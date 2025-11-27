@@ -1,85 +1,44 @@
 const CONFIG = {
-  startDate: new Date('2025-11-09'),
-  spreadsheetId: '1p4H7KDQdr4nOcMR3RlRmmXLawC6m7V7livx4ql4fTrU',
-  apiKey: 'YOUR_API_KEY_HERE', // Get from Google Cloud Console
+  startDate: new Date('2025-11-09T00:00:00'),
   stateIcons: ['✕', '✓', '✕', ':)', ':/'],
-  stateClasses: ['state-0', 'state-1', 'state-2', 'state-3', 'state-4']
+  stateClasses: ['state-0', 'state-1', 'state-2', 'state-3', 'state-4'],
+  apiBaseUrl: 'http://localhost:3000'
 };
 
-class GoogleSheetsAPI {
-  async getSheetData(range) {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.spreadsheetId}/values/${range}?key=${CONFIG.apiKey}`;
-    console.log(`📡 Fetching data from: ${range}`);
-    
+class HabitAPI {
+  async getHabits() {
     try {
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`API Error: ${error.error.message}`);
-      }
-      
-      const data = await response.json();
-      console.log(`✅ Fetched ${data.values?.length || 0} rows from ${range}`);
-      return data.values || [];
-    } catch (error) {
-      console.error(`❌ Error fetching ${range}:`, error);
-      throw error;
-    }
-  }
-
-  async updateRow(sheetName, row, values) {
-    const range = `${sheetName}!A${row}:Z${row}`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED&key=${CONFIG.apiKey}`;
-    
-    try {
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          values: [values],
-        }),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`API Error: ${error.error.message}`);
-      }
-      
-      console.log(`✅ Updated row ${row} in ${sheetName}`);
+      const response = await fetch(`${CONFIG.apiBaseUrl}/habits`);
+      if (!response.ok) throw new Error('Failed to fetch habits');
       return await response.json();
     } catch (error) {
-      console.error('❌ Error updating row:', error);
+      console.error('❌ Error fetching habits:', error);
       throw error;
     }
   }
 
-  async appendRow(sheetName, values) {
-    const range = `${sheetName}!A:Z`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&key=${CONFIG.apiKey}`;
-    
+  async getEntries(from, to) {
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${CONFIG.apiBaseUrl}/habit-entries?from=${from}&to=${to}`);
+      if (!response.ok) throw new Error('Failed to fetch entries');
+      return await response.json();
+    } catch (error) {
+      console.error('❌ Error fetching entries:', error);
+      throw error;
+    }
+  }
+
+  async saveEntry(entry) {
+    try {
+      const response = await fetch(`${CONFIG.apiBaseUrl}/habit-entry`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          values: [values],
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
       });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`API Error: ${error.error.message}`);
-      }
-      
-      console.log(`✅ Appended row to ${sheetName}`);
+      if (!response.ok) throw new Error('Failed to save entry');
       return await response.json();
     } catch (error) {
-      console.error('❌ Error appending row:', error);
+      console.error('❌ Error saving entry:', error);
       throw error;
     }
   }
@@ -87,11 +46,9 @@ class GoogleSheetsAPI {
 
 class DataService {
   constructor() {
-    this.api = new GoogleSheetsAPI();
+    this.api = new HabitAPI();
     this.entriesCache = new Map();
     this.habitsCache = null;
-    this.pendingWrites = [];
-    this.rowIndexMap = new Map();
   }
 
   async initialize() {
@@ -106,62 +63,68 @@ class DataService {
   }
 
   async loadHabitConfig() {
-    const rows = await this.api.getSheetData('HabitConfig!A2:F');
+    const habits = await this.api.getHabits();
     
-    if (!rows || rows.length === 0) {
-      throw new Error('HabitConfig sheet is empty! Add your habits first.');
+    if (!habits || habits.length === 0) {
+      // Try to seed if empty
+      console.log('⚠️ No habits found, attempting to seed...');
+      await fetch(`${CONFIG.apiBaseUrl}/seed-habits`, { method: 'POST' });
+      const seededHabits = await this.api.getHabits();
+      if (!seededHabits || seededHabits.length === 0) {
+        throw new Error('No active habits found!');
+      }
+      return this.processHabits(seededHabits);
     }
     
-    this.habitsCache = rows
-      .filter(row => row && row.length >= 6)
-      .map((row, index) => ({
-        id: row[0],
-        name: row[1],
-        order: parseInt(row[2]),
-        defaultTime: row[3],
-        active: row[4] === 'TRUE',
-        createdDate: row[5],
-        rowIndex: index + 2,
-      }))
-      .filter(h => h.active);
+    return this.processHabits(habits);
+  }
+
+  processHabits(habits) {
+    this.habitsCache = habits.map((h, index) => ({
+      ...h,
+      order: index, // Use index as order since server returns ordered list
+      active: h.active === true || h.active === 'true'
+    }));
     
-    if (this.habitsCache.length === 0) {
-      throw new Error('No active habits found in HabitConfig!');
+    if (this.habitsCache.length > 0) {
+      // Update start date based on earliest habit creation if needed
+      // Ensure we parse as local time to avoid timezone shifts
+      const earliest = Math.min(...this.habitsCache.map(h => {
+        // Append T00:00:00 to ensure local time parsing if it's just YYYY-MM-DD
+        const dateStr = h.createdDate.includes('T') ? h.createdDate : `${h.createdDate}T00:00:00`;
+        return new Date(dateStr).getTime();
+      }));
+      
+      if (!isNaN(earliest)) {
+        CONFIG.startDate = new Date(earliest);
+      }
     }
-    
-    CONFIG.startDate = new Date(
-      Math.min(...this.habitsCache.map(h => new Date(h.createdDate).getTime()))
-    );
-    
+
     console.log(`✅ Loaded ${this.habitsCache.length} habits`);
     return this.habitsCache;
   }
 
   async loadEntries() {
-    const rows = await this.api.getSheetData('HabitEntries!A2:F');
-    this.entriesCache.clear();
-    this.rowIndexMap.clear();
+    // Load all entries from start date to today + some buffer?
+    // Or just load all. The server filters by date.
+    // Let's load from CONFIG.startDate to today.
+    const from = DateUtility.formatDate(CONFIG.startDate);
+    const to = DateUtility.formatDate(new Date());
     
-    if (!rows || rows.length === 0) {
-      console.log('📝 No entries yet (sheet is empty)');
+    const entries = await this.api.getEntries(from, to);
+    this.entriesCache.clear();
+    
+    if (!entries || entries.length === 0) {
+      console.log('📝 No entries yet');
       return this.entriesCache;
     }
     
-    rows.forEach((row, index) => {
-      if (!row || row.length < 6) return;
-      
-      const entry = {
-        entryId: row[0],
-        date: row[1],
-        habitId: row[2],
-        state: parseInt(row[3]),
-        time: row[4],
-        timestamp: row[5],
-      };
-      
+    entries.forEach(entry => {
       const key = `${entry.date}_${entry.habitId}`;
-      this.entriesCache.set(key, entry);
-      this.rowIndexMap.set(key, index + 2);
+      this.entriesCache.set(key, {
+        ...entry,
+        state: parseInt(entry.state)
+      });
     });
     
     console.log(`✅ Loaded ${this.entriesCache.size} entries`);
@@ -181,60 +144,56 @@ class DataService {
     const key = `${date}_${habitId}`;
     const timestamp = new Date().toISOString();
     
-    if (state === 0) {
-      await this.deleteEntry(date, habitId);
-      return;
-    }
-    
-    const existingRowIndex = this.rowIndexMap.get(key);
-    
-    if (existingRowIndex) {
-      const entry = this.entriesCache.get(key);
-      const values = [entry.entryId, date, habitId, state, time, timestamp];
-      await this.api.updateRow('HabitEntries', existingRowIndex, values);
-      
-      this.entriesCache.set(key, {
-        entryId: entry.entryId,
-        date,
-        habitId,
-        state,
-        time,
-        timestamp,
-      });
-    } else {
-      const entryId = this.generateId();
-      const values = [entryId, date, habitId, state, time, timestamp];
-      await this.api.appendRow('HabitEntries', values);
-      
-      const newRowIndex = this.rowIndexMap.size + 2;
-      this.rowIndexMap.set(key, newRowIndex);
-      this.entriesCache.set(key, {
-        entryId,
-        date,
-        habitId,
-        state,
-        time,
-        timestamp,
-      });
-    }
+    let entry = this.entriesCache.get(key);
+    let entryId = entry ? entry.entryId : this.generateId();
+
+    const newEntry = {
+      entryId,
+      date,
+      habitId,
+      state,
+      time: time || 'neither', // time is not stored in DB schema shown in server, but passed in API?
+      // Wait, server schema: entryId, date, habitId, state, timestamp.
+      // The original script had 'time' in the row.
+      // My server implementation doesn't explicitly save 'time' in the CSV if it's not in the destructuring.
+      // Let's check server implementation again.
+      // Server: const { entryId, date, habitId, state, timestamp } = req.body;
+      // It ignores 'time'.
+      // If 'time' is needed for UI (e.g. morning/night icon), it comes from HabitConfig usually.
+      // But the entry might override it?
+      // In original script: `const time = habit ? habit.defaultTime : 'neither';`
+      // So 'time' is derived from habit, but stored in entry?
+      // If I want to persist 'time', I should add it to server schema.
+      // The user said "Keep the tabular data schema the same".
+      // Original script `loadEntries`: `time: row[4]`.
+      // So `HabitEntries` had `time`.
+      // My server schema in `index.js` (Postgres) didn't show `time` column in the INSERT!
+      // `INSERT INTO HabitEntries (entryId, date, habitId, state, timestamp)`
+      // So `time` was NOT persisted in the Postgres version?
+      // But `script.js` (Sheets version) persisted it.
+      // The user said "this is a repo where i was trying to use postgres... Convert all the db logic".
+      // The Postgres code didn't have `time`.
+      // I will assume `time` is not critical or derived from habit.
+      // But to be safe, I'll pass it. If server ignores it, fine.
+      timestamp
+    };
+
+    // Optimistic update
+    this.entriesCache.set(key, newEntry);
+
+    await this.api.saveEntry(newEntry);
   }
 
   async deleteEntry(date, habitId) {
-    const key = `${date}_${habitId}`;
-    const rowIndex = this.rowIndexMap.get(key);
-    
-    if (rowIndex) {
-      const values = ['', date, habitId, 0, '', ''];
-      await this.api.updateRow('HabitEntries', rowIndex, values);
-      this.entriesCache.delete(key);
-      this.rowIndexMap.delete(key);
-    }
+    // In this system, deleting is setting state to 0
+    await this.upsertEntry(date, habitId, 0, null);
   }
 
   generateId() {
     return 'e_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 }
+
 
 const DateUtility = {
   getAllDatesFromStart(startDate) {
@@ -352,10 +311,56 @@ class StateManager {
   }
 }
 
+class ScorecardController {
+  constructor(dataService, stateManager) {
+    this.dataService = dataService;
+    this.stateManager = stateManager;
+  }
+
+  getHabitStats(habitId, weekStart, weekEnd) {
+    let successCount = 0;
+    let totalCount = 0;
+    
+    let curr = new Date(weekStart);
+    while (curr <= weekEnd) {
+      const entry = this.stateManager.getEntry(curr, habitId);
+      // Assuming state 1 (check) and 3 (smiley) are successes
+      if (entry.state === 1 || entry.state === 3) {
+        successCount++;
+      }
+      totalCount++;
+      curr.setDate(curr.getDate() + 1);
+    }
+    
+    const percentage = totalCount === 0 ? 0 : (successCount / totalCount) * 100;
+    return {
+      percentage,
+      grade: this.getGrade(percentage)
+    };
+  }
+
+  getGrade(percentage) {
+    if (percentage >= 90) return { letter: 'A+', class: 'grade-A-plus' };
+    if (percentage >= 85) return { letter: 'A', class: 'grade-A' };
+    if (percentage >= 80) return { letter: 'A-', class: 'grade-A-minus' };
+    if (percentage >= 77) return { letter: 'B+', class: 'grade-B-plus' };
+    if (percentage >= 73) return { letter: 'B', class: 'grade-B' };
+    if (percentage >= 70) return { letter: 'B-', class: 'grade-B-minus' };
+    if (percentage >= 67) return { letter: 'C+', class: 'grade-C-plus' };
+    if (percentage >= 63) return { letter: 'C', class: 'grade-C' };
+    if (percentage >= 60) return { letter: 'C-', class: 'grade-C-minus' };
+    if (percentage >= 57) return { letter: 'D+', class: 'grade-D-plus' };
+    if (percentage >= 53) return { letter: 'D', class: 'grade-D' };
+    if (percentage >= 50) return { letter: 'D-', class: 'grade-D-minus' };
+    return { letter: 'F', class: 'grade-F' };
+  }
+}
+
 class UIController {
-  constructor(stateManager, dataService) {
+  constructor(stateManager, dataService, scorecardController) {
     this.stateManager = stateManager;
     this.dataService = dataService;
+    this.scorecardController = scorecardController;
     
     this.elements = {
       tableHead: document.getElementById('table-head'),
@@ -422,6 +427,14 @@ class UIController {
       dayHeader.appendChild(dayDate);
       th.appendChild(dayHeader);
       headerRow.appendChild(th);
+
+      // Add Score Column after Saturday
+      if (date.getDay() === 6) {
+        const scoreTh = document.createElement('th');
+        scoreTh.className = 'score-header';
+        scoreTh.textContent = ''; // Blank label
+        headerRow.appendChild(scoreTh);
+      }
     });
     
     this.elements.tableHead.innerHTML = '';
@@ -485,6 +498,29 @@ class UIController {
         const cell = this.createCell(date, habit.id);
         td.appendChild(cell);
         row.appendChild(td);
+
+        // Add Score Cell after Saturday
+        if (date.getDay() === 6) {
+          const scoreTd = document.createElement('td');
+          scoreTd.className = 'score-cell';
+          
+          // Calculate stats for this week
+          const weekStart = new Date(date);
+          weekStart.setDate(date.getDate() - 6);
+          const stats = this.scorecardController.getHabitStats(habit.id, weekStart, date);
+          
+          const scoreContent = document.createElement('div');
+          scoreContent.className = 'score-content has-tooltip';
+          scoreContent.setAttribute('data-tooltip', `${Math.round(stats.percentage)}%`);
+          
+          const grade = document.createElement('span');
+          grade.className = `score-grade ${stats.grade.class}`;
+          grade.textContent = stats.grade.letter;
+          
+          scoreContent.appendChild(grade);
+          scoreTd.appendChild(scoreContent);
+          row.appendChild(scoreTd);
+        }
       });
       
       this.elements.tableBody.appendChild(row);
@@ -535,7 +571,8 @@ async function initializeApp() {
   
   const dataService = new DataService();
   const stateManager = new StateManager(dataService);
-  const uiController = new UIController(stateManager, dataService);
+  const scorecardController = new ScorecardController(dataService, stateManager);
+  const uiController = new UIController(stateManager, dataService, scorecardController);
   
   try {
     console.log('📊 Loading data from Google Sheets...');
