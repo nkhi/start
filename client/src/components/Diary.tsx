@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { Square, CheckSquare } from '@phosphor-icons/react';
 import { HabitAPI } from '../api';
 import type { DiaryEntry, Question } from '../types';
 import { generateId } from '../utils';
@@ -35,7 +36,7 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
   function handleAnswerChange(dateStr: string, questionId: string, answer: string) {
     const currentDayEntries = diary[dateStr] || [];
     const existingEntryIndex = currentDayEntries.findIndex(e => e.questionId === questionId);
-    
+
     let updatedDayEntries;
     if (existingEntryIndex >= 0) {
       updatedDayEntries = [...currentDayEntries];
@@ -92,10 +93,10 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
 
   const renderDiaryColumn = ({ date, dateStr, isToday }: DayWeekColumnData) => {
     const dayEntries = diary[dateStr] || [];
-    
+
     // Filter questions: Global (no date) OR Ad-hoc for this date
     const dayQuestions = questions.filter(q => !q.date || q.date === dateStr);
-    
+
     return (
       <>
         <div className="diary-column-header">
@@ -106,16 +107,25 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
             {date.toLocaleDateString('en-US', { weekday: 'short' })}
           </span>
         </div>
-        
+
         <div className="diary-content">
           {dayQuestions.map(question => {
             const entry = dayEntries.find(e => e.questionId === question.id);
             const answer = entry ? entry.answer : '';
-            
+
             return (
               <div key={question.id} className="diary-card">
-                <div className="diary-question">{question.text}</div>
+                <div className="diary-question">
+                  {answer ? (
+                    <CheckSquare size={20} weight="duotone" color="#158e66ff" />
+                    // <CheckSquare size={20} weight="fill" color="#158e66ff" />
+                  ) : (
+                    <Square size={20} color="rgba(255, 255, 255, 0.4)" />
+                  )}
+                  {question.text}
+                </div>
                 <textarea
+                  // oninput='this.style.height = "";this.style.height = this.scrollHeight + "px"'
                   className="diary-answer-area"
                   placeholder="Write your answer here..."
                   value={answer}
@@ -124,10 +134,10 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
               </div>
             );
           })}
-          
+
           {/* Ad-hoc question input */}
           <form onSubmit={(e) => addQuestion(e, dateStr)} className="todo-input-form-small" style={{ marginTop: 'auto' }}>
-             <input
+            <input
               type="text"
               value={newQuestionTexts[dateStr] || ''}
               onChange={(e) => setNewQuestionTexts({ ...newQuestionTexts, [dateStr]: e.target.value })}

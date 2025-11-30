@@ -2,7 +2,7 @@ export interface Habit {
   id: string;
   name: string;
   order: number;
-  defaultTime: 'morning' | 'night' | 'neither' | 'health' | 'exercise';
+  defaultTime: 'morning' | 'night' | 'neither' | 'health' | 'exercise' | 'weekdays';
   active: boolean;
   createdDate: string;
 }

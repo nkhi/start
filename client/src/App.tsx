@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import './App.css';
-import { CalendarCheck, NoteBlank, ListChecks, Calendar, Trophy, NotepadIcon, TipJarIcon, LightbulbIcon, BooksIcon, Binoculars, ListMagnifyingGlassIcon } from '@phosphor-icons/react';
+import { CalendarCheck, ListChecks, Calendar, TipJarIcon, LightbulbIcon, BooksIcon, ChartLineUpIcon, ListDashes, TreeIcon, Pulse, HeartbeatIcon } from '@phosphor-icons/react';
 import { HabitTracker } from './components/HabitTracker';
 import { Todos } from './components/Todos';
 import { Diary } from './components/Diary';
+import { Next } from './components/Next';
+import { Lists } from './components/Lists';
 
 const API_BASE_URL = 'http://localhost:3000';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'habits' | 'todos' | 'logs' | 'memos'>('habits');
+  const [activeTab, setActiveTab] = useState<'habits' | 'todos' | 'logs' | 'memos' | 'next' | 'lists'>('habits');
 
   return (
     <div id="app">
@@ -16,57 +18,73 @@ function App() {
         <div className="left-links">
           <a href="https://app.monarchmoney.com/accounts?chartType=performance&dateRange=6M&timeframe=month" target="_blank" rel="noreferrer" className="nav-link">
             <TipJarIcon size={20} weight="duotone" className="nav-icon" />
-            Money
+            {/* <span className="nav-text">Money</span> */}
           </a>
 
-                    <a href="https://www.perplexity.ai/" target="_blank" rel="noreferrer" className="nav-link">
-            <ListMagnifyingGlassIcon size={20} weight="duotone" className="nav-icon" />
-            Search
+          <a href="https://www.perplexity.ai/" target="_blank" rel="noreferrer" className="nav-link">
+            <img src="/Perplexity-Symbol-Single-Light.svg" alt="Perplexity" className="nav-icon" style={{ width: '20px', height: '20px', opacity: 0.5 }} />
+            {/* <span className="nav-text">Search</span> */}
           </a>
 
         </div>
 
         <div className="tab-switcher">
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'habits' ? 'active' : ''}`}
             onClick={() => setActiveTab('habits')}
           >
             <CalendarCheck size={20} weight={activeTab === 'habits' ? 'duotone' : 'regular'} className="nav-icon" />
-            Habits
+            <span className="nav-text">Habits</span>
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'todos' ? 'active' : ''}`}
             onClick={() => setActiveTab('todos')}
           >
             <ListChecks size={20} weight={activeTab === 'todos' ? 'bold' : 'regular'} className="nav-icon" />
-            Todos
+            <span className="nav-text">Today</span>
           </button>
 
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'memos' ? 'active' : ''}`}
             onClick={() => setActiveTab('memos')}
           >
             <LightbulbIcon size={20} weight={activeTab === 'memos' ? 'duotone' : 'regular'} className="nav-icon" />
-            Ideas
+            <span className="nav-text">Memos</span>
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`}
             onClick={() => setActiveTab('logs')}
           >
-            <BooksIcon size={20} weight={activeTab === 'logs' ? 'duotone' : 'regular'} className="nav-icon" />
-            Diary
+            <HeartbeatIcon size={20} weight={activeTab === 'logs' ? 'duotone' : 'regular'} className="nav-icon" />
+            <span className="nav-text">Journal</span>
           </button>
-          <div className={`tab-indicator ${activeTab}`} />
+          <button
+            className={`tab-btn ${activeTab === 'lists' ? 'active' : ''}`}
+            onClick={() => setActiveTab('lists')}
+          >
+            <ListDashes size={20} weight={activeTab === 'lists' ? 'duotone' : 'regular'} className="nav-icon" />
+            <span className="nav-text">Lists</span>
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'next' ? 'active' : ''}`}
+            onClick={() => setActiveTab('next')}
+          >
+            <TreeIcon size={20} weight={activeTab === 'next' ? 'duotone' : 'regular'} className="nav-icon" />
+            <span className="nav-text">Grow</span>
+          </button>
+
         </div>
 
         <div className="right-links">
-          <a href="https://calendar.google.com" target="_blank" rel="noreferrer" className="nav-link">
+          <a href="cron://" className="nav-link">
             <Calendar size={20} weight="duotone" className="nav-icon" />
-            Calendar
+            {/* <span className="nav-text">Calendar</span> */}
           </a>
           <a href="linear://" className="nav-link">
-            <Trophy size={20} weight="duotone" className="nav-icon" />
-            Goals
+            <ChartLineUpIcon size={20} weight="bold" className="nav-icon" />
+
+            {/* <img src="/linear-logo-dark.svg" alt="Linear" className="nav-icon" style={{ width: '20px', height: '20px' }} /> */}
+            {/* <span className="nav-text">Goals</span> */}
           </a>
         </div>
       </div>
@@ -76,14 +94,16 @@ function App() {
         {activeTab === 'memos' && (
           <div className="memos-container">
             <div className="memos-loading-overlay" />
-            <iframe 
-              src="http://localhost:5230/" 
+            <iframe
+              src="http://localhost:5230/"
               className="memos-frame"
               title="Memos"
             />
           </div>
         )}
         {activeTab === 'logs' && <Diary apiBaseUrl={API_BASE_URL} />}
+        {activeTab === 'next' && <Next />}
+        {activeTab === 'lists' && <Lists />}
       </main>
     </div>
   );

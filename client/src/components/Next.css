@@ -1,0 +1,168 @@
+.next-container {
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+  background-color: transparent;
+}
+
+.next-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-auto-rows: 100px; /* Base row height */
+  gap: 16px;
+  grid-auto-flow: dense; /* Fills in gaps */
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.note-card {
+  background-color: #2D2D2D;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  color: #E0E0E0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+
+.note-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.note-title-input {
+  font-size: 1.65rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #FFFFFF;
+  background: transparent;
+  border: none;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+}
+
+.note-title-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.note-content-input {
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  border: none;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  flex: 1;
+  margin-bottom: 32px; /* Make space for actions */
+}
+
+.note-content-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+
+
+.note-actions {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.note-card:hover .note-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.start-btn:hover {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+/* Size variations */
+.note-card.small {
+  grid-row: span 2;
+}
+
+.note-card.medium {
+  grid-row: span 3;
+}
+
+.note-card.large {
+  grid-row: span 4;
+  grid-column: span 2;
+}
+
+.note-card.tall {
+  grid-row: span 5;
+}
+
+.note-card.wide {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.new-note {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  grid-row: span 2;
+}
+
+.new-note:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.plus-icon {
+  font-size: 32px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+  .next-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+  
+  .note-card.large, .note-card.wide {
+    grid-column: span 1; /* Reset column span on mobile */
+  }
+}

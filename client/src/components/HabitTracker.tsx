@@ -3,11 +3,11 @@ import { HabitAPI } from '../api';
 import type { Habit, HabitEntry, Vlog } from '../types';
 import { DateUtility, getGrade, generateId } from '../utils';
 import VlogModal from './VlogModal';
-import { VideoCameraIcon, SunHorizonIcon, MoonIcon, HeartIcon, TreeIcon, BarbellIcon } from '@phosphor-icons/react';
+import { VideoCameraIcon, SunHorizonIcon, MoonIcon, HeartIcon, TreeIcon, BarbellIcon, ResizeIcon } from '@phosphor-icons/react';
 
 const CONFIG = {
   startDate: new Date('2025-11-09T00:00:00'),
-  stateIcons: ['·', '✓', '✕', ':)', ':/'],
+  stateIcons: ['·', '✓', '✕', ':)', ':|'],
   stateClasses: ['state-0', 'state-1', 'state-2', 'state-3', 'state-4']
 };
 
@@ -58,7 +58,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       }
       const allDates = DateUtility.getAllDatesFromStart(CONFIG.startDate);
       setDates(allDates);
-      
+
       // Expand current week by default
       const today = new Date();
       const currentWeekStart = DateUtility.getWeekStart(today);
@@ -73,7 +73,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       const { isSupported } = await import('@loomhq/record-sdk/is-supported');
       const { supported } = await isSupported();
       setLoomSupported(supported);
-      
+
       if (supported) {
         initializeLoom();
       }
@@ -87,7 +87,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     try {
       const { createInstance } = await import('@loomhq/record-sdk');
       const { oembed } = await import('@loomhq/loom-embed');
-      
+
       // Create a hidden button for Loom SDK
       const hiddenButton = document.createElement('button');
       hiddenButton.style.display = 'none';
@@ -105,12 +105,12 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       sdkButton.on('insert-click', async (video) => {
         console.log('Loom insert-click event triggered!', video);
         console.log('Current recordingWeek:', recordingWeekRef.current);
-        
+
         if (!recordingWeekRef.current) {
           console.error('No recordingWeek set when insert-click fired');
           return;
         }
-        
+
         try {
           console.log('Fetching oembed for:', video.sharedUrl);
           const { html } = await oembed(video.sharedUrl, { width: 600 });
@@ -131,7 +131,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
         console.log('Loom recording completed');
         recordingWeekRef.current = null;
       });
-      
+
       console.log('Loom SDK initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Loom:', error);
@@ -150,7 +150,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       ]);
 
       setHabits(habitsData);
-      
+
       const entriesMap = new Map<string, HabitEntry>();
       entriesData.forEach(entry => {
         const key = `${entry.date}_${entry.habitId}`;
@@ -194,7 +194,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
         const containerWidth = tableWrapperRef.current.clientWidth;
         const todayLeft = (todayHeader as HTMLElement).offsetLeft;
         const todayWidth = (todayHeader as HTMLElement).offsetWidth;
-        
+
         const scrollPosition = todayLeft - containerWidth + todayWidth + 200;
         tableWrapperRef.current.scrollLeft = Math.max(0, scrollPosition);
       }
@@ -207,13 +207,13 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     const current = entries.get(key);
     const currentState = current?.state || 0;
     const nextState = (currentState + 1) % 5;
-    
+
     const habit = habits.find(h => h.id === habitId);
     const time = habit?.defaultTime || 'neither';
-    
+
     const entryId = current?.entryId || generateId();
     const timestamp = new Date().toISOString();
-    
+
     const newEntry: HabitEntry = {
       entryId,
       date: dateStr,
@@ -248,7 +248,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     today.setHours(0, 0, 0, 0);
     let streak = 0;
     let currentDate = new Date(today);
-    
+
     while (currentDate >= CONFIG.startDate) {
       const entry = getEntry(currentDate, habitId);
       if (entry && (entry.state === 1 || entry.state === 3)) {
@@ -258,16 +258,26 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       }
       currentDate.setDate(currentDate.getDate() - 1);
     }
-    
+
     return streak;
   }
 
   function getHabitStats(habitId: string, weekStart: Date, weekEnd: Date) {
+    const habit = habits.find(h => h.id === habitId);
+    const isWeekdays = habit?.defaultTime === 'weekdays';
+
     let successCount = 0;
     let totalCount = 0;
-    
+
     let curr = new Date(weekStart);
     while (curr <= weekEnd) {
+      // Skip weekends for weekday habits
+      const isWeekend = curr.getDay() === 0 || curr.getDay() === 6;
+      if (isWeekdays && isWeekend) {
+        curr.setDate(curr.getDate() + 1);
+        continue;
+      }
+
       const entry = getEntry(curr, habitId);
       if (entry && (entry.state === 1 || entry.state === 3)) {
         successCount++;
@@ -275,9 +285,11 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       totalCount++;
       curr.setDate(curr.getDate() + 1);
     }
-    
+
     const percentage = totalCount === 0 ? 0 : (successCount / totalCount) * 100;
     return {
+      successCount,
+      totalCount,
       percentage,
       grade: getGrade(percentage)
     };
@@ -286,7 +298,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
   async function handleVlogSaved(weekStart: Date, videoUrl: string, embedHtml: string) {
     const weekStartStr = DateUtility.formatDate(weekStart);
     const vlog: Vlog = { weekStartDate: weekStartStr, videoUrl, embedHtml };
-    
+
     try {
       await api.saveVlog(vlog);
       const newVlogs = new Map(vlogs);
@@ -302,7 +314,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     e.stopPropagation(); // Prevent collapsing/expanding when clicking vlog button
     const weekStartStr = DateUtility.formatDate(weekStart);
     const vlog = vlogs.get(weekStartStr);
-    
+
     if (vlog) {
       // View existing vlog
       setViewingVlog(vlog);
@@ -341,19 +353,19 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                 if (!isExpanded) {
                   // Collapsed view
                   return (
-                    <th 
-                      key={week.key} 
+                    <th
+                      key={week.key}
                       className="week-summary-header"
                       onClick={() => toggleWeek(week.key)}
                       style={{ cursor: 'pointer', minWidth: '120px' }}
                     >
-                      <div className="day-header" style={{ flexDirection: 'row', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
+                      <div className="day-header" style={{ flexDirection: 'column', gap: '3px', alignItems: 'center', justifyContent: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span className="day-name">
                             {DateUtility.getDayName(week.start)} {DateUtility.getDayNumber(week.start)} - {DateUtility.getDayName(week.end)} {DateUtility.getDayNumber(week.end)}
                           </span>
                         </div>
-                        {hasVlog && <VideoCameraIcon size={16} weight="fill" color="#8b5cf6" />}
+                        {hasVlog && <VideoCameraIcon size={16} weight="duotone" color="#8b5cf6" />}
                       </div>
                     </th>
                   );
@@ -362,7 +374,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                 // Expanded view
                 return week.days.map((date, idx) => {
                   const isSaturday = date.getDay() === 6;
-                  
+
                   return (
                     <React.Fragment key={`${week.key}-${idx}`}>
                       <th colSpan={1}>
@@ -382,7 +394,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                             onClick={(e) => handleVlogClick(weekStart, e)}
                             title={hasVlog ? "View weekly vlog" : "Record weekly vlog"}
                           >
-                            <VideoCameraIcon size={20} weight="fill" />
+                            <VideoCameraIcon size={20} weight="duotone" />
                           </button>
                           <button
                             className="collapse-btn"
@@ -410,16 +422,19 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                   <div className="habit-name">
                     <span className={`time-icon ${habit.defaultTime}`}>
                       {habit.defaultTime === 'morning' && (
-                        <SunHorizonIcon size={20} weight="fill" color="orange"/>
+                        <SunHorizonIcon size={20} weight="duotone" color="orange" />
                       )}
                       {habit.defaultTime === 'night' && (
-                        <MoonIcon size={20} weight="fill" color="#3ddde6ff"/>
+                        <MoonIcon size={20} weight="duotone" color="#3ddde6ff" />
                       )}
                       {habit.defaultTime === 'health' && (
-                        <TreeIcon size={20} weight="fill" color="#1ba841ff"/>
+                        <TreeIcon size={20} weight="duotone" color="#1ba841ff" />
                       )}
                       {habit.defaultTime === 'exercise' && (
-                        <BarbellIcon size={20} weight="fill" color="#f4244dff"/>
+                        <BarbellIcon size={20} weight="duotone" color="#f4244dff" />
+                      )}
+                      {habit.defaultTime === 'weekdays' && (
+                        <ResizeIcon size={20} weight="duotone" color="#a855f7" />
                       )}
                     </span>
                     <div className="habit-name-text">
@@ -443,15 +458,15 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                   if (!isExpanded) {
                     const stats = getHabitStats(habit.id, weekStart, weekEnd);
                     return (
-                      <td 
-                        key={week.key} 
+                      <td
+                        key={week.key}
                         onClick={() => toggleWeek(week.key)}
                         style={{ cursor: 'pointer' }}
                         className="week-summary-cell"
                       >
-                        <div className="score-content">
+                        <div className="score-content has-tooltip" data-tooltip={`${stats.grade.letter} (${Math.round(stats.percentage)}%)`}>
                           <span className={`score-grade ${stats.grade.class}`}>
-                            {stats.grade.letter}
+                            {stats.successCount}/{stats.totalCount}
                           </span>
                         </div>
                       </td>
@@ -462,26 +477,37 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                     const entry = getEntry(date, habit.id);
                     const state = entry?.state || 0;
                     const isSaturday = date.getDay() === 6;
-                    
+
                     return (
                       <React.Fragment key={`${week.key}-${idx}`}>
                         <td>
                           <div
-                            className={`cell ${CONFIG.stateClasses[state]}`}
-                            onClick={() => cycleState(date, habit.id)}
+                            className={`cell ${CONFIG.stateClasses[state]} ${habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0) ? 'disabled' : ''}`}
+                            onClick={() => {
+                              if (habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0)) return;
+                              cycleState(date, habit.id);
+                            }}
                           >
-                            {CONFIG.stateIcons[state]}
+                            {habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0) ? (
+                              <span style={{ color: '#333', fontSize: '12px' }}>-</span>
+                            ) : (
+                              CONFIG.stateIcons[state]
+                            )}
                           </div>
                         </td>
-                        {isSaturday && (
-                          <td className="score-cell">
-                            <div className="score-content has-tooltip" data-tooltip={`${Math.round(getHabitStats(habit.id, new Date(date.getTime() - 6 * 24 * 60 * 60 * 1000), date).percentage)}%`}>
-                              <span className={`score-grade ${getHabitStats(habit.id, new Date(date.getTime() - 6 * 24 * 60 * 60 * 1000), date).grade.class}`}>
-                                {getHabitStats(habit.id, new Date(date.getTime() - 6 * 24 * 60 * 60 * 1000), date).grade.letter}
-                              </span>
-                            </div>
-                          </td>
-                        )}
+                        {isSaturday && (() => {
+                          const weekStartDate = new Date(date.getTime() - 6 * 24 * 60 * 60 * 1000);
+                          const stats = getHabitStats(habit.id, weekStartDate, date);
+                          return (
+                            <td className="score-cell">
+                              <div className="score-content has-tooltip" data-tooltip={`${stats.grade.letter} (${Math.round(stats.percentage)}%)`}>
+                                <span className={`score-grade ${stats.grade.class}`}>
+                                  {stats.successCount}/{stats.totalCount}
+                                </span>
+                              </div>
+                            </td>
+                          );
+                        })()}
                       </React.Fragment>
                     );
                   });

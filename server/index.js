@@ -281,6 +281,143 @@ app.post('/diary', (req, res) => {
   }
 });
 
+// --- Next Endpoints ---
+
+const NEXT_FILE = path.join(__dirname, '../data/next.json');
+
+// Get all active next items
+app.get('/next', (req, res) => {
+  try {
+    const items = readJson(NEXT_FILE);
+    // Filter out deleted and started items by default
+    const activeItems = items.filter(item => !item.deletedAt && !item.startedAt);
+    res.json(activeItems);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Add a new next item
+app.post('/next', (req, res) => {
+  const { id, title, content, color, size } = req.body;
+  if (!id || !title) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const items = readJson(NEXT_FILE);
+    const newItem = {
+      id,
+      title,
+      content: content || '',
+      color: color || '#2D2D2D',
+      size: size || 'medium',
+      createdAt: new Date().toISOString(),
+      deletedAt: null,
+      startedAt: null
+    };
+    items.push(newItem);
+    writeJson(NEXT_FILE, items);
+    res.json(newItem);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update a next item (e.g. delete, start, or edit)
+app.patch('/next/:id', (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+
+  try {
+    const items = readJson(NEXT_FILE);
+    const index = items.findIndex(item => item.id === id);
+    
+    if (index === -1) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    items[index] = { ...items[index], ...updates };
+    writeJson(NEXT_FILE, items);
+    res.json(items[index]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Lists Endpoints ---
+
+const LISTS_FILE = path.join(__dirname, '../data/lists.json');
+
+// Get all lists
+app.get('/lists', (req, res) => {
+  try {
+    const lists = readJson(LISTS_FILE);
+    res.json(lists);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Create a new list
+app.post('/lists', (req, res) => {
+  const { id, title, color } = req.body;
+  if (!id || !title) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const lists = readJson(LISTS_FILE);
+    const newList = {
+      id,
+      title,
+      color: color || '#2D2D2D',
+      createdAt: new Date().toISOString(),
+      items: []
+    };
+    lists.push(newList);
+    writeJson(LISTS_FILE, lists);
+    res.json(newList);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update a list (title or items)
+app.patch('/lists/:id', (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+
+  try {
+    const lists = readJson(LISTS_FILE);
+    const index = lists.findIndex(l => l.id === id);
+    
+    if (index === -1) {
+      return res.status(404).json({ error: 'List not found' });
+    }
+
+    lists[index] = { ...lists[index], ...updates };
+    writeJson(LISTS_FILE, lists);
+    res.json(lists[index]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Delete a list
+app.delete('/lists/:id', (req, res) => {
+  const { id } = req.params;
+
+  try {
+    let lists = readJson(LISTS_FILE);
+    lists = lists.filter(l => l.id !== id);
+    writeJson(LISTS_FILE, lists);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);

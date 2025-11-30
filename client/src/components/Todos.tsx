@@ -155,8 +155,22 @@ export function Todos({ apiBaseUrl }: TodosProps) {
 
   const renderTodoColumn = ({ date, dateStr, isToday }: DayWeekColumnData) => {
     const dayTasks = tasks[dateStr] || [];
-    const lifeTasks = dayTasks.filter(t => !t.category || t.category === 'life');
-    const workTasks = dayTasks.filter(t => t.category === 'work');
+    const sortTasks = (taskList: Task[]) => {
+      return [...taskList].sort((a, b) => {
+        const stateA = a.state || (a.completed ? 'completed' : 'active');
+        const stateB = b.state || (b.completed ? 'completed' : 'active');
+        
+        const isAActive = stateA === 'active';
+        const isBActive = stateB === 'active';
+        
+        if (isAActive && !isBActive) return -1;
+        if (!isAActive && isBActive) return 1;
+        return 0;
+      });
+    };
+
+    const lifeTasks = sortTasks(dayTasks.filter(t => !t.category || t.category === 'life'));
+    const workTasks = sortTasks(dayTasks.filter(t => t.category === 'work'));
     
     return (
       <>

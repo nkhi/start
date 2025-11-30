@@ -10,6 +10,7 @@ body {
   /* background: #1c1c1c; */
   background: #110C09;
   min-height: 100vh;
+  min-width: 550px;
 }
 
 button, input, select, textarea {
@@ -122,7 +123,7 @@ button, input, select, textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 18px;
+  font-size: 22px;
 }
 
 .streak-badge {
@@ -219,6 +220,12 @@ button, input, select, textarea {
   transform: scale(0.98);
 }
 
+.cell.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.02);
+}
+
 .cell.state-0 {
   color: #525252;
   box-shadow: inset 0 -1px 0 0 #262626;
@@ -271,7 +278,7 @@ button, input, select, textarea {
 
 @media (max-width: 768px) {
   body {
-    padding: 0.5rem;
+    /* padding: 0.5rem; */
   }
   
   #app {
@@ -595,15 +602,15 @@ button, input, select, textarea {
 
 .vlog-modal-content {
   position: relative;
-  background: white;
+  background: #ffffff0d;
   border-radius: 16px;
   padding: 24px;
-  max-width: 800px;
+  max-width: 75vw;
   width: 100%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
-.vlog-modal-close {
+/* .vlog-modal-close {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -617,20 +624,29 @@ button, input, select, textarea {
   justify-content: center;
   cursor: pointer;
   font-size: 18px;
-  color: #374151;
+  color: #ffffff;
   transition: all 0.2s ease;
+  z-index: 50;
 }
 
 .vlog-modal-close:hover {
   background: #e5e7eb;
   transform: scale(1.1);
-}
+} */
 
 #habit-container.habits {
   background: transparent;
 }
 
 #habit-container.todos {
+  background: transparent;
+}
+
+#habit-container.next {
+  background: transparent;
+}
+
+#habit-container.lists {
   background: transparent;
 }
 
@@ -655,6 +671,7 @@ button, input, select, textarea {
   gap: 24px;
   position: relative;
   border-bottom: 1px solid #363029;
+  /* background: #1d1d1d52; */
 }
 
 .left-links {
@@ -697,7 +714,7 @@ button, input, select, textarea {
   background: #110C09;
   padding: 4px;
   border-radius: 12px;
-  gap: 0;
+  gap: 4px;
   width: fit-content;
   min-width: 200px;
 }
@@ -708,23 +725,22 @@ button, input, select, textarea {
 
 .tab-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: #888;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  padding: 6px 14px;
-  transition: color 0.2s ease;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
   position: relative;
   z-index: 2;
-  flex: 1;
-  border-radius: 14px;
+  flex: 0 0 auto;
+  border-radius: 8px;
   text-decoration: none;
-  text-align: center;
-  display: flex;
+  text-align: left;
+  display: grid;
+  grid-template-columns: 20px 1fr;
   align-items: center;
-  justify-content: center;
-  min-width: 0; /* Ensure flex items can shrink below content size if needed, ensuring equal width */
   gap: 8px;
 }
 
@@ -734,31 +750,11 @@ button, input, select, textarea {
 
 .tab-btn.active {
   color: white;
-}
-
-.tab-indicator {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc((100% - 8px) / 4); /* Exact width of one slot */
   background: #1d1d1d;
-  border-radius: 8px;
-  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-.tab-indicator.todos {
-  transform: translateX(100%);
-}
 
-.tab-indicator.logs {
-  transform: translateX(300%);
-}
-
-.tab-indicator.memos {
-  transform: translateX(200%);
-}
 
 .memos-container {
   width: 100%;
@@ -1194,7 +1190,7 @@ button, input, select, textarea {
   min-width: 60vw;
   width: 60vw;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 1rem;
+  padding: 1.5rem 1rem;
   display: flex;
   flex-direction: column;
   scroll-snap-align: center;
@@ -1231,13 +1227,13 @@ button, input, select, textarea {
 
 .diary-day-name {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.45);
   font-weight: 500;
 }
 
 .diary-content {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1 1 auto;
+  /* overflow-y: auto; */
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -1252,7 +1248,8 @@ button, input, select, textarea {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  min-height: 120px; /* Adjust as needed */
+  min-height: 120px;
+  height: auto;
   transition: all 0.2s ease;
 }
 
@@ -1262,6 +1259,9 @@ button, input, select, textarea {
 }
 
 .diary-question {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 1.1rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
@@ -1284,4 +1284,36 @@ button, input, select, textarea {
 .diary-answer-area::placeholder {
   color: rgba(255, 255, 255, 0.2);
   font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .diary-column {
+    min-width: 90vw;
+    width: 90vw;
+  }
+}
+
+/* Responsive Navigation */
+@media (max-width: 950px) {
+  /* .left-links .nav-link .nav-text,
+  .right-links .nav-link .nav-text {
+    display: none;
+  }
+
+  .left-links .nav-link,
+  .right-links .nav-link {
+    padding: 8px;
+    gap: 0;
+  } */
+}
+
+@media (max-width: 910px) {
+  .tab-switcher .tab-btn .nav-text {
+    display: none;
+  }
+
+  .tab-switcher .tab-btn {
+    padding: 6px;
+    gap: 0;
+  }
 }
