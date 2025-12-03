@@ -29,14 +29,6 @@ export function Todos({ apiBaseUrl }: TodosProps) {
 
   async function addTask(e: React.FormEvent, dateStr: string, category: 'life' | 'work') {
     e.preventDefault();
-    // We need separate state for life/work inputs
-    // But for now let's just use the same state object but key it differently?
-    // Or just use a simple prompt? No, let's do it properly.
-    // We need to update the state to handle categories.
-    // Let's assume the current newTaskTexts is just for 'life' (default) or we need to change it.
-    // Let's change newTaskTexts to be Record<string, {life: string, work: string}>
-    
-    // Actually, let's just use a composite key for the input state: `${dateStr}_${category}`
     const inputKey = `${dateStr}_${category}`;
     const text = newTaskTexts[inputKey];
     if (!text?.trim()) return;
@@ -47,43 +39,61 @@ export function Todos({ apiBaseUrl }: TodosProps) {
       completed: false,
       date: dateStr,
       createdAt: new Date().toISOString(),
-      category: category // We need to add this to the type
+      category: category
     };
 
+    // Optimistic update
     const currentDayTasks = tasks[dateStr] || [];
     const updatedDayTasks = [...currentDayTasks, newTask];
     const updatedTasks = { ...tasks, [dateStr]: updatedDayTasks };
 
     setTasks(updatedTasks);
     setNewTaskTexts({ ...newTaskTexts, [inputKey]: '' });
-    await api.saveTasks(updatedTasks);
+    
+    try {
+      await api.createTask(newTask);
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      // Revert optimistic update on error
+      setTasks(tasks);
+    }
   }
 
   async function toggleTask(dateStr: string, taskId: string) {
     const currentDayTasks = tasks[dateStr] || [];
-    const updatedDayTasks = currentDayTasks.map(t => {
-      if (t.id !== taskId) return t;
-      
-      const currentState = t.state || (t.completed ? 'completed' : 'active');
-      let newState: 'active' | 'completed' | 'failed';
-      
-      if (currentState === 'active') {
-        newState = 'completed';
-      } else {
-        // If completed or failed, go back to active
-        newState = 'active';
-      }
-      
-      return { 
-        ...t, 
-        completed: newState === 'completed',
-        state: newState 
-      };
-    });
+    const task = currentDayTasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const currentState = task.state || (task.completed ? 'completed' : 'active');
+    let newState: 'active' | 'completed' | 'failed';
+    
+    if (currentState === 'active') {
+      newState = 'completed';
+    } else {
+      // If completed or failed, go back to active
+      newState = 'active';
+    }
+    
+    // Optimistic update
+    const updatedDayTasks = currentDayTasks.map(t => 
+      t.id === taskId 
+        ? { ...t, completed: newState === 'completed', state: newState }
+        : t
+    );
     const updatedTasks = { ...tasks, [dateStr]: updatedDayTasks };
     
     setTasks(updatedTasks);
-    await api.saveTasks(updatedTasks);
+    
+    try {
+      await api.updateTask(taskId, {
+        completed: newState === 'completed',
+        state: newState
+      });
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      // Revert optimistic update on error
+      setTasks(tasks);
+    }
   }
 
   async function puntTask(dateStr: string, taskId: string) {
@@ -91,12 +101,7 @@ export function Todos({ apiBaseUrl }: TodosProps) {
     const taskToClone = currentDayTasks.find(t => t.id === taskId);
     if (!taskToClone) return;
 
-    // 1. Mark original as failed
-    const updatedOriginalDayTasks = currentDayTasks.map(t => 
-      t.id === taskId ? { ...t, state: 'failed' as const, completed: false } : t
-    );
-    
-    // 2. Determine target date
+    // 1. Determine target date
     // If task is in the past -> move to Today
     // If task is today or future -> move to Next Day
     const today = new Date();
@@ -106,9 +111,6 @@ export function Todos({ apiBaseUrl }: TodosProps) {
     
     if (dateStr >= todayStr) {
       const d = new Date(dateStr);
-      // Add 1 day. Since dateStr is YYYY-MM-DD (UTC), we can safely add 24h
-      // But we need to be careful with timezone offsets if using local methods.
-      // Let's stick to UTC operations to match DateUtility.formatDate
       d.setUTCDate(d.getUTCDate() + 1);
       targetDateStr = d.toISOString().split('T')[0];
     }
@@ -122,35 +124,47 @@ export function Todos({ apiBaseUrl }: TodosProps) {
       completed: false
     };
     
+    // Optimistic update
     const updatedTasks = { ...tasks };
     
-    // Update original day
-    updatedTasks[dateStr] = updatedOriginalDayTasks;
+    // Mark original as failed
+    updatedTasks[dateStr] = currentDayTasks.map(t => 
+      t.id === taskId ? { ...t, state: 'failed' as const, completed: false } : t
+    );
     
-    // Update target day (append new task)
-    // Note: if target day is same as original day (shouldn't happen with new logic unless logic is wrong),
-    // we need to be careful not to overwrite.
-    // But logic says: if dateStr < today, target=today (different).
-    // If dateStr >= today, target=dateStr+1 (different).
-    // So targetDateStr is always different from dateStr?
-    // Wait. If dateStr < today (e.g. yesterday), target is today. They are different.
-    // If dateStr == today, target is tomorrow. Different.
-    // So we can safely update both keys.
-    
+    // Add new task to target day
     const targetDayTasks = updatedTasks[targetDateStr] || [];
     updatedTasks[targetDateStr] = [...targetDayTasks, newTask];
 
     setTasks(updatedTasks);
-    await api.saveTasks(updatedTasks);
+    
+    try {
+      // Update original task to failed state
+      await api.updateTask(taskId, { state: 'failed', completed: false });
+      // Create new task
+      await api.createTask(newTask);
+    } catch (error) {
+      console.error('Failed to punt task:', error);
+      // Revert optimistic update on error
+      setTasks(tasks);
+    }
   }
 
   async function deleteTask(dateStr: string, taskId: string) {
+    // Optimistic update
     const currentDayTasks = tasks[dateStr] || [];
     const updatedDayTasks = currentDayTasks.filter(t => t.id !== taskId);
     const updatedTasks = { ...tasks, [dateStr]: updatedDayTasks };
     
     setTasks(updatedTasks);
-    await api.saveTasks(updatedTasks);
+    
+    try {
+      await api.deleteTask(taskId);
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      // Revert optimistic update on error
+      setTasks(tasks);
+    }
   }
 
   const renderTodoColumn = ({ date, dateStr, isToday }: DayWeekColumnData) => {

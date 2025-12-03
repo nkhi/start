@@ -160,7 +160,7 @@ app.post('/vlogs', async (req, res) => {
   }
 });
 
-// Get all tasks
+// Get all tasks (bulk fetch for initial load)
 app.get('/tasks', async (req, res) => {
   try {
     const result = await db.query('SELECT * FROM tasks');
@@ -189,48 +189,111 @@ app.get('/tasks', async (req, res) => {
   }
 });
 
-// Save all tasks (replace) - Modified to be an Upsert for changed items
-// Note: The UI sends the ENTIRE state. Ideally we'd only send changes, but for now we'll 
-// just upsert everything received. This is inefficient but safe.
+// Create a single task
 app.post('/tasks', async (req, res) => {
-  const tasksByDate = req.body;
-  if (!tasksByDate || typeof tasksByDate !== 'object') {
-    return res.status(400).json({ error: 'Body must be an object of tasks' });
+  const { id, text, completed, date, createdAt, category, state } = req.body;
+  if (!id || !date) {
+    return res.status(400).json({ error: 'Missing required fields: id, date' });
   }
   
-  const client = await db.pool.connect();
   try {
-    await client.query('BEGIN');
+    await db.query(`
+      INSERT INTO tasks (id, text, completed, date, created_at, category, state)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [
+      id,
+      text || '',
+      completed || false,
+      date,
+      createdAt || new Date().toISOString(),
+      category || 'life',
+      state || 'active'
+    ]);
     
-    // We can't easily "replace all" without deleting everything, which is risky.
-    // Instead, we'll upsert every task we receive.
-    // TODO: Handle deletions? If a task is removed from UI, it won't be deleted here.
-    // For now, assuming tasks are only added/modified.
-    
-    for (const [date, tasks] of Object.entries(tasksByDate)) {
-      if (Array.isArray(tasks)) {
-        for (const t of tasks) {
-          await client.query(`
-            INSERT INTO tasks (id, text, completed, date, created_at, category, state)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            ON CONFLICT (id) DO UPDATE SET
-              text = EXCLUDED.text,
-              completed = EXCLUDED.completed,
-              date = EXCLUDED.date,
-              category = EXCLUDED.category,
-              state = EXCLUDED.state
-          `, [t.id, t.text || '', t.completed || false, t.date || date, t.createdAt, t.category || 'life', t.state || 'active']);
-        }
-      }
-    }
-    
-    await client.query('COMMIT');
     res.json({ ok: true });
   } catch (e) {
-    await client.query('ROLLBACK');
     res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
+  }
+});
+
+// Update a single task
+app.patch('/tasks/:id', async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  
+  // Build dynamic update query
+  const fields = [];
+  const values = [id];
+  let idx = 2;
+  
+  if (updates.text !== undefined) {
+    fields.push(`text = $${idx++}`);
+    values.push(updates.text);
+  }
+  if (updates.completed !== undefined) {
+    fields.push(`completed = $${idx++}`);
+    values.push(updates.completed);
+  }
+  if (updates.date !== undefined) {
+    fields.push(`date = $${idx++}`);
+    values.push(updates.date);
+  }
+  if (updates.category !== undefined) {
+    fields.push(`category = $${idx++}`);
+    values.push(updates.category);
+  }
+  if (updates.state !== undefined) {
+    fields.push(`state = $${idx++}`);
+    values.push(updates.state);
+  }
+  
+  if (fields.length === 0) {
+    return res.json({ ok: true }); // Nothing to update
+  }
+  
+  try {
+    const result = await db.query(`
+      UPDATE tasks 
+      SET ${fields.join(', ')}
+      WHERE id = $1
+      RETURNING *
+    `, values);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    const t = result.rows[0];
+    const dateStr = typeof t.date === 'string' ? t.date : t.date.toISOString().split('T')[0];
+    
+    res.json({
+      id: t.id,
+      text: t.text,
+      completed: t.completed,
+      date: dateStr,
+      createdAt: t.created_at,
+      category: t.category,
+      state: t.state
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Delete a single task
+app.delete('/tasks/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const result = await db.query('DELETE FROM tasks WHERE id = $1 RETURNING id', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -268,7 +331,7 @@ app.post('/questions', async (req, res) => {
   }
 });
 
-// Get all diary entries
+// Get all diary entries (bulk fetch for initial load)
 app.get('/diary', async (req, res) => {
   try {
     const result = await db.query('SELECT * FROM diary_entries');
@@ -293,37 +356,98 @@ app.get('/diary', async (req, res) => {
   }
 });
 
-// Save diary entries
-app.post('/diary', async (req, res) => {
-  const diaryByDate = req.body;
-  if (!diaryByDate || typeof diaryByDate !== 'object') {
-    return res.status(400).json({ error: 'Body must be an object' });
+// Create a single diary entry
+app.post('/diary-entries', async (req, res) => {
+  const { id, date, questionId, answer, createdAt } = req.body;
+  if (!id || !date || !questionId) {
+    return res.status(400).json({ error: 'Missing required fields: id, date, questionId' });
   }
   
-  const client = await db.pool.connect();
   try {
-    await client.query('BEGIN');
+    await db.query(`
+      INSERT INTO diary_entries (id, date, question_id, answer, created_at)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (id)
+      DO UPDATE SET 
+        answer = EXCLUDED.answer,
+        date = EXCLUDED.date,
+        question_id = EXCLUDED.question_id
+    `, [id, date, questionId, answer || '', createdAt || new Date().toISOString()]);
     
-    for (const [date, entries] of Object.entries(diaryByDate)) {
-      if (Array.isArray(entries)) {
-        for (const e of entries) {
-          await client.query(`
-            INSERT INTO diary_entries (id, date, question_id, answer, created_at)
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (id) DO UPDATE SET
-              answer = EXCLUDED.answer
-          `, [e.id, e.date || date, e.questionId, e.answer || '', e.createdAt]);
-        }
-      }
-    }
-    
-    await client.query('COMMIT');
     res.json({ ok: true });
   } catch (e) {
-    await client.query('ROLLBACK');
     res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
+  }
+});
+
+// Update a single diary entry
+app.patch('/diary-entries/:id', async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  
+  // Build dynamic update query
+  const fields = [];
+  const values = [id];
+  let idx = 2;
+  
+  if (updates.answer !== undefined) {
+    fields.push(`answer = $${idx++}`);
+    values.push(updates.answer);
+  }
+  if (updates.date !== undefined) {
+    fields.push(`date = $${idx++}`);
+    values.push(updates.date);
+  }
+  if (updates.questionId !== undefined) {
+    fields.push(`question_id = $${idx++}`);
+    values.push(updates.questionId);
+  }
+  
+  if (fields.length === 0) {
+    return res.json({ ok: true }); // Nothing to update
+  }
+  
+  try {
+    const result = await db.query(`
+      UPDATE diary_entries 
+      SET ${fields.join(', ')}
+      WHERE id = $1
+      RETURNING *
+    `, values);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Diary entry not found' });
+    }
+    
+    const e = result.rows[0];
+    const dateStr = typeof e.date === 'string' ? e.date : e.date.toISOString().split('T')[0];
+    
+    res.json({
+      id: e.id,
+      date: dateStr,
+      questionId: e.question_id,
+      answer: e.answer,
+      createdAt: e.created_at
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Delete a single diary entry
+app.delete('/diary-entries/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const result = await db.query('DELETE FROM diary_entries WHERE id = $1 RETURNING id', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Diary entry not found' });
+    }
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 

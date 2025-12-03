@@ -37,18 +37,22 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
 
   function handleAnswerChange(dateStr: string, questionId: string, answer: string) {
     const currentDayEntries = diary[dateStr] || [];
-    const existingEntryIndex = currentDayEntries.findIndex(e => e.questionId === questionId);
+    const existingEntry = currentDayEntries.find(e => e.questionId === questionId);
 
     let updatedDayEntries;
-    if (existingEntryIndex >= 0) {
-      updatedDayEntries = [...currentDayEntries];
-      updatedDayEntries[existingEntryIndex] = {
-        ...updatedDayEntries[existingEntryIndex],
-        answer
-      };
+    let entryId: string;
+
+    if (existingEntry) {
+      // Update existing entry
+      entryId = existingEntry.id;
+      updatedDayEntries = currentDayEntries.map(e =>
+        e.id === entryId ? { ...e, answer } : e
+      );
     } else {
+      // Create new entry
+      entryId = generateId();
       const newEntry: DiaryEntry = {
-        id: generateId(),
+        id: entryId,
         date: dateStr,
         questionId,
         answer,
@@ -57,15 +61,43 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
       updatedDayEntries = [...currentDayEntries, newEntry];
     }
 
+    // Store previous state for error rollback
+    const previousDiary = diary;
+
+    // Optimistic update
     const updatedDiary = { ...diary, [dateStr]: updatedDayEntries };
     setDiary(updatedDiary);
-    debouncedSave(updatedDiary);
+
+    // Debounced save of individual entry
+    debouncedSaveEntry(entryId, existingEntry, dateStr, questionId, answer, previousDiary);
   }
 
-  function debouncedSave(newDiary: Record<string, DiaryEntry[]>) {
+  function debouncedSaveEntry(
+    entryId: string,
+    existingEntry: DiaryEntry | undefined,
+    dateStr: string,
+    questionId: string,
+    answer: string,
+    previousDiary: Record<string, DiaryEntry[]>
+  ) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => {
-      api.saveDiary(newDiary).catch(err => console.error('Failed to save diary:', err));
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        // Always use saveDiaryEntry (upsert) to handle race conditions and ensure
+        // we don't try to patch a non-existent entry.
+        const entryToSave: DiaryEntry = {
+          id: entryId,
+          date: dateStr,
+          questionId,
+          answer,
+          createdAt: existingEntry ? existingEntry.createdAt : new Date().toISOString()
+        };
+        await api.saveDiaryEntry(entryToSave);
+      } catch (err) {
+        console.error('Failed to save diary entry:', err);
+        // Revert optimistic update on error
+        setDiary(previousDiary);
+      }
     }, 1000);
   }
 

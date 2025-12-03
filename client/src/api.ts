@@ -2,7 +2,7 @@ import type { Habit, HabitEntry, Vlog } from './types';
 
 export class HabitAPI {
   private baseUrl: string;
-  
+
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
@@ -49,13 +49,30 @@ export class HabitAPI {
     return response.json();
   }
 
-  async saveTasks(tasks: Record<string, import('./types').Task[]>): Promise<void> {
+  async createTask(task: import('./types').Task): Promise<void> {
     const response = await fetch(`${this.baseUrl}/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(tasks)
+      body: JSON.stringify(task)
     });
-    if (!response.ok) throw new Error('Failed to save tasks');
+    if (!response.ok) throw new Error('Failed to create task');
+  }
+
+  async updateTask(id: string, updates: Partial<import('./types').Task>): Promise<import('./types').Task> {
+    const response = await fetch(`${this.baseUrl}/tasks/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    if (!response.ok) throw new Error('Failed to update task');
+    return response.json();
+  }
+
+  async deleteTask(id: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/tasks/${id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Failed to delete task');
   }
 
   async getQuestions(): Promise<import('./types').Question[]> {
@@ -79,12 +96,38 @@ export class HabitAPI {
     return response.json();
   }
 
-  async saveDiary(diary: Record<string, import('./types').DiaryEntry[]>): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/diary`, {
+  async createDiaryEntry(entry: import('./types').DiaryEntry): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/diary-entries`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(diary)
+      body: JSON.stringify(entry)
     });
-    if (!response.ok) throw new Error('Failed to save diary');
+    if (!response.ok) throw new Error('Failed to create diary entry');
+  }
+
+  async saveDiaryEntry(entry: import('./types').DiaryEntry): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/diary-entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry)
+    });
+    if (!response.ok) throw new Error('Failed to save diary entry');
+  }
+
+  async updateDiaryEntry(id: string, updates: Partial<import('./types').DiaryEntry>): Promise<import('./types').DiaryEntry> {
+    const response = await fetch(`${this.baseUrl}/diary-entries/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    if (!response.ok) throw new Error('Failed to update diary entry');
+    return response.json();
+  }
+
+  async deleteDiaryEntry(id: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/diary-entries/${id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Failed to delete diary entry');
   }
 }
