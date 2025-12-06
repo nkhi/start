@@ -130,21 +130,24 @@ habits/
 
 - **Web Client**: React + TypeScript + Vite
 - **API Server**: Node.js + Express
-- **Storage**: Local CSV files + JSON
-- **Styling**: Vanilla CSS with Phosphor Icons
+- **Storage**: CockroachDB
+- **Styling**: Bad CSS written with Gemini (i am not this bad at css) with Phosphor Icons
 - **Video**: Loom SDK
 
 
 ## Data Storage
 
-All your data is stored **locally** in the `data/` directory:
+Data is stored in **CockroachDB**.
+Their free tier is very generous and should be more than enough for personal use.
+They do require a CC but with price limiting, and 15$ of free credits every month, this works very well for this project.
+Thank you Venture Capitalist who is paying for me to improve myself. I will eat you.
 
-- **CSV files** for structured data (habits, entries, questions, vlogs)
-- **JSON files** for flexible data (tasks, diary, next, lists)
+You must create a `.env` file in the `server` root with the following variables:
 
-### Data Initialization
-
-The app automatically creates missing data files with proper schema on startup. 
+```bash
+PORT=3000
+DATABASE_URL=postgresql://.......
+``` 
 
 ## Backups
 
