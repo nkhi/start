@@ -1,4 +1,4 @@
-import type { Habit, HabitEntry, Vlog } from './types';
+import type { Habit, HabitEntry, Vlog, DiaryByQuestion } from './types';
 
 export class HabitAPI {
   private baseUrl: string;
@@ -131,5 +131,22 @@ export class HabitAPI {
       method: 'DELETE'
     });
     if (!response.ok) throw new Error('Failed to delete diary entry');
+  }
+
+  async getDiaryByQuestion(): Promise<DiaryByQuestion[]> {
+    const [questions, diary] = await Promise.all([
+      this.getQuestions(),
+      this.getDiary()
+    ]);
+
+    // diary is Record<string, DiaryEntry[]> (keyed by date)
+    const allEntries = Object.values(diary).flat();
+
+    return questions.map(question => ({
+      question,
+      entries: allEntries
+        .filter(e => e.questionId === question.id)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    }));
   }
 }

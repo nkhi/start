@@ -55,3 +55,8 @@ export interface DiaryEntry {
   answer: string;
   createdAt: string;
 }
+
+export interface DiaryByQuestion {
+  question: Question;
+  entries: DiaryEntry[];
+}

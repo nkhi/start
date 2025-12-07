@@ -35,6 +35,11 @@ interface DayWeekProps {
    * Optional: Custom class name for each column
    */
   columnClassName?: string;
+
+  /**
+   * Optional: Callback when the "More" button is clicked.
+   */
+  onMoreClick?: () => void;
 }
 
 /**
@@ -54,7 +59,8 @@ export function DayWeek({
   startDate = new Date('2025-11-09T00:00:00'),
   futureDays = 14,
   className = 'dayweek-scroll-container',
-  columnClassName = 'dayweek-column'
+  columnClassName = 'dayweek-column',
+  onMoreClick
 }: DayWeekProps) {
   const [dates, setDates] = useState<Date[]>([]);
   const [focusedDateStr, setFocusedDateStr] = useState<string>('');
@@ -145,7 +151,7 @@ export function DayWeek({
       {/* Floating "Zoom Out" button */}
       <button
         className={`zoom-floating-btn`}
-        onClick={() => scrollToToday()}
+        onClick={() => onMoreClick ? onMoreClick() : scrollToToday()}
         title="Zoom Out, See More"
       >
         <StrategyIcon
