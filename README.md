@@ -215,11 +215,9 @@ pnpm run build
 **Strong Roots** is built around a few core principles:
 
 1. **Single source of truth** - One app for all your personal organization
-2. **Local-first** - Your data stays on your machine
-3. **Minimal friction** - Quick to open, quick to use
-4. **Visual clarity** - Clean design with meaningful colors and icons
-5. **Daily focus** - Emphasizes today while tracking long-term progress
-6. **Reflection-driven** - Built-in prompts to help you learn and grow
+2. **Minimal friction** - Quick to open, quick to use
+3. **Visual clarity** - Clean design with meaningful colors and icons
+4. **Daily focus** - Emphasizes today while tracking long-term progress
 
 ## Privacy
 
