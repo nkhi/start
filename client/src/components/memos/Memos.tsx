@@ -1,13 +1,13 @@
 import React from 'react';
-import './Memos.css';
+import styles from './Memos.module.css';
 
 export const Memos: React.FC = () => {
     return (
-        <div className="memos-container">
-            <div className="memos-loading-overlay" />
+        <div className={styles.memosContainer}>
+            <div className={styles.memosLoadingOverlay} />
             <iframe
                 src="http://localhost:5230/"
-                className="memos-frame"
+                className={styles.memosFrame}
                 title="Memos"
             />
         </div>

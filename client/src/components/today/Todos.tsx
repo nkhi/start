@@ -5,7 +5,7 @@ import { generateId, DateUtility } from '../../utils';
 import { Trash, Check, X, ArrowBendDownRight } from '@phosphor-icons/react';
 import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
 import { WeekView } from './WeekView';
-import './Todos.css';
+import styles from './Todos.module.css';
 
 interface TodosProps {
   apiBaseUrl: string;
@@ -227,57 +227,57 @@ export function Todos({ apiBaseUrl }: TodosProps) {
 
     return (
       <>
-        <div className="todo-column-header">
-          <span className={`todo-date ${isToday ? 'today' : ''}`}>
+        <div className={styles.todoColumnHeader}>
+          <span className={`${styles.todoDate} ${isToday ? 'today' : ''}`}>
             {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
-          <span className="todo-day-name">
+          <span className={styles.todoDayName}>
             {date.toLocaleDateString('en-US', { weekday: 'short' })}
           </span>
         </div>
 
-        <div className="todo-content-row">
+        <div className={styles.todoContentRow}>
           {showLife && (
-            <div className="todo-category-section">
-              {viewMode === 'day' && <div className="todo-category-header">Life</div>}
-              <form onSubmit={(e) => addTask(e, dateStr, 'life')} className="todo-input-form-small">
+            <div className={styles.todoCategorySection}>
+              {viewMode === 'day' && <div className={styles.todoCategoryHeader}>Life</div>}
+              <form onSubmit={(e) => addTask(e, dateStr, 'life')} className={styles.todoInputFormSmall}>
                 <input
                   type="text"
                   value={newTaskTexts[`${dateStr}_life`] || ''}
                   onChange={(e) => setNewTaskTexts({ ...newTaskTexts, [`${dateStr}_life`]: e.target.value })}
                   placeholder="Add task"
-                  className="todo-input-small"
+                  className={styles.todoInputSmall}
                 />
               </form>
-              <div className="todo-items">
+              <div className={styles.todoItems}>
                 {lifeTasks.map(task => {
                   const taskState = task.state || (task.completed ? 'completed' : 'active');
                   return (
                     <div
                       key={task.id}
-                      className={`todo-item ${taskState}`}
+                      className={`${styles.todoItem} ${styles[taskState] || ''}`}
                       onClick={() => toggleTask(dateStr, task.id)}
                     >
-                      <div className="todo-item-content">
+                      <div className={styles.todoItemContent}>
                         <button
                           type="button"
-                          className={`todo-check-btn ${taskState}`}
+                          className={`${styles.todoCheckBtn} ${styles[taskState] || ''}`}
                         >
                           {taskState === 'completed' && <Check size={12} weight="bold" />}
                           {taskState === 'failed' && <X size={12} weight="bold" />}
                         </button>
-                        <span className="todo-text">{task.text}</span>
+                        <span className={styles.todoText}>{task.text}</span>
                       </div>
-                      <div className="todo-actions">
+                      <div className={styles.todoActions}>
                         <button
-                          className="todo-clone-btn"
+                          className={styles.todoCloneBtn}
                           onClick={(e) => { e.stopPropagation(); puntTask(dateStr, task.id); }}
                           title="Fail & Punt to Next Day"
                         >
                           <ArrowBendDownRight size={14} />
                         </button>
                         <button
-                          className="todo-delete-btn"
+                          className={styles.todoDeleteBtn}
                           onClick={(e) => { e.stopPropagation(); deleteTask(dateStr, task.id); }}
                         >
                           <Trash size={14} />
@@ -291,47 +291,47 @@ export function Todos({ apiBaseUrl }: TodosProps) {
           )}
 
           {showWork && (
-            <div className="todo-category-section">
-              {viewMode === 'day' && <div className="todo-category-header">Work</div>}
-              <form onSubmit={(e) => addTask(e, dateStr, 'work')} className="todo-input-form-small">
+            <div className={styles.todoCategorySection}>
+              {viewMode === 'day' && <div className={styles.todoCategoryHeader}>Work</div>}
+              <form onSubmit={(e) => addTask(e, dateStr, 'work')} className={styles.todoInputFormSmall}>
                 <input
                   type="text"
                   value={newTaskTexts[`${dateStr}_work`] || ''}
                   onChange={(e) => setNewTaskTexts({ ...newTaskTexts, [`${dateStr}_work`]: e.target.value })}
                   placeholder="Add task"
-                  className="todo-input-small"
+                  className={styles.todoInputSmall}
                 />
               </form>
-              <div className="todo-items">
+              <div className={styles.todoItems}>
                 {workTasks.map(task => {
                   const taskState = task.state || (task.completed ? 'completed' : 'active');
                   return (
                     <div
                       key={task.id}
-                      className={`todo-item ${taskState}`}
+                      className={`${styles.todoItem} ${styles[taskState] || ''}`}
                       onClick={() => toggleTask(dateStr, task.id)}
                     >
-                      <div className="todo-item-content">
+                      <div className={styles.todoItemContent}>
                         <button
                           type="button"
-                          className={`todo-check-btn ${taskState}`}
+                          className={`${styles.todoCheckBtn} ${styles[taskState] || ''}`}
                         >
                           {taskState === 'completed' && <Check size={12} weight="bold" />}
                           {taskState === 'failed' && <X size={12} weight="bold" />}
                         </button>
-                        <span className="todo-text">{task.text}</span>
+                        <span className={styles.todoText}>{task.text}</span>
                       </div>
 
-                      <div className="todo-actions">
+                      <div className={styles.todoActions}>
                         <button
-                          className="todo-clone-btn"
+                          className={styles.todoCloneBtn}
                           onClick={(e) => { e.stopPropagation(); puntTask(dateStr, task.id); }}
                           title="Fail & Punt to Next Day"
                         >
                           <ArrowBendDownRight size={14} />
                         </button>
                         <button
-                          className="todo-delete-btn"
+                          className={styles.todoDeleteBtn}
                           onClick={(e) => { e.stopPropagation(); deleteTask(dateStr, task.id); }}
                         >
                           <Trash size={14} />
@@ -356,15 +356,15 @@ export function Todos({ apiBaseUrl }: TodosProps) {
         onClose={() => setViewMode('day')}
         onWeekChange={loadWeekTasks}
         headerControls={
-          <div className="week-category-toggle">
+          <div className={styles.weekCategoryToggle}>
             <button
-              className={`toggle-btn ${weekCategory === 'life' ? 'active' : ''}`}
+              className={`${styles.toggleBtn} ${weekCategory === 'life' ? styles.active : ''}`}
               onClick={() => setWeekCategory('life')}
             >
               Life
             </button>
             <button
-              className={`toggle-btn ${weekCategory === 'work' ? 'active' : ''}`}
+              className={`${styles.toggleBtn} ${weekCategory === 'work' ? styles.active : ''}`}
               onClick={() => setWeekCategory('work')}
             >
               Work
@@ -378,8 +378,8 @@ export function Todos({ apiBaseUrl }: TodosProps) {
   return (
     <DayWeek
       renderColumn={renderTodoColumn}
-      className="todos-scroll-container"
-      columnClassName="todo-column"
+      className={styles.todosScrollContainer}
+      columnClassName={styles.todoColumn}
       onMoreClick={() => setViewMode('week')}
     />
   );

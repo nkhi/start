@@ -1,5 +1,5 @@
 /* Todos - Uses DayWeek component */
-.todos-scroll-container {
+.todosScrollContainer {
   display: flex;
   overflow-x: auto;
   height: 100%;
@@ -8,7 +8,7 @@
   scroll-snap-type: x mandatory;
 }
 
-.todo-column {
+.todoColumn {
   min-width: 60vw;
   width: 60vw;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -23,12 +23,12 @@
   filter: grayscale(100%);
 }
 
-.todo-column.focused {
+.todoColumn:global(.focused) {
   opacity: 1;
   filter: grayscale(0%);
 }
 
-.today-floating-btn {
+.todayFloatingBtn {
   position: fixed;
   bottom: 24px;
   right: 24px;
@@ -50,20 +50,20 @@
   animation: slideUp 0.3s ease;
 }
 
-.today-floating-btn:hover {
+.todayFloatingBtn:hover {
   transform: translateY(-2px);
   background: black;
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
-.today-floating-btn.is-today {
+.todayFloatingBtn.isToday {
   opacity: 0.5;
   pointer-events: none;
   background: rgba(0, 0, 0, 0.6);
 }
 
-.zoom-floating-btn {
+.zoomFloatingBtn {
   position: fixed;
   bottom: 24px;
   left: 24px;
@@ -87,7 +87,7 @@
   transition: opacity 0.2s ease transform 0.2s ease;
 }
 
-.zoom-floating-btn:hover {
+.zoomFloatingBtn:hover {
   opacity: 1;
   transform: translateY(-2px);
   background: black;
@@ -95,20 +95,20 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
-.zoom-floating-btn.is-today {
+.zoomFloatingBtn.isToday {
   pointer-events: none;
   background: rgba(0, 0, 0, 0.6);
 }
 
-.today-icon {
+.todayIcon {
   transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.today-icon.point-right {
+.todayIcon.pointRight {
   transform: rotate(180deg);
 }
 
-.today-icon.point-up {
+.todayIcon.pointUp {
   transform: rotate(90deg);
 }
 
@@ -117,7 +117,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.todo-content-row {
+.todoContentRow {
   display: flex;
   flex-direction: row;
   gap: 2rem;
@@ -125,7 +125,7 @@
   min-height: 0;
 }
 
-.todo-column-header {
+.todoColumnHeader {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -134,23 +134,23 @@
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-.todo-date {
+.todoDate {
   font-size: 1.25rem;
   font-weight: 700;
   color: white;
 }
 
-.todo-date.today {
+.todoDate:global(.today) {
   color: #007AFF;
 }
 
-.todo-day-name {
+.todoDayName {
   font-size: 1rem;
   color: rgba(255, 255, 255, 0.4);
   font-weight: 500;
 }
 
-.todo-items {
+.todoItems {
   flex: 1;
   overflow-y: auto;
   display: flex;
@@ -158,7 +158,7 @@
   gap: 0.5rem;
 }
 
-.todo-item {
+.todoItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -169,13 +169,13 @@
   cursor: pointer;
 }
 
-.todo-item:hover {
+.todoItem:hover {
   background: #1d1d1d;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
 }
 
-.todo-item-content {
+.todoItemContent {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -183,7 +183,7 @@
   min-width: 0; /* Allow text truncation/wrapping in flex child */
 }
 
-.todo-text {
+.todoText {
   flex: 1;
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.95rem;
@@ -192,12 +192,12 @@
   line-height: 1.4;
 }
 
-.todo-item.completed .todo-text {
+.todoItem.completed .todoText {
   text-decoration: line-through;
   color: rgba(52, 211, 153, 0.6);
 }
 
-.todo-check-btn {
+.todoCheckBtn {
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -213,17 +213,17 @@
   flex-shrink: 0;
 }
 
-.todo-check-btn:hover {
+.todoCheckBtn:hover {
   border-color: #34D399;
 }
 
-.todo-check-btn.completed {
+.todoCheckBtn.completed {
   background: #34D399;
   border-color: #34D399;
   color: white;
 }
 
-.todo-delete-btn {
+.todoDeleteBtn {
   opacity: 0;
   background: transparent;
   border: none;
@@ -233,37 +233,37 @@
   transition: all 0.2s ease;
 }
 
-.todo-item:hover .todo-delete-btn {
+.todoItem:hover .todoDeleteBtn {
   opacity: 1;
 }
 
-.todo-delete-btn:hover {
+.todoDeleteBtn:hover {
   color: #FF3B30;
   transform: scale(1.1);
 }
 
-.todo-item.failed .todo-text {
+.todoItem.failed .todoText {
   text-decoration: line-through;
   color: rgba(255, 59, 48, 0.6);
 }
 
-.todo-check-btn.failed {
+.todoCheckBtn.failed {
   border-color: #FF3B30;
   color: #FF3B30;
 }
 
-.todo-check-btn.failed:hover {
+.todoCheckBtn.failed:hover {
   background: rgba(255, 59, 48, 0.1);
 }
 
-.todo-actions {
+.todoActions {
   display: flex;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
 }
 
-.todo-clone-btn {
+.todoCloneBtn {
   opacity: 0;
   background: transparent;
   border: none;
@@ -273,20 +273,20 @@
   transition: all 0.2s ease;
 }
 
-.todo-item:hover .todo-clone-btn {
+.todoItem:hover .todoCloneBtn {
   opacity: 1;
 }
 
-.todo-clone-btn:hover {
+.todoCloneBtn:hover {
   color: #007AFF;
   transform: scale(1.1);
 }
 
-.todo-column-input {
+.todoColumnInput {
   margin-top: auto;
 }
 
-.todo-input-small {
+.todoInputSmall {
   width: 100%;
   background: transparent;
   border: none;
@@ -298,24 +298,15 @@
   transition: border-color 0.2s ease;
 }
 
-.todo-input-small:focus {
+.todoInputSmall:focus {
   border-bottom-color: #007AFF;
 }
 
-.todo-input-small::placeholder {
+.todoInputSmall::placeholder {
   color: rgba(255, 255, 255, 0.2);
 }
 
-.todo-content-row {
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  flex: 1;
-  min-height: 0;
-  height: 100%; /* Ensure it fills the column */
-}
-
-.todo-category-section {
+.todoCategorySection {
   flex: 1 1 0; /* Force equal width */
   display: flex;
   flex-direction: column;
@@ -324,7 +315,7 @@
   margin-bottom: 0; /* Remove margin, use gap instead */
 }
 
-.todo-category-header {
+.todoCategoryHeader {
   font-size: 0.75rem;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.4);
@@ -333,22 +324,52 @@
   margin-bottom: 0.5rem;
 }
 
-.todo-input-form-small {
+.todoInputFormSmall {
   margin-bottom: 0.5rem;
 }
 
+.weekCategoryToggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px;
+  border-radius: 8px;
+  gap: 4px;
+}
+
+.toggleBtn {
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleBtn:hover {
+  color: white;
+}
+
+.toggleBtn.active {
+  background: #333;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
 @media (max-width: 768px) {
-  .todo-column {
+  .todoColumn {
     min-width: 90vw;
     width: 90vw;
   }
   
-  .todo-content-row {
+  .todoContentRow {
     flex-direction: column;
     gap: 1.5rem;
   }
   
-  .todo-category-section {
+  .todoCategorySection {
     flex: 1; /* On mobile, let them split height or stack? */
     /* If we want to avoid the 'gap' on mobile, we might want flex: auto? 
        But then we lose scrolling within the section if it overflows. 

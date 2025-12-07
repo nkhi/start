@@ -5,7 +5,7 @@ import type { DiaryEntry, Question } from '../../types';
 import { generateId } from '../../utils';
 import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
 import { QuestionView } from './QuestionView';
-import './Diary.css';
+import styles from './Diary.module.css';
 
 interface DiaryProps {
   apiBaseUrl: string;
@@ -134,23 +134,23 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
 
     return (
       <>
-        <div className="diary-column-header">
-          <span className={`diary-date ${isToday ? 'today' : ''}`}>
+        <div className={styles.diaryColumnHeader}>
+          <span className={`${styles.diaryDate} ${isToday ? 'today' : ''}`}>
             {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
-          <span className="diary-day-name">
+          <span className={styles.diaryDayName}>
             {date.toLocaleDateString('en-US', { weekday: 'short' })}
           </span>
         </div>
 
-        <div className="diary-content">
+        <div className={styles.diaryContent}>
           {dayQuestions.map(question => {
             const entry = dayEntries.find(e => e.questionId === question.id);
             const answer = entry ? entry.answer : '';
 
             return (
-              <div key={question.id} className="diary-card">
-                <div className="diary-question">
+              <div key={question.id} className={styles.diaryCard}>
+                <div className={styles.diaryQuestion}>
                   {answer ? (
                     <CheckSquare size={20} weight="duotone" color="#158e66ff" />
                     // <CheckSquare size={20} weight="fill" color="#158e66ff" />
@@ -161,7 +161,7 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
                 </div>
                 <textarea
                   // oninput='this.style.height = "";this.style.height = this.scrollHeight + "px"'
-                  className="diary-answer-area"
+                  className={styles.diaryAnswerArea}
                   placeholder="Write your answer here..."
                   value={answer}
                   onChange={(e) => handleAnswerChange(dateStr, question.id, e.target.value)}
@@ -171,13 +171,13 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
           })}
 
           {/* Ad-hoc question input */}
-          <form onSubmit={(e) => addQuestion(e, dateStr)} className="todo-input-form-small" style={{ marginTop: 'auto' }}>
+          <form onSubmit={(e) => addQuestion(e, dateStr)} className={styles.diaryInputFormSmall} style={{ marginTop: 'auto' }}>
             <input
               type="text"
               value={newQuestionTexts[dateStr] || ''}
               onChange={(e) => setNewQuestionTexts({ ...newQuestionTexts, [dateStr]: e.target.value })}
               placeholder="Ask a question for today..."
-              className="todo-input-small"
+              className={styles.diaryInputSmall}
             />
           </form>
         </div>
@@ -192,8 +192,8 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
   return (
     <DayWeek
       renderColumn={renderDiaryColumn}
-      className="diary-scroll-container"
-      columnClassName="diary-column"
+      className={styles.diaryScrollContainer}
+      columnClassName={styles.diaryColumn}
       onMoreClick={() => setViewMode('question')}
     />
   );

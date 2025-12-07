@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, type ReactNode } from 'react';
 import { DateUtility } from '../../utils';
 import { ArrowCircleLeft, StrategyIcon } from '@phosphor-icons/react';
-import './DayWeek.css';
+import styles from './DayWeek.module.css';
 
 export interface DayWeekColumnData {
   date: Date;
@@ -59,14 +59,18 @@ export function DayWeek({
   renderColumn,
   startDate = new Date('2025-11-09T00:00:00'),
   futureDays = 14,
-  className = 'dayweek-scroll-container',
-  columnClassName = 'dayweek-column',
+  className,
+  columnClassName,
   onMoreClick
 }: DayWeekProps) {
   const [dates, setDates] = useState<Date[]>([]);
   const [focusedDateStr, setFocusedDateStr] = useState<string>('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // Use provided classNames or fall back to module styles
+  const containerClass = className || styles.dayweekScrollContainer;
+  const columnClass = columnClassName || styles.dayweekColumn;
 
   useEffect(() => {
     initializeDates();
@@ -116,15 +120,15 @@ export function DayWeek({
     // Disconnect previous observations
     observerRef.current.disconnect();
 
-    const columns = scrollContainerRef.current.querySelectorAll(`.${columnClassName}`);
+    const columns = scrollContainerRef.current.querySelectorAll(`.${columnClass.split(' ')[0]}`);
     columns.forEach(col => observerRef.current?.observe(col));
 
     return () => observerRef.current?.disconnect();
-  }, [dates, columnClassName]);
+  }, [dates, columnClass]);
 
   function scrollToToday() {
     if (scrollContainerRef.current) {
-      const todayEl = scrollContainerRef.current.querySelector(`.${columnClassName}.today`);
+      const todayEl = scrollContainerRef.current.querySelector('.today');
       if (todayEl) {
         todayEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       }
@@ -132,7 +136,7 @@ export function DayWeek({
   }
 
   return (
-    <div className={className} ref={scrollContainerRef}>
+    <div className={containerClass} ref={scrollContainerRef}>
       {dates.map(date => {
         const dateStr = DateUtility.formatDate(date);
         const isToday = DateUtility.isToday(date);
@@ -141,7 +145,7 @@ export function DayWeek({
         return (
           <div
             key={dateStr}
-            className={`${columnClassName} ${isToday ? 'today' : ''} ${isFocused ? 'focused' : ''}`}
+            className={`${columnClass} ${isToday ? 'today' : ''} ${isFocused ? 'focused' : ''}`}
             data-date={dateStr}
           >
             {renderColumn({ date, dateStr, isToday, isFocused })}
@@ -151,7 +155,7 @@ export function DayWeek({
 
       {/* Floating "Zoom Out" button */}
       <button
-        className={`zoom-floating-btn`}
+        className={styles.zoomFloatingBtn}
         onClick={() => onMoreClick ? onMoreClick() : scrollToToday()}
         title="Zoom Out, See More"
       >
@@ -169,19 +173,19 @@ export function DayWeek({
         const isPast = focusedDateStr < todayStr;
 
         let rotationClass = '';
-        if (isToday) rotationClass = 'point-up';
-        else if (isPast) rotationClass = 'point-right';
+        if (isToday) rotationClass = styles.pointUp;
+        else if (isPast) rotationClass = styles.pointRight;
 
         return (
           <button
-            className={`today-floating-btn ${isToday ? 'is-today' : ''}`}
+            className={`${styles.todayFloatingBtn} ${isToday ? styles.isToday : ''}`}
             onClick={() => scrollToToday()}
             title="Back to Today"
           >
             <ArrowCircleLeft
               weight="duotone"
               size={20}
-              className={`today-icon ${rotationClass}`}
+              className={`${styles.todayIcon} ${rotationClass}`}
             />
             <span>Today</span>
           </button>

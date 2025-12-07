@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { DateUtility } from '../../utils';
 import { CaretLeft, CaretRight, ArrowBendUpLeft } from '@phosphor-icons/react';
 import type { DayWeekColumnData } from '../shared/DayWeek';
-import './WeekView.css';
+import styles from './WeekView.module.css';
 
 interface WeekViewProps {
     renderColumn: (data: DayWeekColumnData) => React.ReactNode;
@@ -60,38 +60,38 @@ export function WeekView({ renderColumn, currentDate, onClose, onWeekChange, hea
     };
 
     return (
-        <div className="week-view-container">
-            <div className="week-columns">
+        <div className={styles.weekViewContainer}>
+            <div className={styles.weekColumns}>
                 {weekDates.map(date => {
                     const dateStr = DateUtility.formatDate(date);
                     const isToday = DateUtility.isToday(date);
                     return (
-                        <div key={dateStr} className={`week-column ${isToday ? 'today' : ''}`}>
+                        <div key={dateStr} className={`${styles.weekColumn} ${isToday ? 'today' : ''}`}>
                             {renderColumn({ date, dateStr, isToday, isFocused: false })}
                         </div>
                     );
                 })}
             </div>
 
-            <div className="week-controls-center">
-                <button className="week-back-btn" onClick={onClose} title="Back to Day View">
+            <div className={styles.weekControlsCenter}>
+                <button className={styles.weekBackBtn} onClick={onClose} title="Back to Day View">
                     <ArrowBendUpLeft size={20} weight="bold" />
                 </button>
 
                 {headerControls}
 
-                <div className="week-nav-group">
-                    <button className="week-nav-btn" onClick={handlePrevWeek}>
+                <div className={styles.weekNavGroup}>
+                    <button className={styles.weekNavBtn} onClick={handlePrevWeek}>
                         <CaretLeft size={20} weight="bold" />
                     </button>
                     <button
-                        className="week-label"
+                        className={styles.weekLabel}
                         onClick={handleCurrentWeek}
                         title="Go to Current Week"
                     >
                         {DateUtility.formatDateRange(weekDates)}
                     </button>
-                    <button className="week-nav-btn" onClick={handleNextWeek}>
+                    <button className={styles.weekNavBtn} onClick={handleNextWeek}>
                         <CaretRight size={20} weight="bold" />
                     </button>
                 </div>

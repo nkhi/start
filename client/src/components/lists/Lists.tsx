@@ -3,7 +3,7 @@ import { Plus, Trash, Check } from '@phosphor-icons/react';
 import { CARD_COLORS } from '../../constants/colors';
 import { HabitAPI } from '../../api';
 import type { List, ListItem } from '../../types';
-import './Lists.css';
+import styles from './Lists.module.css';
 
 interface ListsProps {
     apiBaseUrl: string;
@@ -133,21 +133,21 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
     }
 
     return (
-        <div className="lists-container">
+        <div className={styles.listsContainer}>
             {lists.map(list => (
                 <div
                     key={list.id}
-                    className="list-column"
+                    className={styles.listColumn}
                     style={{ backgroundColor: list.color || '#2D2D2D' }}
                 >
-                    <div className="list-header">
+                    <div className={styles.listHeader}>
                         <input
-                            className="list-title"
+                            className={styles.listTitle}
                             value={list.title}
                             onChange={(e) => updateList(list.id, { title: e.target.value })}
                         />
                         <button
-                            className="item-delete-btn"
+                            className={styles.itemDeleteBtn}
                             onClick={() => handleDeleteList(list.id)}
                             title="Delete List"
                         >
@@ -155,23 +155,23 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
                         </button>
                     </div>
 
-                    <div className="list-items">
+                    <div className={styles.listItems}>
                         {list.items.map(item => (
-                            <div key={item.id} className="list-item">
+                            <div key={item.id} className={styles.listItem}>
                                 <div
-                                    className={`item-checkbox ${item.completed ? 'checked' : ''}`}
+                                    className={`${styles.itemCheckbox} ${item.completed ? styles.checked : ''}`}
                                     onClick={() => handleToggleItem(list.id, item.id)}
                                 >
                                     {item.completed && <Check size={12} weight="bold" color="#151515" />}
                                 </div>
                                 <input
-                                    className={`item-text ${item.completed ? 'completed' : ''}`}
+                                    className={`${styles.itemText} ${item.completed ? styles.completed : ''}`}
                                     value={item.text}
                                     onChange={(e) => handleUpdateItemText(list.id, item.id, e.target.value)}
                                     onBlur={() => handleItemBlur(list.id)}
                                 />
                                 <button
-                                    className="item-delete-btn"
+                                    className={styles.itemDeleteBtn}
                                     onClick={() => handleDeleteItem(list.id, item.id)}
                                 >
                                     <Trash size={14} />
@@ -180,9 +180,9 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
                         ))}
                     </div>
 
-                    <div className="add-item-container">
+                    <div className={styles.addItemContainer}>
                         <input
-                            className="add-item-input"
+                            className={styles.addItemInput}
                             placeholder="+ Add a task"
                             value={newItemText[list.id] || ''}
                             onChange={(e) => setNewItemText(prev => ({ ...prev, [list.id]: e.target.value }))}
@@ -194,7 +194,7 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
                 </div>
             ))}
 
-            <button className="add-list-btn" onClick={handleAddList}>
+            <button className={styles.addListBtn} onClick={handleAddList}>
                 <Plus size={20} />
                 Add New List
             </button>

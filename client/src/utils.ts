@@ -54,19 +54,19 @@ export const DateUtility = {
 };
 
 export function getGrade(percentage: number): { letter: string; class: string } {
-  if (percentage >= 90) return { letter: 'A+', class: 'grade-A-plus' };
-  if (percentage >= 85) return { letter: 'A', class: 'grade-A' };
-  if (percentage >= 80) return { letter: 'A-', class: 'grade-A-minus' };
-  if (percentage >= 77) return { letter: 'B+', class: 'grade-B-plus' };
-  if (percentage >= 73) return { letter: 'B', class: 'grade-B' };
-  if (percentage >= 70) return { letter: 'B-', class: 'grade-B-minus' };
-  if (percentage >= 67) return { letter: 'C+', class: 'grade-C-plus' };
-  if (percentage >= 63) return { letter: 'C', class: 'grade-C' };
-  if (percentage >= 60) return { letter: 'C-', class: 'grade-C-minus' };
-  if (percentage >= 57) return { letter: 'D+', class: 'grade-D-plus' };
-  if (percentage >= 53) return { letter: 'D', class: 'grade-D' };
-  if (percentage >= 50) return { letter: 'D-', class: 'grade-D-minus' };
-  return { letter: 'F', class: 'grade-F' };
+  if (percentage >= 90) return { letter: 'A+', class: 'gradeAPlus' };
+  if (percentage >= 85) return { letter: 'A', class: 'gradeA' };
+  if (percentage >= 80) return { letter: 'A-', class: 'gradeAMinus' };
+  if (percentage >= 77) return { letter: 'B+', class: 'gradeBPlus' };
+  if (percentage >= 73) return { letter: 'B', class: 'gradeB' };
+  if (percentage >= 70) return { letter: 'B-', class: 'gradeBMinus' };
+  if (percentage >= 67) return { letter: 'C+', class: 'gradeCPlus' };
+  if (percentage >= 63) return { letter: 'C', class: 'gradeC' };
+  if (percentage >= 60) return { letter: 'C-', class: 'gradeCMinus' };
+  if (percentage >= 57) return { letter: 'D+', class: 'gradeDPlus' };
+  if (percentage >= 53) return { letter: 'D', class: 'gradeD' };
+  if (percentage >= 50) return { letter: 'D-', class: 'gradeDMinus' };
+  return { letter: 'F', class: 'gradeF' };
 }
 
 export function generateId(): string {

@@ -1,0 +1,117 @@
+/* DayWeek - Reusable horizontal day view component */
+.dayweekScrollContainer {
+  display: flex;
+  overflow-x: auto;
+  height: 100%;
+  padding: 0 1rem;
+  gap: 0;
+  scroll-snap-type: x mandatory;
+}
+
+.dayweekColumn {
+  min-width: 60vw;
+  width: 60vw;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: center;
+  height: 100%;
+  padding-bottom: 0;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+  filter: grayscale(100%);
+}
+
+.dayweekColumn:global(.focused) {
+  opacity: 1;
+  filter: grayscale(0%);
+}
+
+.questionViewColumn {
+  opacity: 1;
+  filter: grayscale(0%);
+}
+
+.zoomFloatingBtn {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  z-index: 100;
+  animation: slideUp 0.3s ease;
+  opacity: 0.5;
+}
+
+.zoomFloatingBtn:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  background: black;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.todayFloatingBtn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  z-index: 100;
+  animation: slideUp 0.3s ease;
+}
+
+.todayFloatingBtn:hover {
+  transform: translateY(-2px);
+  background: black;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.todayFloatingBtn.isToday {
+  opacity: 0.5;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.todayIcon {
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.todayIcon.pointRight {
+  transform: rotate(180deg);
+}
+
+.todayIcon.pointUp {
+  transform: rotate(90deg);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -3,7 +3,7 @@ import { Trash, RocketLaunch } from '@phosphor-icons/react';
 import { CARD_COLORS } from '../../constants/colors';
 import { HabitAPI } from '../../api';
 import type { Note } from '../../types';
-import './Next.css';
+import styles from './Next.module.css';
 
 interface NextProps {
     apiBaseUrl: string;
@@ -74,39 +74,39 @@ export const Next: React.FC<NextProps> = ({ apiBaseUrl }) => {
     };
 
     return (
-        <div className="next-container">
-            <div className="next-grid">
+        <div className={styles.nextContainer}>
+            <div className={styles.nextGrid}>
                 {notes.map((note) => (
                     <div
                         key={note.id}
-                        className={`note-card ${note.size}`}
+                        className={`${styles.noteCard} ${styles[note.size]}`}
                         style={{ backgroundColor: note.color }}
                     >
                         <input
-                            className="note-title-input"
+                            className={styles.noteTitleInput}
                             value={note.title}
                             placeholder="Title"
                             onChange={(e) => setNotes(prev => prev.map(n => n.id === note.id ? { ...n, title: e.target.value } : n))}
                             onBlur={(e) => updateNote(note.id, { title: e.target.value })}
                         />
                         <textarea
-                            className="note-content-input"
+                            className={styles.noteContentInput}
                             value={note.content}
                             placeholder="Take a note..."
                             onChange={(e) => setNotes(prev => prev.map(n => n.id === note.id ? { ...n, content: e.target.value } : n))}
                             onBlur={(e) => updateNote(note.id, { content: e.target.value })}
                         />
 
-                        <div className="note-actions">
+                        <div className={styles.noteActions}>
                             <button
-                                className="action-btn start-btn"
+                                className={`${styles.actionBtn} ${styles.startBtn}`}
                                 onClick={(e) => handleStart(e, note.id)}
                                 title="Start this project"
                             >
                                 <RocketLaunch size={18} weight="duotone" />
                             </button>
                             <button
-                                className="action-btn delete-btn"
+                                className={`${styles.actionBtn} ${styles.deleteBtn}`}
                                 onClick={(e) => handleDelete(e, note.id)}
                                 title="Move to trash"
                             >
@@ -116,8 +116,8 @@ export const Next: React.FC<NextProps> = ({ apiBaseUrl }) => {
                     </div>
                 ))}
                 {/* Add a "New Note" placeholder */}
-                <div className="note-card new-note" onClick={handleCreate}>
-                    <div className="plus-icon">+</div>
+                <div className={`${styles.noteCard} ${styles.newNote}`} onClick={handleCreate}>
+                    <div className={styles.plusIcon}>+</div>
                 </div>
             </div>
         </div>

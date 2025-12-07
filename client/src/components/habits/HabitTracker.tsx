@@ -5,12 +5,12 @@ import { DateUtility, getGrade, generateId } from '../../utils';
 import VlogModal from './VlogModal';
 import ChartModal from './ChartModal';
 import { VideoCameraIcon, SunHorizonIcon, MoonIcon, HeartIcon, TreeIcon, BarbellIcon, ResizeIcon, PresentationChartIcon } from '@phosphor-icons/react';
-import './HabitTracker.css';
+import styles from './HabitTracker.module.css';
 
 const CONFIG = {
   startDate: new Date('2025-11-09T00:00:00'),
   stateIcons: ['·', '✓', '✕', ':)', ':|'],
-  stateClasses: ['state-0', 'state-1', 'state-2', 'state-3', 'state-4']
+  stateClasses: [styles.state0, styles.state1, styles.state2, styles.state3, styles.state4]
 };
 
 interface HabitTrackerProps {
@@ -408,13 +408,13 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
 
   return (
     <>
-      <div className="table-wrapper" ref={tableWrapperRef}>
-        <table id="habit-table">
+      <div className={styles.tableWrapper} ref={tableWrapperRef}>
+        <table className={styles.habitTable}>
           <thead id="table-head">
             <tr>
-              <th className="trends-header">
+              <th className={styles.trendsHeader}>
                 <button
-                  className="trends-button"
+                  className={styles.trendsButton}
                   onClick={() => setShowChart(true)}
                   style={{
                     background: 'transparent',
@@ -443,13 +443,13 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                   return (
                     <th
                       key={week.key}
-                      className="week-summary-header"
+                      className={styles.weekSummaryHeader}
                       onClick={() => toggleWeek(week.key)}
                       style={{ cursor: 'pointer', minWidth: '120px' }}
                     >
-                      <div className="day-header" style={{ flexDirection: 'column', gap: '3px', alignItems: 'center', justifyContent: 'center' }}>
+                      <div className={styles.dayHeader} style={{ flexDirection: 'column', gap: '3px', alignItems: 'center', justifyContent: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span className="day-name">
+                          <span className={styles.dayName}>
                             {DateUtility.getDayName(week.start)} {DateUtility.getDayNumber(week.start)} - {DateUtility.getDayName(week.end)} {DateUtility.getDayNumber(week.end)}
                           </span>
                         </div>
@@ -466,26 +466,26 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                   return (
                     <React.Fragment key={`${week.key}-${idx}`}>
                       <th colSpan={1}>
-                        <div className="day-header">
-                          <span className={`day-name ${DateUtility.isToday(date) ? 'today' : ''}`}>
+                        <div className={styles.dayHeader}>
+                          <span className={`${styles.dayName} ${DateUtility.isToday(date) ? styles.today : ''}`}>
                             {DateUtility.getDayName(date)}
                           </span>
-                          <span className={`day-date ${DateUtility.isToday(date) ? 'today' : ''}`}>
+                          <span className={`${styles.dayDate} ${DateUtility.isToday(date) ? styles.today : ''}`}>
                             {DateUtility.getDayNumber(date)}
                           </span>
                         </div>
                       </th>
                       {isSaturday && loomSupported && (
-                        <th className="score-header">
+                        <th className={styles.scoreHeader}>
                           <button
-                            className={`vlog-button ${hasVlog ? 'has-vlog' : ''}`}
+                            className={`${styles.vlogButton} ${hasVlog ? styles.hasVlog : ''}`}
                             onClick={(e) => handleVlogClick(weekStart, e)}
                             title={hasVlog ? "View weekly vlog" : "Record weekly vlog"}
                           >
                             <VideoCameraIcon size={20} weight="duotone" />
                           </button>
                           <button
-                            className="collapse-btn"
+                            className={styles.collapseBtn}
                             onClick={() => toggleWeek(week.key)}
                             title="Collapse week"
                             style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', marginLeft: '4px' }}
@@ -495,7 +495,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                         </th>
                       )}
                       {isSaturday && !loomSupported && (
-                        <th className="score-header"></th>
+                        <th className={styles.scoreHeader}></th>
                       )}
                     </React.Fragment>
                   );
@@ -507,8 +507,8 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
             {habits.sort((a, b) => a.order - b.order).map(habit => (
               <tr key={habit.id}>
                 <td>
-                  <div className="habit-name">
-                    <span className={`time-icon ${habit.defaultTime}`}>
+                  <div className={styles.habitName}>
+                    <span className={`${styles.timeIcon} ${habit.defaultTime}`}>
                       {habit.defaultTime === 'morning' && (
                         <SunHorizonIcon size={20} weight="duotone" color="orange" />
                       )}
@@ -525,11 +525,11 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                         <ResizeIcon size={20} weight="duotone" color="#a855f7" />
                       )}
                     </span>
-                    <div className="habit-name-text">
+                    <div className={styles.habitNameText}>
                       <span>{habit.name}</span>
                       {getCurrentStreak(habit.id) > 0 && (
-                        <span className="streak-badge">
-                          <span className="streak-icon">
+                        <span className={styles.streakBadge}>
+                          <span className={styles.streakIcon}>
                             <HeartIcon size={12} weight="fill" />
                           </span>
                           <span>{getCurrentStreak(habit.id)}</span>
@@ -550,10 +550,10 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                         key={week.key}
                         onClick={() => toggleWeek(week.key)}
                         style={{ cursor: 'pointer' }}
-                        className="week-summary-cell"
+                        className={styles.weekSummaryCell}
                       >
-                        <div className="score-content has-tooltip" data-tooltip={`${stats.grade.letter} (${Math.round(stats.percentage)}%)`}>
-                          <span className={`score-grade ${stats.grade.class}`}>
+                        <div className={`${styles.scoreContent} ${styles.hasTooltip}`} data-tooltip={`${stats.grade.letter} (${Math.round(stats.percentage)}%)`}>
+                          <span className={`${styles.scoreGrade} ${styles[stats.grade.class]}`}>
                             {stats.successCount}/{stats.totalCount}
                           </span>
                         </div>
@@ -570,7 +570,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                       <React.Fragment key={`${week.key}-${idx}`}>
                         <td>
                           <div
-                            className={`cell ${CONFIG.stateClasses[state]} ${habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0) ? 'disabled' : ''}`}
+                            className={`${styles.cell} ${CONFIG.stateClasses[state]} ${habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0) ? styles.disabled : ''}`}
                             onClick={() => {
                               if (habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0)) return;
                               cycleState(date, habit.id);
@@ -587,9 +587,9 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                           const weekStartDate = new Date(date.getTime() - 6 * 24 * 60 * 60 * 1000);
                           const stats = getHabitStats(habit.id, weekStartDate, date);
                           return (
-                            <td className="score-cell">
-                              <div className="score-content has-tooltip" data-tooltip={`${stats.grade.letter} (${Math.round(stats.percentage)}%)`}>
-                                <span className={`score-grade ${stats.grade.class}`}>
+                            <td className={styles.scoreCell}>
+                              <div className={`${styles.scoreContent} ${styles.hasTooltip}`} data-tooltip={`${stats.grade.letter} (${Math.round(stats.percentage)}%)`}>
+                                <span className={`${styles.scoreGrade} ${styles[stats.grade.class]}`}>
                                   {stats.successCount}/{stats.totalCount}
                                 </span>
                               </div>

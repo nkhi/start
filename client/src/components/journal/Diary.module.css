@@ -1,5 +1,5 @@
 /* Diary */
-.diary-scroll-container {
+.diaryScrollContainer {
   display: flex;
   overflow-x: auto;
   height: 100%;
@@ -8,7 +8,7 @@
   scroll-snap-type: x mandatory;
 }
 
-.diary-column {
+.diaryColumn {
   min-width: 60vw;
   width: 60vw;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -23,12 +23,12 @@
   filter: grayscale(100%);
 }
 
-.diary-column.focused {
+.diaryColumn:global(.focused) {
   opacity: 1;
   filter: grayscale(0%);
 }
 
-.diary-column-header {
+.diaryColumnHeader {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -37,23 +37,23 @@
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-.diary-date {
+.diaryDate {
   font-size: 1.25rem;
   font-weight: 700;
   color: white;
 }
 
-.diary-date.today {
+.diaryDate:global(.today) {
   color: #007AFF;
 }
 
-.diary-day-name {
+.diaryDayName {
   font-size: 1rem;
   color: rgba(255, 255, 255, 0.45);
   font-weight: 500;
 }
 
-.diary-content {
+.diaryContent {
   flex: 1 1 auto;
   /* overflow-y: auto; */
   display: flex;
@@ -62,7 +62,7 @@
   padding-bottom: 2rem;
 }
 
-.diary-card {
+.diaryCard {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
@@ -75,12 +75,12 @@
   transition: all 0.2s ease;
 }
 
-.diary-card:hover {
+.diaryCard:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-.diary-question {
+.diaryQuestion {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -90,7 +90,7 @@
   line-height: 1.4;
 }
 
-.diary-answer-area {
+.diaryAnswerArea {
   flex: 1;
   background: transparent;
   border: none;
@@ -103,13 +103,37 @@
   width: 100%;
 }
 
-.diary-answer-area::placeholder {
+.diaryAnswerArea::placeholder {
   color: rgba(255, 255, 255, 0.2);
   font-style: italic;
 }
 
+.diaryInputFormSmall {
+  margin-bottom: 0.5rem;
+}
+
+.diaryInputSmall {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 0;
+  color: white;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.diaryInputSmall:focus {
+  border-bottom-color: #007AFF;
+}
+
+.diaryInputSmall::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
 @media (max-width: 768px) {
-  .diary-column {
+  .diaryColumn {
     min-width: 90vw;
     width: 90vw;
   }

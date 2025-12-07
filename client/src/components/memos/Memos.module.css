@@ -1,10 +1,10 @@
-.memos-container {
+.memosContainer {
   width: 100%;
   height: 100%;
   position: relative;
 }
 
-.memos-loading-overlay {
+.memosLoadingOverlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -21,7 +21,7 @@
   to { opacity: 0; }
 }
 
-.memos-frame {
+.memosFrame {
   width: 100%;
   height: 100%;
   border: none;
