@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Trash, RocketLaunch } from '@phosphor-icons/react';
-import { CARD_COLORS } from '../constants/colors';
-import { HabitAPI } from '../api';
-import type { Note } from '../types';
+import { CARD_COLORS } from '../../constants/colors';
+import { HabitAPI } from '../../api';
+import type { Note } from '../../types';
 import './Next.css';
 
 interface NextProps {

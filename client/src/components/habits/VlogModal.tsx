@@ -1,4 +1,4 @@
-import type { Vlog } from '../types';
+import type { Vlog } from '../../types';
 
 interface VlogModalProps {
   vlog: Vlog;

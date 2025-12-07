@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import { HabitAPI } from '../api';
-import type { DiaryByQuestion } from '../types';
+import { HabitAPI } from '../../api';
+import type { DiaryByQuestion } from '../../types';
 import { ArrowCircleLeft } from '@phosphor-icons/react';
 
 interface QuestionViewProps {

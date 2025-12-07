@@ -10,7 +10,7 @@ import {
     ResponsiveContainer,
     LabelList
 } from 'recharts';
-import type { Habit } from '../types';
+import type { Habit } from '../../types';
 
 interface ChartModalProps {
     data: any[];

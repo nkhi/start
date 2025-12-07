@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { Square, CheckSquare } from '@phosphor-icons/react';
-import { HabitAPI } from '../api';
-import type { DiaryEntry, Question } from '../types';
-import { generateId } from '../utils';
-import { DayWeek, type DayWeekColumnData } from './DayWeek';
+import { HabitAPI } from '../../api';
+import type { DiaryEntry, Question } from '../../types';
+import { generateId } from '../../utils';
+import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
 import { QuestionView } from './QuestionView';
 
 interface DiaryProps {

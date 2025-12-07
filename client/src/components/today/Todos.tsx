@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { HabitAPI } from '../api';
-import type { Task } from '../types';
-import { generateId, DateUtility } from '../utils';
+import { HabitAPI } from '../../api';
+import type { Task } from '../../types';
+import { generateId, DateUtility } from '../../utils';
 import { Trash, Check, X, ArrowBendDownRight } from '@phosphor-icons/react';
-import { DayWeek, type DayWeekColumnData } from './DayWeek';
+import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
 import { WeekView } from './WeekView';
 
 interface TodosProps {
@@ -16,7 +16,7 @@ export function Todos({ apiBaseUrl }: TodosProps) {
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [weekCategory, setWeekCategory] = useState<'life' | 'work'>('life');
   const api = useRef(new HabitAPI(apiBaseUrl)).current;
-  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     loadTasks();

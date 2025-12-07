@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Plus, Trash, Check } from '@phosphor-icons/react';
-import { CARD_COLORS } from '../constants/colors';
-import { HabitAPI } from '../api';
-import type { List, ListItem } from '../types';
+import { CARD_COLORS } from '../../constants/colors';
+import { HabitAPI } from '../../api';
+import type { List, ListItem } from '../../types';
 import './Lists.css';
 
 interface ListsProps {

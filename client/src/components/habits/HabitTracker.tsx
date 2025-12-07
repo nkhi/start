@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { HabitAPI } from '../api';
-import type { Habit, HabitEntry, Vlog } from '../types';
-import { DateUtility, getGrade, generateId } from '../utils';
+import { HabitAPI } from '../../api';
+import type { Habit, HabitEntry, Vlog } from '../../types';
+import { DateUtility, getGrade, generateId } from '../../utils';
 import VlogModal from './VlogModal';
 import ChartModal from './ChartModal';
 import { VideoCameraIcon, SunHorizonIcon, MoonIcon, HeartIcon, TreeIcon, BarbellIcon, ResizeIcon, PresentationChartIcon } from '@phosphor-icons/react';
@@ -109,10 +109,10 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
         CONFIG.startDate = new Date(earliest);
       }
       const allDates = DateUtility.getAllDatesFromStart(CONFIG.startDate);
-      
+
       // Create a completely new array with new Date objects to ensure React detects the change
       const datesCopy = allDates.map(d => new Date(d));
-      
+
       // Set dates and loading state
       setDates(datesCopy);
       setIsLoading(false);
@@ -208,11 +208,11 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
         const entryDate = new Date(entry.date);
         const normalizedDate = DateUtility.formatDate(entryDate);
         const key = `${normalizedDate}_${normalizedHabitId}`;
-        entriesMap.set(key, { 
-          ...entry, 
+        entriesMap.set(key, {
+          ...entry,
           date: normalizedDate, // Store normalized date format
-          habitId: normalizedHabitId, 
-          state: parseInt(String(entry.state)) 
+          habitId: normalizedHabitId,
+          state: parseInt(String(entry.state))
         });
       });
       setEntries(entriesMap);
