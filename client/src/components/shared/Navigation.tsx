@@ -1,4 +1,4 @@
-import { CalendarCheck, ListChecks, Calendar, TipJarIcon, LightbulbIcon, ChartLineUpIcon, ListDashes, TreeIcon, HeartbeatIcon } from '@phosphor-icons/react';
+import { CalendarCheck, ListChecks, Calendar, TipJarIcon, LightbulbIcon, ChartLineUpIcon, ListDashes, TreeIcon, HeartbeatIcon, CarrotIcon } from '@phosphor-icons/react';
 import { ServerStatus } from './ServerStatus';
 import styles from './Navigation.module.css';
 
@@ -66,6 +66,9 @@ export function Navigation({ activeTab, onTabChange, apiBaseUrl }: NavigationPro
 
             {/* Right side - icon-only external links */}
             <div className={styles.rightLinks}>
+                <a href="https://central.karat.io/interviewer/dashboard" target="_blank" rel="noreferrer" className={styles.iconLink}>
+                    <CarrotIcon size={20} weight="duotone" />
+                </a>
                 <a href="https://app.monarchmoney.com/accounts?chartType=performance&dateRange=6M&timeframe=month" target="_blank" rel="noreferrer" className={styles.iconLink}>
                     <TipJarIcon size={20} weight="duotone" />
                 </a>
