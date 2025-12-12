@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { HabitAPI } from '../../api';
+import { getTasks, getTasksForWeek, createTask, updateTask, deleteTask as apiDeleteTask } from '../../api/tasks';
 import type { Task } from '../../types';
 import { generateId, DateUtility } from '../../utils';
 import { Trash, Check, X, ArrowBendDownRight } from '@phosphor-icons/react';
@@ -16,7 +16,7 @@ export function Todos({ apiBaseUrl }: TodosProps) {
   const [newTaskTexts, setNewTaskTexts] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [weekCategory, setWeekCategory] = useState<'life' | 'work'>('life');
-  const api = useRef(new HabitAPI(apiBaseUrl)).current;
+
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export function Todos({ apiBaseUrl }: TodosProps) {
 
   async function loadTasks() {
     try {
-      const data = await api.getTasks();
+      const data = await getTasks(apiBaseUrl);
       setTasks(data || {});
     } catch (error) {
       console.error('Failed to load tasks:', error);
@@ -41,7 +41,7 @@ export function Todos({ apiBaseUrl }: TodosProps) {
     try {
       const startStr = DateUtility.formatDate(start);
       const endStr = DateUtility.formatDate(end);
-      const data = await api.getTasksForWeek(startStr, endStr);
+      const data = await getTasksForWeek(apiBaseUrl, startStr, endStr);
       setTasks(prev => ({ ...prev, ...data }));
     } catch (error) {
       console.error('Failed to load week tasks:', error);
@@ -72,7 +72,7 @@ export function Todos({ apiBaseUrl }: TodosProps) {
     setNewTaskTexts({ ...newTaskTexts, [inputKey]: '' });
 
     try {
-      await api.createTask(newTask);
+      await createTask(apiBaseUrl, newTask);
     } catch (error) {
       console.error('Failed to create task:', error);
       // Revert optimistic update on error
@@ -119,7 +119,7 @@ export function Todos({ apiBaseUrl }: TodosProps) {
 
     debounceTimers.current[debounceKey] = setTimeout(async () => {
       try {
-        await api.updateTask(taskId, {
+        await updateTask(apiBaseUrl, taskId, {
           completed: newState === 'completed',
           state: newState
         });
@@ -176,9 +176,9 @@ export function Todos({ apiBaseUrl }: TodosProps) {
 
     try {
       // Update original task to failed state
-      await api.updateTask(taskId, { state: 'failed', completed: false });
+      await updateTask(apiBaseUrl, taskId, { state: 'failed', completed: false });
       // Create new task
-      await api.createTask(newTask);
+      await createTask(apiBaseUrl, newTask);
     } catch (error) {
       console.error('Failed to punt task:', error);
       // Revert optimistic update on error
@@ -195,7 +195,7 @@ export function Todos({ apiBaseUrl }: TodosProps) {
     setTasks(updatedTasks);
 
     try {
-      await api.deleteTask(taskId);
+      await apiDeleteTask(apiBaseUrl, taskId);
     } catch (error) {
       console.error('Failed to delete task:', error);
       // Revert optimistic update on error

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Square, CheckSquare } from '@phosphor-icons/react';
-import { HabitAPI } from '../../api';
+import { getQuestions, getDiary, saveDiaryEntry, saveQuestion } from '../../api/diary';
 import type { DiaryEntry, Question } from '../../types';
 import { generateId } from '../../utils';
 import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
@@ -16,7 +16,7 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
   const [diary, setDiary] = useState<Record<string, DiaryEntry[]>>({});
   const [questions, setQuestions] = useState<Question[]>([]);
   const [newQuestionTexts, setNewQuestionTexts] = useState<Record<string, string>>({});
-  const api = useRef(new HabitAPI(apiBaseUrl)).current;
+
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -26,8 +26,8 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
   async function loadData() {
     try {
       const [questionsData, diaryData] = await Promise.all([
-        api.getQuestions(),
-        api.getDiary()
+        getQuestions(apiBaseUrl),
+        getDiary(apiBaseUrl)
       ]);
       setQuestions(questionsData);
       setDiary(diaryData || {});
@@ -93,7 +93,7 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
           answer,
           createdAt: existingEntry ? existingEntry.createdAt : new Date().toISOString()
         };
-        await api.saveDiaryEntry(entryToSave);
+        await saveDiaryEntry(apiBaseUrl, entryToSave);
       } catch (err) {
         console.error('Failed to save diary entry:', err);
         // Revert optimistic update on error
@@ -116,10 +116,10 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
     };
 
     try {
-      await api.saveQuestion(newQuestion);
+      await saveQuestion(apiBaseUrl, newQuestion);
       setNewQuestionTexts({ ...newQuestionTexts, [dateStr]: '' });
       // Reload questions to see the new one
-      const updatedQuestions = await api.getQuestions();
+      const updatedQuestions = await getQuestions(apiBaseUrl);
       setQuestions(updatedQuestions);
     } catch (error) {
       console.error('Failed to add question:', error);

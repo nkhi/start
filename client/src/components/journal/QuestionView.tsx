@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { HabitAPI } from '../../api';
+import { getDiaryByQuestion } from '../../api/diary';
 import type { DiaryByQuestion } from '../../types';
 import { ArrowCircleLeft } from '@phosphor-icons/react';
 import dayWeekStyles from '../shared/DayWeek.module.css';
@@ -12,7 +12,7 @@ interface QuestionViewProps {
 
 export function QuestionView({ apiBaseUrl, onBack }: QuestionViewProps) {
     const [data, setData] = useState<DiaryByQuestion[]>([]);
-    const api = useRef(new HabitAPI(apiBaseUrl)).current;
+
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -35,7 +35,7 @@ export function QuestionView({ apiBaseUrl, onBack }: QuestionViewProps) {
 
     async function loadData() {
         try {
-            const result = await api.getDiaryByQuestion();
+            const result = await getDiaryByQuestion(apiBaseUrl);
             setData(result);
         } catch (error) {
             console.error('Failed to load diary by question:', error);

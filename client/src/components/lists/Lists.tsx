@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, Trash, Check } from '@phosphor-icons/react';
 import { CARD_COLORS } from '../../constants/colors';
-import { HabitAPI } from '../../api';
+import { getLists, createList, updateList as apiUpdateList, deleteList } from '../../api/lists';
 import type { List, ListItem } from '../../types';
 import styles from './Lists.module.css';
 
@@ -12,7 +12,7 @@ interface ListsProps {
 export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
     const [lists, setLists] = useState<List[]>([]);
     const [newItemText, setNewItemText] = useState<Record<string, string>>({});
-    const api = useRef(new HabitAPI(apiBaseUrl)).current;
+
 
     useEffect(() => {
         fetchLists();
@@ -20,7 +20,7 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
 
     const fetchLists = async () => {
         try {
-            const data = await api.getLists();
+            const data = await getLists(apiBaseUrl);
             setLists(data);
         } catch (error) {
             console.error('Error fetching lists:', error);
@@ -32,7 +32,7 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
         setLists(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
 
         try {
-            await api.updateList(id, updates);
+            await apiUpdateList(apiBaseUrl, id, updates);
         } catch (error) {
             console.error('Error updating list:', error);
             fetchLists();
@@ -57,7 +57,7 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
         };
 
         try {
-            const savedList = await api.createList(newList);
+            const savedList = await createList(apiBaseUrl, newList);
             setLists(prev => [...prev, savedList]);
         } catch (error) {
             console.error('Error creating list:', error);
@@ -69,7 +69,7 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
 
         setLists(prev => prev.filter(l => l.id !== id));
         try {
-            await api.deleteList(id);
+            await deleteList(apiBaseUrl, id);
         } catch (error) {
             console.error('Error deleting list:', error);
             fetchLists();

@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trash, RocketLaunch } from '@phosphor-icons/react';
 import { CARD_COLORS } from '../../constants/colors';
-import { HabitAPI } from '../../api';
+import { getNotes, createNote, updateNote as apiUpdateNote } from '../../api/next';
 import type { Note } from '../../types';
 import styles from './Next.module.css';
 
@@ -11,7 +11,7 @@ interface NextProps {
 
 export const Next: React.FC<NextProps> = ({ apiBaseUrl }) => {
     const [notes, setNotes] = useState<Note[]>([]);
-    const api = useRef(new HabitAPI(apiBaseUrl)).current;
+
 
     useEffect(() => {
         fetchNotes();
@@ -19,7 +19,7 @@ export const Next: React.FC<NextProps> = ({ apiBaseUrl }) => {
 
     const fetchNotes = async () => {
         try {
-            const data = await api.getNotes();
+            const data = await getNotes(apiBaseUrl);
             setNotes(data);
         } catch (error) {
             console.error('Error fetching notes:', error);
@@ -31,7 +31,7 @@ export const Next: React.FC<NextProps> = ({ apiBaseUrl }) => {
         setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates } : n));
 
         try {
-            await api.updateNote(id, updates);
+            await apiUpdateNote(apiBaseUrl, id, updates);
         } catch (error) {
             console.error('Error updating note:', error);
             // Revert on failure (could be improved)
@@ -66,7 +66,7 @@ export const Next: React.FC<NextProps> = ({ apiBaseUrl }) => {
         };
 
         try {
-            const savedNote = await api.createNote(newNote);
+            const savedNote = await createNote(apiBaseUrl, newNote);
             setNotes(prev => [...prev, savedNote]);
         } catch (error) {
             console.error('Error creating note:', error);

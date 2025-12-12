@@ -32,7 +32,7 @@ export function Navigation({ activeTab, onTabChange, apiBaseUrl }: NavigationPro
                     onClick={() => onTabChange('todos')}
                 >
                     <ListChecks size={20} weight={activeTab === 'todos' ? 'bold' : 'regular'} className={styles.navIcon} />
-                    <span className={styles.navText}>Today</span>
+                    <span className={styles.navText}>Todos</span>
                 </button>
                 <button
                     className={`${styles.tabBtn} ${activeTab === 'memos' ? styles.active : ''}`}
@@ -72,12 +72,12 @@ export function Navigation({ activeTab, onTabChange, apiBaseUrl }: NavigationPro
                 <a href="https://app.monarchmoney.com/accounts?chartType=performance&dateRange=6M&timeframe=month" target="_blank" rel="noreferrer" className={styles.iconLink}>
                     <TipJarIcon size={20} weight="duotone" />
                 </a>
-                <a href="cron://" className={styles.iconLink}>
+                {/* <a href="cron://" className={styles.iconLink}>
                     <Calendar size={20} weight="duotone" />
-                </a>
-                <a href="linear://" className={styles.iconLink}>
+                </a> */}
+                {/* <a href="linear://" className={styles.iconLink}>
                     <ChartLineUpIcon size={20} weight="bold" />
-                </a>
+                </a> */}
             </div>
         </div>
     );

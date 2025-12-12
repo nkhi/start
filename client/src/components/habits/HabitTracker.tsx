@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { HabitAPI } from '../../api';
+import { getHabits, getEntries, saveEntry } from '../../api/habits';
+import { getVlog, saveVlog } from '../../api/vlogs';
 import type { Habit, HabitEntry, Vlog } from '../../types';
 import { DateUtility, getGrade, generateId } from '../../utils';
 import VlogModal from './VlogModal';
-import ChartModal from './ChartModal';
+// import ChartModal from './ChartModal';
 import { TimeFilterButtons } from './TimeFilterButtons';
 import { HabitTimeIcon } from './habitTimeConfig';
 import { VideoCameraIcon, HeartIcon } from '@phosphor-icons/react';
@@ -14,6 +15,12 @@ const CONFIG = {
   stateIcons: ['·', '✓', '✕', ':)', ':|'],
   stateClasses: [styles.state0, styles.state1, styles.state2, styles.state3, styles.state4]
 };
+
+const DAILY_STATUS_CONFIG = [
+  { min: 0, max: 33, className: styles.dailyStatusRed },
+  { min: 34, max: 66, className: styles.dailyStatusOrange },
+  { min: 67, max: 100, className: styles.dailyStatusGreen }
+];
 
 interface HabitTrackerProps {
   apiBaseUrl: string;
@@ -28,7 +35,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
   const [loomSupported, setLoomSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
-  const api = useRef(new HabitAPI(apiBaseUrl)).current;
+
   const loomButtonRef = useRef<HTMLButtonElement | null>(null);
   const sdkButtonRef = useRef<any>(null);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
@@ -244,8 +251,9 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     try {
       setIsLoading(true);
       const [habitsData, entriesData] = await Promise.all([
-        api.getHabits(),
-        api.getEntries(
+        getHabits(apiBaseUrl),
+        getEntries(
+          apiBaseUrl,
           DateUtility.formatDate(CONFIG.startDate),
           DateUtility.formatDate(new Date())
         )
@@ -290,7 +298,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     const vlogsMap = new Map<string, Vlog>();
     await Promise.all(
       Array.from(weeks).map(async (weekStart) => {
-        const vlog = await api.getVlog(weekStart);
+        const vlog = await getVlog(apiBaseUrl, weekStart);
         if (vlog) {
           vlogsMap.set(weekStart, vlog);
         }
@@ -342,7 +350,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     setEntries(newEntries);
 
     try {
-      await api.saveEntry(newEntry);
+      await saveEntry(apiBaseUrl, newEntry);
     } catch (error) {
       console.error('Failed to save entry:', error);
       // Revert on error
@@ -413,7 +421,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     const vlog: Vlog = { weekStartDate: weekStartStr, videoUrl, embedHtml };
 
     try {
-      await api.saveVlog(vlog);
+      await saveVlog(apiBaseUrl, vlog);
       const newVlogs = new Map(vlogs);
       newVlogs.set(weekStartStr, vlog);
       setVlogs(newVlogs);
@@ -438,6 +446,38 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
         loomButtonRef.current.click();
       }
     }
+  }
+
+
+  function getDayStats(date: Date) {
+    let successCount = 0;
+    let totalCount = 0;
+    const breakdown: Record<string, { success: number; total: number }> = {};
+
+    habits.forEach(habit => {
+      // Check if habit applies to this day
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+      if (habit.defaultTime === 'weekdays' && isWeekend) {
+        return;
+      }
+
+      if (!breakdown[habit.defaultTime]) {
+        breakdown[habit.defaultTime] = { success: 0, total: 0 };
+      }
+
+      const entry = getEntry(date, habit.id);
+      const isSuccess = entry && (entry.state === 1 || entry.state === 3);
+
+      if (isSuccess) {
+        successCount++;
+        breakdown[habit.defaultTime].success++;
+      }
+      totalCount++;
+      breakdown[habit.defaultTime].total++;
+    });
+
+    const percentage = totalCount === 0 ? 0 : (successCount / totalCount) * 100;
+    return { percentage, totalCount, successCount, breakdown };
   }
 
   function toggleWeek(weekKey: string) {
@@ -501,17 +541,41 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                 // Expanded view
                 return week.days.map((date, idx) => {
                   const isSaturday = date.getDay() === 6;
+                  const stats = getDayStats(date);
+                  const statusClass = DAILY_STATUS_CONFIG.find(
+                    c => stats.percentage >= c.min && stats.percentage <= c.max
+                  )?.className || '';
 
                   return (
                     <React.Fragment key={`${week.key}-${idx}`}>
-                      <th colSpan={1}>
-                        <div className={styles.dayHeader}>
+                      <th colSpan={1} className={statusClass}>
+                        <div className={styles.dayHeader} style={{ position: 'relative' }}>
                           <span className={`${styles.dayName} ${DateUtility.isToday(date) ? styles.today : ''}`}>
                             {DateUtility.getDayName(date)}
                           </span>
                           <span className={`${styles.dayDate} ${DateUtility.isToday(date) ? styles.today : ''}`}>
                             {DateUtility.getDayNumber(date)}
                           </span>
+
+                          {/* Tooltip with breakdown */}
+                          <div className={styles.dayStatsTooltip}>
+                            {Object.entries(stats.breakdown).map(([time, data]) => (
+                              <div key={time} className={styles.tooltipRow}>
+                                <span className={styles.tooltipLabel}>
+                                  <HabitTimeIcon defaultTime={time} size={14} />
+                                  {time}
+                                </span>
+                                <span className={styles.tooltipValue}>
+                                  {data.success}/{data.total}
+                                </span>
+                              </div>
+                            ))}
+                            {Object.keys(stats.breakdown).length === 0 && (
+                              <div className={styles.tooltipRow} style={{ justifyContent: 'center', color: '#666' }}>
+                                No habits
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </th>
                       {isSaturday && loomSupported && (
@@ -569,13 +633,104 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                       </div>
                     </div>
                   </td>
-                  {weeks.map((week) => {
+                  {weeks.map((week, weekIndex) => {
                     const isExpanded = expandedWeeks.has(week.key);
                     const weekStart = new Date(week.key + 'T00:00:00');
                     const weekEnd = week.end;
 
+                    const stats = getHabitStats(habit.id, weekStart, weekEnd);
+
+                    const GRADE_COLORS: Record<string, string> = {
+                      'gradeAPlus': '#10b981', 'gradeA': '#10b981', 'gradeAMinus': '#10b981',
+                      'gradeBPlus': '#0ea5e9', 'gradeB': '#0ea5e9', 'gradeBMinus': '#0ea5e9',
+                      'gradeCPlus': '#f59e0b', 'gradeC': '#f59e0b', 'gradeCMinus': '#f59e0b',
+                      'gradeDPlus': '#ef4444', 'gradeD': '#ef4444', 'gradeDMinus': '#ef4444',
+                      'gradeF': '#ef4444'
+                    };
+                    const currentColor = GRADE_COLORS[stats.grade.class] || '#4b5563';
+
                     if (!isExpanded) {
-                      const stats = getHabitStats(habit.id, weekStart, weekEnd);
+                      const nextWeek = weeks[weekIndex + 1];
+                      const prevWeek = weeks[weekIndex - 1];
+                      const isNextExpanded = nextWeek ? expandedWeeks.has(nextWeek.key) : true;
+                      const isPrevExpanded = prevWeek ? expandedWeeks.has(prevWeek.key) : true;
+
+                      // 1px in CSS = ~1.56 SVG units. Bottom center: 99.22.
+                      // Top gap 8px = 12.5 SVG units. Top center: 13.28. Range: 85.94.
+                      const getY = (p: number) => 99.22 - (p * 0.86);
+                      const yCurr = getY(stats.percentage);
+
+                      let strokeElements: JSX.Element[] = [];
+                      let fillElements: JSX.Element[] = [];
+                      const maskId = `mask-fade-${habit.id}-${week.key}`;
+
+                      // Shared Mask Definition
+                      strokeElements.push(
+                        <defs key="defs-mask">
+                          <linearGradient id={`grad-mask-${habit.id}-${week.key}`} x1="0" x2="0" y1="0" y2="1">
+                            <stop offset="0%" stopColor="white" stopOpacity="0.5" />
+                            <stop offset="100%" stopColor="white" stopOpacity="0" />
+                          </linearGradient>
+                          <mask id={maskId}>
+                            <rect x="-100" y="0" width="300" height="100" fill={`url(#grad-mask-${habit.id}-${week.key})`} />
+                          </mask>
+                        </defs>
+                      );
+
+                      // 1. Connection from Previous (or Start Extension)
+                      if (prevWeek && !isPrevExpanded) {
+                        const prevWeekStart = new Date(prevWeek.key + 'T00:00:00');
+                        const prevStats = getHabitStats(habit.id, prevWeekStart, prevWeek.end);
+                        const prevColor = GRADE_COLORS[prevStats.grade.class] || '#4b5563';
+                        const yPrev = getY(prevStats.percentage);
+
+                        const pathD = `M -50 ${yPrev} C 0 ${yPrev}, 0 ${yCurr}, 50 ${yCurr}`;
+                        const fillD = `${pathD} V 100 H -50 Z`;
+                        const gradId = `grad-${habit.id}-${week.key}-conn`;
+
+                        strokeElements.push(
+                          <defs key="defs-conn">
+                            <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1="-50" y1="0" x2="50" y2="0">
+                              <stop offset="0%" stopColor={prevColor} />
+                              <stop offset="100%" stopColor={currentColor} />
+                            </linearGradient>
+                          </defs>
+                        );
+
+                        // Fill
+                        fillElements.push(
+                          <path key="conn-fill" d={fillD} fill={`url(#${gradId})`} mask={`url(#${maskId})`} style={{ pointerEvents: 'none' }} />
+                        );
+                        // Stroke
+                        strokeElements.push(
+                          <path key="conn-stroke" d={pathD} className={styles.sparklinePath} style={{ stroke: `url(#${gradId})`, strokeWidth: 1.5625, opacity: 1 }} />
+                        );
+                      } else {
+                        // Start Extension
+                        const pathD = `M 0 ${yCurr} L 50 ${yCurr}`;
+                        const fillD = `${pathD} V 100 H 0 Z`;
+
+                        fillElements.push(
+                          <path key="start-fill" d={fillD} fill={currentColor} mask={`url(#${maskId})`} style={{ pointerEvents: 'none' }} />
+                        );
+                        strokeElements.push(
+                          <path key="start-stroke" d={pathD} className={styles.sparklinePath} style={{ stroke: currentColor, strokeWidth: 1.5625, opacity: 1 }} />
+                        );
+                      }
+
+                      // 2. End Extension
+                      if (!nextWeek || isNextExpanded) {
+                        const pathD = `M 50 ${yCurr} L 100 ${yCurr}`;
+                        const fillD = `${pathD} V 100 H 50 Z`;
+
+                        fillElements.push(
+                          <path key="end-fill" d={fillD} fill={currentColor} mask={`url(#${maskId})`} style={{ pointerEvents: 'none' }} />
+                        );
+                        strokeElements.push(
+                          <path key="end-stroke" d={pathD} className={styles.sparklinePath} style={{ stroke: currentColor, strokeWidth: 1.5625, opacity: 1 }} />
+                        );
+                      }
+
                       return (
                         <td
                           key={week.key}
@@ -583,6 +738,10 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                           style={{ cursor: 'pointer' }}
                           className={styles.weekSummaryCell}
                         >
+                          <svg className={styles.sparklineSvg} viewBox="0 0 100 100" preserveAspectRatio="none">
+                            {fillElements}
+                            {strokeElements}
+                          </svg>
                           <div className={`${styles.scoreContent} ${styles.hasTooltip}`} data-tooltip={`${stats.grade.letter} (${Math.round(stats.percentage)}%)`}>
                             <span className={`${styles.scoreGrade} ${styles[stats.grade.class]}`}>
                               {stats.successCount}/{stats.totalCount}
@@ -634,8 +793,8 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                 </tr>
               ))}
           </tbody>
-        </table>
-      </div>
+        </table >
+      </div >
 
       {viewingVlog && (
         <VlogModal
