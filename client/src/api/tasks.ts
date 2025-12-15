@@ -6,6 +6,12 @@ export async function getTasks(baseUrl: string): Promise<Record<string, Task[]>>
   return response.json();
 }
 
+export async function getWorkTasks(baseUrl: string): Promise<Record<string, Task[]>> {
+  const response = await fetch(`${baseUrl}/tasks/work`);
+  if (!response.ok) throw new Error('Failed to fetch work tasks');
+  return response.json();
+}
+
 export async function getTasksForWeek(baseUrl: string, start: string, end: string): Promise<Record<string, Task[]>> {
   const response = await fetch(`${baseUrl}/tasks/week?start=${start}&end=${end}`);
   if (!response.ok) throw new Error('Failed to fetch tasks for week');

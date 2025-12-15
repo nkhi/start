@@ -11,7 +11,7 @@ interface DaylightProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function Daylight({ apiBaseUrl }: DaylightProps) {
+export function Daylight({ apiBaseUrl: _apiBaseUrl }: DaylightProps) {
     const {
         userLocation,
         sunObject,

@@ -1,4 +1,4 @@
-import { CalendarCheck, ListChecks, Calendar, TipJarIcon, LightbulbIcon, ChartLineUpIcon, ListDashes, TreeIcon, HeartbeatIcon, CarrotIcon, SunDim } from '@phosphor-icons/react';
+import { CalendarCheck, ListChecks, TipJarIcon, LightbulbIcon, ListDashes, TreeIcon, HeartbeatIcon, CarrotIcon, SunDim } from '@phosphor-icons/react';
 import { ServerStatus } from './ServerStatus';
 import styles from './Navigation.module.css';
 import { useDaylight } from '../daylight/DaylightContext';
@@ -10,9 +10,10 @@ interface NavigationProps {
     lastTab?: TabType;
     onTabChange: (tab: TabType) => void;
     apiBaseUrl: string;
+    workMode?: boolean;
 }
 
-export function Navigation({ activeTab, lastTab, onTabChange, apiBaseUrl }: NavigationProps) {
+export function Navigation({ activeTab, lastTab, onTabChange, apiBaseUrl, workMode = false }: NavigationProps) {
     const { themeColors } = useDaylight();
 
     const navStyle = (activeTab === 'daylight' && themeColors) ? {
@@ -41,13 +42,15 @@ export function Navigation({ activeTab, lastTab, onTabChange, apiBaseUrl }: Navi
             </div>
 
             <div className={styles.tabSwitcher}>
-                <button
-                    className={`${styles.tabBtn} ${activeTab === 'habits' ? styles.active : ''}`}
-                    onClick={() => onTabChange('habits')}
-                >
-                    <CalendarCheck size={20} weight={activeTab === 'habits' ? 'duotone' : 'regular'} className={styles.navIcon} />
-                    <span className={styles.navText}>Habits</span>
-                </button>
+                {!workMode && (
+                    <button
+                        className={`${styles.tabBtn} ${activeTab === 'habits' ? styles.active : ''}`}
+                        onClick={() => onTabChange('habits')}
+                    >
+                        <CalendarCheck size={20} weight={activeTab === 'habits' ? 'duotone' : 'regular'} className={styles.navIcon} />
+                        <span className={styles.navText}>Habits</span>
+                    </button>
+                )}
                 <button
                     className={`${styles.tabBtn} ${activeTab === 'todos' ? styles.active : ''}`}
                     onClick={() => onTabChange('todos')}
@@ -55,50 +58,52 @@ export function Navigation({ activeTab, lastTab, onTabChange, apiBaseUrl }: Navi
                     <ListChecks size={20} weight={activeTab === 'todos' ? 'bold' : 'regular'} className={styles.navIcon} />
                     <span className={styles.navText}>Todos</span>
                 </button>
-                <button
-                    className={`${styles.tabBtn} ${activeTab === 'memos' ? styles.active : ''}`}
-                    onClick={() => onTabChange('memos')}
-                >
-                    <LightbulbIcon size={20} weight={activeTab === 'memos' ? 'duotone' : 'regular'} className={styles.navIcon} />
-                    <span className={styles.navText}>Memos</span>
-                </button>
-                <button
-                    className={`${styles.tabBtn} ${activeTab === 'logs' ? styles.active : ''}`}
-                    onClick={() => onTabChange('logs')}
-                >
-                    <HeartbeatIcon size={20} weight={activeTab === 'logs' ? 'duotone' : 'regular'} className={styles.navIcon} />
-                    <span className={styles.navText}>Journal</span>
-                </button>
-                <button
-                    className={`${styles.tabBtn} ${activeTab === 'lists' ? styles.active : ''}`}
-                    onClick={() => onTabChange('lists')}
-                >
-                    <ListDashes size={20} weight={activeTab === 'lists' ? 'duotone' : 'regular'} className={styles.navIcon} />
-                    <span className={styles.navText}>Lists</span>
-                </button>
-                <button
-                    className={`${styles.tabBtn} ${activeTab === 'next' ? styles.active : ''}`}
-                    onClick={() => onTabChange('next')}
-                >
-                    <TreeIcon size={20} weight={activeTab === 'next' ? 'duotone' : 'regular'} className={styles.navIcon} />
-                    <span className={styles.navText}>Grow</span>
-                </button>
+                {!workMode && (
+                    <>
+                        <button
+                            className={`${styles.tabBtn} ${activeTab === 'memos' ? styles.active : ''}`}
+                            onClick={() => onTabChange('memos')}
+                        >
+                            <LightbulbIcon size={20} weight={activeTab === 'memos' ? 'duotone' : 'regular'} className={styles.navIcon} />
+                            <span className={styles.navText}>Memos</span>
+                        </button>
+                        <button
+                            className={`${styles.tabBtn} ${activeTab === 'logs' ? styles.active : ''}`}
+                            onClick={() => onTabChange('logs')}
+                        >
+                            <HeartbeatIcon size={20} weight={activeTab === 'logs' ? 'duotone' : 'regular'} className={styles.navIcon} />
+                            <span className={styles.navText}>Journal</span>
+                        </button>
+                        <button
+                            className={`${styles.tabBtn} ${activeTab === 'lists' ? styles.active : ''}`}
+                            onClick={() => onTabChange('lists')}
+                        >
+                            <ListDashes size={20} weight={activeTab === 'lists' ? 'duotone' : 'regular'} className={styles.navIcon} />
+                            <span className={styles.navText}>Lists</span>
+                        </button>
+                        <button
+                            className={`${styles.tabBtn} ${activeTab === 'next' ? styles.active : ''}`}
+                            onClick={() => onTabChange('next')}
+                        >
+                            <TreeIcon size={20} weight={activeTab === 'next' ? 'duotone' : 'regular'} className={styles.navIcon} />
+                            <span className={styles.navText}>Grow</span>
+                        </button>
+                    </>
+                )}
             </div>
 
-            <div className={styles.rightLinks}>
-                <a href="https://central.karat.io/interviewer/dashboard" target="_blank" rel="noreferrer" className={styles.iconLink}>
-                    <CarrotIcon size={20} weight="duotone" />
-                </a>
-                <a href="https://app.monarchmoney.com/accounts?chartType=performance&dateRange=6M&timeframe=month" target="_blank" rel="noreferrer" className={styles.iconLink}>
-                    <TipJarIcon size={20} weight="duotone" />
-                </a>
-                {/* <a href="cron://" className={styles.iconLink}>
-                    <Calendar size={20} weight="duotone" />
-                </a> */}
-                {/* <a href="linear://" className={styles.iconLink}>
-                    <ChartLineUpIcon size={20} weight="bold" />
-                </a> */}
-            </div>
+            {!workMode && (
+                <div className={styles.rightLinks}>
+                    <a href="https://central.karat.io/interviewer/dashboard" target="_blank" rel="noreferrer" className={styles.iconLink}>
+                        <CarrotIcon size={20} weight="duotone" />
+                    </a>
+                    <a href="https://app.monarchmoney.com/accounts?chartType=performance&dateRange=6M&timeframe=month" target="_blank" rel="noreferrer" className={styles.iconLink}>
+                        <TipJarIcon size={20} weight="duotone" />
+                    </a>
+                </div>
+            )}
+            {workMode && <div className={styles.rightLinks} />}
         </div>
     );
 }
+

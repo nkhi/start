@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { getTasks, getTasksForWeek, createTask, updateTask, deleteTask as apiDeleteTask } from '../../api/tasks';
+import { getTasks, getWorkTasks, getTasksForWeek, createTask, updateTask, deleteTask as apiDeleteTask } from '../../api/tasks';
 import type { Task } from '../../types';
 import { generateId, DateUtility } from '../../utils';
 import { Trash, Check, X, ArrowBendDownRight } from '@phosphor-icons/react';
@@ -9,9 +9,10 @@ import styles from './Todos.module.css';
 
 interface TodosProps {
   apiBaseUrl: string;
+  workMode?: boolean;
 }
 
-export function Todos({ apiBaseUrl }: TodosProps) {
+export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
   const [tasks, setTasks] = useState<Record<string, Task[]>>({});
   const [newTaskTexts, setNewTaskTexts] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
@@ -30,7 +31,9 @@ export function Todos({ apiBaseUrl }: TodosProps) {
 
   async function loadTasks() {
     try {
-      const data = await getTasks(apiBaseUrl);
+      const data = workMode
+        ? await getWorkTasks(apiBaseUrl)
+        : await getTasks(apiBaseUrl);
       setTasks(data || {});
     } catch (error) {
       console.error('Failed to load tasks:', error);
@@ -222,7 +225,7 @@ export function Todos({ apiBaseUrl }: TodosProps) {
     const lifeTasks = sortTasks(dayTasks.filter(t => !t.category || t.category === 'life'));
     const workTasks = sortTasks(dayTasks.filter(t => t.category === 'work'));
 
-    const showLife = viewMode === 'day' || weekCategory === 'life';
+    const showLife = !workMode && (viewMode === 'day' || weekCategory === 'life');
     const showWork = viewMode === 'day' || weekCategory === 'work';
 
     return (

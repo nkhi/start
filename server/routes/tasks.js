@@ -15,14 +15,39 @@ router.get('/tasks/week', async (req, res) => {
       SELECT * FROM tasks 
       WHERE date >= $1 AND date <= $2
     `, [start, end]);
-    
+
     // Convert flat DB rows back to date-keyed object
     const tasksByDate = {};
     result.rows.forEach(t => {
       const dateStr = typeof t.date === 'string' ? t.date : t.date.toISOString().split('T')[0];
-      
+
       if (!tasksByDate[dateStr]) tasksByDate[dateStr] = [];
-      
+
+      tasksByDate[dateStr].push({
+        id: t.id,
+        text: t.text,
+        completed: t.completed,
+        date: dateStr,
+        createdAt: t.created_at,
+        category: t.category,
+        state: t.state
+      });
+    });
+    res.json(tasksByDate);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get only work tasks (for work mode - privacy on work laptops)
+router.get('/tasks/work', async (req, res) => {
+  try {
+    const result = await db.query(`SELECT * FROM tasks WHERE category = 'work'`);
+
+    const tasksByDate = {};
+    result.rows.forEach(t => {
+      const dateStr = typeof t.date === 'string' ? t.date : t.date.toISOString().split('T')[0];
+      if (!tasksByDate[dateStr]) tasksByDate[dateStr] = [];
       tasksByDate[dateStr].push({
         id: t.id,
         text: t.text,
@@ -43,15 +68,15 @@ router.get('/tasks/week', async (req, res) => {
 router.get('/tasks', async (req, res) => {
   try {
     const result = await db.query('SELECT * FROM tasks');
-    
+
     // Convert flat DB rows back to date-keyed object
     const tasksByDate = {};
     result.rows.forEach(t => {
       // Format date to YYYY-MM-DD string if it's a Date object
       const dateStr = typeof t.date === 'string' ? t.date : t.date.toISOString().split('T')[0];
-      
+
       if (!tasksByDate[dateStr]) tasksByDate[dateStr] = [];
-      
+
       tasksByDate[dateStr].push({
         id: t.id,
         text: t.text,
@@ -74,7 +99,7 @@ router.post('/tasks', async (req, res) => {
   if (!id || !date) {
     return res.status(400).json({ error: 'Missing required fields: id, date' });
   }
-  
+
   try {
     await db.query(`
       INSERT INTO tasks (id, text, completed, date, created_at, category, state)
@@ -88,7 +113,7 @@ router.post('/tasks', async (req, res) => {
       category || 'life',
       state || 'active'
     ]);
-    
+
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -99,12 +124,12 @@ router.post('/tasks', async (req, res) => {
 router.patch('/tasks/:id', async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
-  
+
   // Build dynamic update query
   const fields = [];
   const values = [id];
   let idx = 2;
-  
+
   if (updates.text !== undefined) {
     fields.push(`text = $${idx++}`);
     values.push(updates.text);
@@ -125,11 +150,11 @@ router.patch('/tasks/:id', async (req, res) => {
     fields.push(`state = $${idx++}`);
     values.push(updates.state);
   }
-  
+
   if (fields.length === 0) {
     return res.json({ ok: true }); // Nothing to update
   }
-  
+
   try {
     const result = await db.query(`
       UPDATE tasks 
@@ -137,17 +162,17 @@ router.patch('/tasks/:id', async (req, res) => {
       WHERE id = $1
       RETURNING *
     `, values);
-    
+
     if (result.rows.length === 0) {
       const msg = `[SERVER] ⚠️ Task not found for update: ${id}`;
       console.log(msg);
       logToFile(msg);
       return res.status(404).json({ error: `Task with ID ${id} not found` });
     }
-    
+
     const t = result.rows[0];
     const dateStr = typeof t.date === 'string' ? t.date : t.date.toISOString().split('T')[0];
-    
+
     res.json({
       id: t.id,
       text: t.text,
@@ -165,14 +190,14 @@ router.patch('/tasks/:id', async (req, res) => {
 // Delete a single task
 router.delete('/tasks/:id', async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     const result = await db.query('DELETE FROM tasks WHERE id = $1 RETURNING id', [id]);
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Task not found' });
     }
-    
+
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -183,11 +208,11 @@ router.delete('/tasks/:id', async (req, res) => {
 router.put('/tasks/:id', async (req, res) => {
   const taskId = req.params.id;
   const task = req.body;
-  
+
   if (!task || typeof task !== 'object') {
     return res.status(400).json({ error: 'Body must be a task object' });
   }
-  
+
   const client = await db.pool.connect();
   try {
     await client.query(`
@@ -206,7 +231,7 @@ router.put('/tasks/:id', async (req, res) => {
       task.state || 'active',
       taskId
     ]);
-    
+
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
