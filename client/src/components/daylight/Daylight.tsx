@@ -114,6 +114,42 @@ export function Daylight({ apiBaseUrl: _apiBaseUrl, workMode = false }: Daylight
     const workStartMarker = workMode ? getWorkHourMarker(9) : null;
     const workEndMarker = workMode ? getWorkHourMarker(17) : null;
 
+    // --- Sleep Marker (11pm) for Normal Mode ---
+    // Only visible in "normal" mode (not work mode) and when it is night (moon visible)
+    const getSleepMarker = () => {
+        if (workMode || isDay) return null;
+
+        let nightStartMs: number;
+        let nightEndMs: number;
+        let targetTime: Date;
+
+        if (nowMs < sunriseMs) {
+            // Pre-dawn: Night started yesterday sunset, ends today sunrise
+            nightStartMs = sunObject.prevSunset.getTime();
+            nightEndMs = sunObject.sunrise.getTime();
+            targetTime = new Date(currentTime);
+            targetTime.setDate(targetTime.getDate() - 1); // Yesterday
+            targetTime.setHours(23, 0, 0, 0); // 11pm
+        } else {
+            // Post-sunset: Night starts today sunset, ends tomorrow sunrise
+            nightStartMs = sunObject.sunset.getTime();
+            nightEndMs = sunObject.nextSunrise.getTime();
+            targetTime = new Date(currentTime);
+            targetTime.setHours(23, 0, 0, 0); // 11pm
+        }
+
+        const targetMs = targetTime.getTime();
+        const progress = (targetMs - nightStartMs) / (nightEndMs - nightStartMs);
+        const angleDeg = progress * 180;
+
+        // Hide if outside the visible night arc (though 11pm usually is visible)
+        if (progress < 0 || progress > 1) return null;
+
+        return { angleDeg };
+    };
+
+    const sleepMarker = getSleepMarker();
+
     // --- Icon Selection Logic (V2) ---
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let CurrentIcon: any = null; // null means use default circle (V1 behavior)
@@ -191,6 +227,15 @@ export function Daylight({ apiBaseUrl: _apiBaseUrl, workMode = false }: Daylight
                                         transform: `rotate(${workEndMarker.angleDeg - 90}deg)`,
                                     }}
                                     title="5:00 PM"
+                                />
+                            )}
+                            {sleepMarker && (
+                                <div
+                                    className={styles.workHourMarker}
+                                    style={{
+                                        transform: `rotate(${sleepMarker.angleDeg - 90}deg)`,
+                                    }}
+                                    title="11:00 PM"
                                 />
                             )}
                         </div>
