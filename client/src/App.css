@@ -13,7 +13,10 @@ body {
   min-width: 550px;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font-family: inherit;
 }
 
@@ -52,14 +55,14 @@ button, input, select, textarea {
   #app {
     height: calc(100vh - 1rem);
   }
-  
+
   header {
     padding: 16px 20px;
     flex-direction: column;
     gap: 12px;
     align-items: flex-start;
   }
-  
+
   header h1 {
     font-size: 18px;
   }

@@ -1,24 +1,45 @@
-import { CalendarCheck, ListChecks, Calendar, TipJarIcon, LightbulbIcon, ChartLineUpIcon, ListDashes, TreeIcon, HeartbeatIcon, CarrotIcon } from '@phosphor-icons/react';
+import { CalendarCheck, ListChecks, Calendar, TipJarIcon, LightbulbIcon, ChartLineUpIcon, ListDashes, TreeIcon, HeartbeatIcon, CarrotIcon, SunDim } from '@phosphor-icons/react';
 import { ServerStatus } from './ServerStatus';
 import styles from './Navigation.module.css';
+import { useDaylight } from '../daylight/DaylightContext';
 
-type TabType = 'habits' | 'todos' | 'logs' | 'memos' | 'next' | 'lists';
+type TabType = 'habits' | 'todos' | 'logs' | 'memos' | 'next' | 'lists' | 'daylight';
 
 interface NavigationProps {
     activeTab: TabType;
+    lastTab?: TabType;
     onTabChange: (tab: TabType) => void;
     apiBaseUrl: string;
 }
 
-export function Navigation({ activeTab, onTabChange, apiBaseUrl }: NavigationProps) {
+export function Navigation({ activeTab, lastTab, onTabChange, apiBaseUrl }: NavigationProps) {
+    const { themeColors } = useDaylight();
+
+    const navStyle = (activeTab === 'daylight' && themeColors) ? {
+        '--daylight-text-color': themeColors.text
+    } as React.CSSProperties : {};
+
+    const handleDaylightClick = () => {
+        if (activeTab === 'daylight' && lastTab) {
+            onTabChange(lastTab);
+        } else {
+            onTabChange('daylight');
+        }
+    };
+
     return (
-        <div className={styles.navContainer}>
-            {/* Left side - Server Status */}
+        <div
+            className={`${styles.navContainer} ${activeTab === 'daylight' ? styles.immersive : ''}`}
+            style={navStyle}
+        >
             <div className={styles.leftSection}>
+                <button onClick={handleDaylightClick} className={styles.tabBtn}>
+                    <SunDim size={20} weight="duotone" />
+                </button>
+
                 <ServerStatus apiBaseUrl={apiBaseUrl} />
             </div>
 
-            {/* Center - Main navigation tabs */}
             <div className={styles.tabSwitcher}>
                 <button
                     className={`${styles.tabBtn} ${activeTab === 'habits' ? styles.active : ''}`}
@@ -64,7 +85,6 @@ export function Navigation({ activeTab, onTabChange, apiBaseUrl }: NavigationPro
                 </button>
             </div>
 
-            {/* Right side - icon-only external links */}
             <div className={styles.rightLinks}>
                 <a href="https://central.karat.io/interviewer/dashboard" target="_blank" rel="noreferrer" className={styles.iconLink}>
                     <CarrotIcon size={20} weight="duotone" />

@@ -18,9 +18,11 @@
     "@loomhq/loom-embed": "^1.7.0",
     "@loomhq/record-sdk": "^4.4.0",
     "@phosphor-icons/react": "^2.1.10",
+    "@types/suncalc": "^1.9.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^3.5.1"
+    "recharts": "^3.5.1",
+    "suncalc": "^1.9.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

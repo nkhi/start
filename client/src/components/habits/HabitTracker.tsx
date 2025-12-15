@@ -70,14 +70,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       };
 
       habits.forEach(habit => {
-        // Calculate stats logic duplicated here to avoid dependency issues or extract it
-        // Actually we can call getHabitStats if we are careful, but getHabitStats uses state.
-        // It's safer to inline the logic or ensure getHabitStats is stable/accessible.
-        // Since getHabitStats is defined in the component, we can call it.
-        // But we need to make sure we don't cause infinite loops if we were to put it in dependencies.
-        // Here we are inside useMemo, so calling the function is fine as long as we depend on the state it uses.
-
-        // Re-implementing logic to be safe and clear within useMemo
         const isWeekdays = habit.defaultTime === 'weekdays';
         let successCount = 0;
         let totalCount = 0;
@@ -108,15 +100,12 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     });
   }, [weeks, habits, entries]);
 
-  // Memoize filtered habits for dynamic height calculation
   const filteredHabits = useMemo(() => {
     return habits.filter(habit => !selectedTimeFilter || habit.defaultTime === selectedTimeFilter);
   }, [habits, selectedTimeFilter]);
 
-  // Calculate dynamic row height when filtering
   useEffect(() => {
     if (!selectedTimeFilter) {
-      // No filter active - use default fixed height
       setDynamicRowHeight(null);
       return;
     }
@@ -130,19 +119,17 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       const theadHeight = theadRef.current.clientHeight;
       const availableHeight = wrapperHeight - theadHeight;
 
-      // Calculate height per row, with only a min 48px bound (no max - let rows expand fully)
+      // Calculate height per row, with only a min 48px bound
       const calculatedHeight = Math.floor(availableHeight / filteredHabits.length);
       const boundedHeight = Math.max(48, calculatedHeight);
 
       setDynamicRowHeight(boundedHeight);
     };
 
-    // Use requestAnimationFrame to ensure layout is complete before measuring
     const rafId = requestAnimationFrame(() => {
       calculateRowHeight();
     });
 
-    // Set up ResizeObserver for responsive updates
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(calculateRowHeight);
     });
@@ -170,14 +157,11 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       }
       const allDates = DateUtility.getAllDatesFromStart(CONFIG.startDate);
 
-      // Create a completely new array with new Date objects to ensure React detects the change
       const datesCopy = allDates.map(d => new Date(d));
 
-      // Set dates and loading state
       setDates(datesCopy);
       setIsLoading(false);
 
-      // Expand current week by default
       const today = new Date();
       const currentWeekStart = DateUtility.getWeekStart(today);
       setExpandedWeeks(new Set([DateUtility.formatDate(currentWeekStart)]));
@@ -206,7 +190,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       const { createInstance } = await import('@loomhq/record-sdk');
       const { oembed } = await import('@loomhq/loom-embed');
 
-      // Create a hidden button for Loom SDK
       const hiddenButton = document.createElement('button');
       hiddenButton.style.display = 'none';
       document.body.appendChild(hiddenButton);
@@ -263,9 +246,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
 
       const entriesMap = new Map<string, HabitEntry>();
       entriesData.forEach(entry => {
-        // API may return habit_id or habitId, normalize to habitId
         const normalizedHabitId = entry.habitId || (entry as any).habit_id;
-        // Normalize date format - entry.date might be ISO string, convert to YYYY-MM-DD format
         const entryDate = new Date(entry.date);
         const normalizedDate = DateUtility.formatDate(entryDate);
         const key = `${normalizedDate}_${normalizedHabitId}`;
@@ -278,7 +259,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       });
       setEntries(entriesMap);
 
-      // Load vlogs for visible weeks
       await loadVlogs(DateUtility.getAllDatesFromStart(CONFIG.startDate));
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -344,7 +324,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       timestamp
     };
 
-    // Optimistic update
     const newEntries = new Map(entries);
     newEntries.set(key, newEntry);
     setEntries(newEntries);
@@ -353,7 +332,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
       await saveEntry(apiBaseUrl, newEntry);
     } catch (error) {
       console.error('Failed to save entry:', error);
-      // Revert on error
       setEntries(entries);
     }
   }
@@ -392,7 +370,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
 
     let curr = new Date(weekStart);
     while (curr <= weekEnd) {
-      // Skip weekends for weekday habits
       const isWeekend = curr.getDay() === 0 || curr.getDay() === 6;
       if (isWeekdays && isWeekend) {
         curr.setDate(curr.getDate() + 1);
@@ -432,15 +409,13 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
   }
 
   function handleVlogClick(weekStart: Date, e: React.MouseEvent) {
-    e.stopPropagation(); // Prevent collapsing/expanding when clicking vlog button
+    e.stopPropagation();
     const weekStartStr = DateUtility.formatDate(weekStart);
     const vlog = vlogs.get(weekStartStr);
 
     if (vlog) {
-      // View existing vlog
       setViewingVlog(vlog);
     } else {
-      // Start recording
       recordingWeekRef.current = weekStart;
       if (loomButtonRef.current) {
         loomButtonRef.current.click();
@@ -455,7 +430,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     const breakdown: Record<string, { success: number; total: number }> = {};
 
     habits.forEach(habit => {
-      // Check if habit applies to this day
       const isWeekend = date.getDay() === 0 || date.getDay() === 6;
       if (habit.defaultTime === 'weekdays' && isWeekend) {
         return;
@@ -493,7 +467,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
   if (isLoading || habits.length === 0 || dates.length === 0) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p>Loading habits data...</p>
+        {/* <p>Loading habits data...</p> */}
       </div>
     );
   }
@@ -515,10 +489,9 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
               {weeks.map((week) => {
                 const isExpanded = expandedWeeks.has(week.key);
                 const hasVlog = vlogs.has(week.key);
-                const weekStart = new Date(week.key + 'T00:00:00'); // Construct date from key
+                const weekStart = new Date(week.key + 'T00:00:00');
 
                 if (!isExpanded) {
-                  // Collapsed view
                   return (
                     <th
                       key={week.key}
@@ -538,7 +511,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                   );
                 }
 
-                // Expanded view
                 return week.days.map((date, idx) => {
                   const isSaturday = date.getDay() === 6;
                   const stats = getDayStats(date);
@@ -557,12 +529,12 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                             {DateUtility.getDayNumber(date)}
                           </span>
 
-                          {/* Tooltip with breakdown */}
+
                           <div className={styles.dayStatsTooltip}>
                             {Object.entries(stats.breakdown).map(([time, data]) => (
                               <div key={time} className={styles.tooltipRow}>
                                 <span className={styles.tooltipLabel}>
-                                  <HabitTimeIcon defaultTime={time} size={14} />
+                                  <HabitTimeIcon defaultTime={time as any} size={14} />
                                   {time}
                                 </span>
                                 <span className={styles.tooltipValue}>
@@ -656,7 +628,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                       const isPrevExpanded = prevWeek ? expandedWeeks.has(prevWeek.key) : true;
 
                       // 1px in CSS = ~1.56 SVG units. Bottom center: 99.22.
-                      // Top gap 8px = 12.5 SVG units. Top center: 13.28. Range: 85.94.
                       const getY = (p: number) => 99.22 - (p * 0.86);
                       const yCurr = getY(stats.percentage);
 
@@ -664,7 +635,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                       let fillElements: JSX.Element[] = [];
                       const maskId = `mask-fade-${habit.id}-${week.key}`;
 
-                      // Shared Mask Definition
                       strokeElements.push(
                         <defs key="defs-mask">
                           <linearGradient id={`grad-mask-${habit.id}-${week.key}`} x1="0" x2="0" y1="0" y2="1">
@@ -677,7 +647,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                         </defs>
                       );
 
-                      // 1. Connection from Previous (or Start Extension)
                       if (prevWeek && !isPrevExpanded) {
                         const prevWeekStart = new Date(prevWeek.key + 'T00:00:00');
                         const prevStats = getHabitStats(habit.id, prevWeekStart, prevWeek.end);
@@ -697,16 +666,13 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                           </defs>
                         );
 
-                        // Fill
                         fillElements.push(
                           <path key="conn-fill" d={fillD} fill={`url(#${gradId})`} mask={`url(#${maskId})`} style={{ pointerEvents: 'none' }} />
                         );
-                        // Stroke
                         strokeElements.push(
                           <path key="conn-stroke" d={pathD} className={styles.sparklinePath} style={{ stroke: `url(#${gradId})`, strokeWidth: 1.5625, opacity: 1 }} />
                         );
                       } else {
-                        // Start Extension
                         const pathD = `M 0 ${yCurr} L 50 ${yCurr}`;
                         const fillD = `${pathD} V 100 H 0 Z`;
 
@@ -718,7 +684,6 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                         );
                       }
 
-                      // 2. End Extension
                       if (!nextWeek || isNextExpanded) {
                         const pathD = `M 50 ${yCurr} L 100 ${yCurr}`;
                         const fillD = `${pathD} V 100 H 50 Z`;

@@ -1,4 +1,3 @@
-/* Navigation Container */
 .navContainer {
   display: flex;
   justify-content: center;
@@ -8,9 +7,48 @@
   gap: 24px;
   border-bottom: 1px solid #363029;
   position: relative;
+  transition: all 0.3s ease;
+  position: relative;
+  transition: all 0.3s ease;
 }
 
-/* Left Section - Server Status */
+.navContainer.immersive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+
+  transition: all 0.3s ease;
+}
+
+.navContainer.immersive .tabSwitcher,
+.navContainer.immersive .rightLinks,
+.navContainer.immersive .leftSection>*:not(:first-child) {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+
+
+.navContainer.immersive .leftSection button {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+
+
+.navContainer.immersive:hover .leftSection button {
+  opacity: 0.05;
+  cursor: pointer;
+}
+
+.navContainer.immersive .leftSection button:hover {
+  opacity: 1;
+}
+
 .leftSection {
   position: absolute;
   left: 24px;
@@ -18,7 +56,6 @@
   align-items: center;
 }
 
-/* Left - Main Tab Switcher */
 .tabSwitcher {
   display: flex;
   background: #110C09;
@@ -26,6 +63,17 @@
   border-radius: 12px;
   gap: 4px;
   width: fit-content;
+  transition: background 0.3s ease;
+}
+
+.navContainer.immersive .tabBtn,
+.navContainer.immersive .iconLink {
+  color: var(--daylight-text-color, #888);
+}
+
+.navContainer.immersive .tabBtn.active {
+  color: var(--daylight-text-color, white);
+  border-color: var(--daylight-text-color, rgba(255, 255, 255, 0.1));
 }
 
 .tabBtn {
@@ -54,7 +102,6 @@
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Right Links - Icon-only external links + Server Status */
 .rightLinks {
   position: absolute;
   right: 24px;
@@ -78,7 +125,6 @@
   color: white;
 }
 
-/* Responsive */
 @media (max-width: 910px) {
   .tabSwitcher .tabBtn .navText {
     display: none;

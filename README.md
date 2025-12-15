@@ -1,6 +1,6 @@
-# 🌳 Strong Roots 
+# 🌳 Start 
 
-Strong Roots is my command center for habits, daily todos, notes, journals, lists, and goals. I use this as the "open" tab on my personal computer. It also makes it easy to access my calendar, my budgetting app, Linear, and Perplexity. It also allows me to record weekly vlogs using the Loom SDK recorder.
+Start is my command center for habits, daily todos, notes, journals, lists, and goals. I use this as the "open" tab on my personal computer. It also makes it easy to access my calendar, my budgetting app, Linear, and Perplexity. It also allows me to record weekly vlogs using the Loom SDK recorder.
 
 This tool exists to help me bias my time towards action & expression rather than planinng and selecting "what to do". The ultimate goal of this app is to make **me** more organized, productive, and happy. I hope you find it useful too! Running `~/strongroots/go.sh` will handle setup from a cold boot and launch the app. 
 
@@ -212,7 +212,7 @@ pnpm run build
 
 ## Design
 
-**Strong Roots** is built around a few core principles:
+**Start** is built around a few core principles:
 
 1. **Single source of truth** - One app for all your personal organization
 2. **Minimal friction** - Quick to open, quick to use
