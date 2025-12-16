@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
 import type { UserLocation, Location } from './utils/store';
 import Store from './utils/store';
 import { getDay, type SunObject } from './utils/sun';
@@ -20,6 +20,11 @@ interface DaylightContextType {
     themeColors: { text: string; background: string } | undefined;
     isV2: boolean;
     isV2Icons: boolean;
+    isDebugPanelOpen: boolean;
+    setIsDebugPanelOpen: (isOpen: boolean) => void;
+    jumpToPhase: (phase: ThemeNameV2) => void;
+    setManualVariantIndex: (index: number | null) => void;
+    isDemoMode: boolean;
 }
 
 const DaylightContext = createContext<DaylightContextType | undefined>(undefined);
@@ -38,6 +43,21 @@ export function DaylightProvider({ children }: DaylightProviderProps) {
     const [currentTime, setCurrentTime] = useState(getCurrentTime());
     const [isLoading, setIsLoading] = useState(true);
     const [isFastForward, setIsFastForward] = useState(false);
+
+
+    // --- V1 vs V2 Logic Helpers ---
+
+    const calculateSunData = useCallback((date: Date, location: Location) => {
+        if (USE_V2_THEME) {
+            // V2 Logic: Uses updated phases and calculations
+            return getDayV2(date, location);
+        } else {
+            // V1 Logic: Legacy calculations
+            return getDay(date, location);
+        }
+    }, []);
+
+
 
 
     const reverseGeocode = async (location: Location): Promise<UserLocation> => {
@@ -99,9 +119,7 @@ export function DaylightProvider({ children }: DaylightProviderProps) {
                 setUserLocation(location);
 
                 const now = getCurrentTime();
-                const sunData = USE_V2_THEME
-                    ? getDayV2(now, location.location)
-                    : getDay(now, location.location);
+                const sunData = calculateSunData(now, location.location);
                 setSunObject(sunData);
                 setIsLoading(false);
             } catch (error) {
@@ -115,16 +133,10 @@ export function DaylightProvider({ children }: DaylightProviderProps) {
         return () => {
             mounted = false;
         };
-    }, [getUserLocation]);
+    }, [getUserLocation, calculateSunData]);
 
     useEffect(() => {
         if (!userLocation) return;
-
-        const calculateSun = (date: Date) => {
-            return USE_V2_THEME
-                ? getDayV2(date, userLocation.location)
-                : getDay(date, userLocation.location);
-        };
 
         if (isFastForward) {
             let lastNow = performance.now();
@@ -136,11 +148,11 @@ export function DaylightProvider({ children }: DaylightProviderProps) {
                 const dt = now - lastNow;
                 lastNow = now;
 
-                simState.time += dt * 3000;
+                simState.time += dt * 18000;
 
                 const nextDate = new Date(simState.time);
                 setCurrentTime(nextDate);
-                setSunObject(calculateSun(nextDate));
+                setSunObject(calculateSunData(nextDate, userLocation.location));
 
                 frameId = requestAnimationFrame(loop);
             };
@@ -151,7 +163,7 @@ export function DaylightProvider({ children }: DaylightProviderProps) {
             const sync = () => {
                 const now = getCurrentTime();
                 setCurrentTime(now);
-                setSunObject(calculateSun(now));
+                setSunObject(calculateSunData(now, userLocation.location));
             };
 
             sync();
@@ -170,80 +182,185 @@ export function DaylightProvider({ children }: DaylightProviderProps) {
                 if (intervalId) clearInterval(intervalId);
             };
         }
-    }, [userLocation, isFastForward]);
+    }, [userLocation, isFastForward, calculateSunData]);
 
+    // Debug Panel State
+    const [isDebugPanelOpen, setIsDebugPanelOpen] = useState(false);
+    const [isDemoMode, setIsDemoMode] = useState(false);
+
+    // Theme Color Selection State - moved up for use in advanceDemo
+    const [themeColors, setThemeColors] = useState<{ text: string; background: string } | undefined>(undefined);
+    const [manualVariantIndex, setManualVariantIndex] = useState<number | null>(null);
+
+    // Helper to jump to a specific phase
+    const jumpToPhase = useCallback((phaseName: ThemeNameV2) => {
+        if (!userLocation) return;
+        const times = SunCalc.getTimes(currentTime, userLocation.location.latitude, userLocation.location.longitude);
+
+        let targetTime: number | null = null;
+
+        // Map phases to their start times (adding a small buffer)
+        // Note: Using the same logic as the previous 't' key debug test
+        switch (phaseName) {
+            case 'night1': targetTime = times.dusk.getTime() + 60000; break; // Night 1 is after dusk
+            case 'night2': targetTime = times.dusk.getTime() + 4 * 3600000; break; // Night 2 is deep night
+            case 'night3': targetTime = times.nightEnd.getTime() - 2 * 3600000; break; // Night 3 is pre-dawn
+            case 'dawn': targetTime = times.nightEnd.getTime() + 60000; break;
+            case 'sunrise': targetTime = times.sunrise.getTime() + 60000; break;
+            case 'morning': targetTime = times.sunriseEnd.getTime() + 60000; break;
+            case 'noon': targetTime = times.solarNoon.getTime() + 60000; break;
+            case 'afternoon': targetTime = times.solarNoon.getTime() + 2.5 * 3600000; break;
+            case 'goldenHour': targetTime = times.goldenHour.getTime() + 60000; break;
+            case 'sunset': targetTime = times.sunsetStart.getTime() + 60000; break;
+            case 'dusk': targetTime = times.sunset.getTime() + 60000; break;
+        }
+
+        if (targetTime) {
+            const nextDate = new Date(targetTime);
+            setCurrentTime(nextDate);
+            setSunObject(calculateSunData(nextDate, userLocation.location));
+        }
+    }, [userLocation, currentTime, calculateSunData]);
+
+    // Demo mode phase order: starts at sunrise, cycles through all phases
+    const DEMO_PHASE_ORDER: ThemeNameV2[] = [
+        'sunrise', 'morning', 'noon', 'afternoon', 'goldenHour', 'sunset',
+        'dusk', 'night1', 'night2', 'night3', 'dawn'
+    ];
+    const MAX_VARIANTS = 9; // Number of color paths to cycle through
+
+    // Demo mode cycling logic - auto-plays through color paths
+    const demoStepRef = useRef<{ phaseIndex: number; variantIndex: number } | null>(null);
+    const demoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const stopDemo = useCallback(() => {
+        if (demoIntervalRef.current) {
+            clearInterval(demoIntervalRef.current);
+            demoIntervalRef.current = null;
+        }
+        setIsDemoMode(false);
+        demoStepRef.current = null;
+    }, []);
+
+    const advanceDemoStep = useCallback(() => {
+        if (!userLocation) return;
+
+        // Initialize demo state if needed
+        if (!demoStepRef.current) {
+            demoStepRef.current = { phaseIndex: 0, variantIndex: 0 };
+        }
+
+        const { phaseIndex, variantIndex } = demoStepRef.current;
+        const currentPhase = DEMO_PHASE_ORDER[phaseIndex];
+
+        // Jump to phase and set variant
+        jumpToPhase(currentPhase);
+        setManualVariantIndex(variantIndex);
+
+        // Calculate next step: cycle through all phases for current variant, then next variant
+        const nextPhaseIndex = phaseIndex + 1;
+        if (nextPhaseIndex >= DEMO_PHASE_ORDER.length) {
+            // Finished all phases for this variant, move to next variant
+            const nextVariantIndex = variantIndex + 1;
+            if (nextVariantIndex >= MAX_VARIANTS) {
+                // Done with all variants, stop demo
+                stopDemo();
+                return;
+            }
+            demoStepRef.current = { phaseIndex: 0, variantIndex: nextVariantIndex };
+        } else {
+            // Continue to next phase in current variant path
+            demoStepRef.current = { phaseIndex: nextPhaseIndex, variantIndex };
+        }
+    }, [userLocation, jumpToPhase, setManualVariantIndex, stopDemo]);
+
+    const startDemo = useCallback(() => {
+        if (!userLocation) return;
+
+        // Reset and start fresh
+        demoStepRef.current = { phaseIndex: 0, variantIndex: 0 };
+        setIsDemoMode(true);
+
+        // Run first step immediately
+        advanceDemoStep();
+
+        // Auto-advance every 2000ms (2 seconds)
+        demoIntervalRef.current = setInterval(() => {
+            advanceDemoStep();
+        }, 1000);
+    }, [userLocation, advanceDemoStep]);
+
+    const toggleDemo = useCallback(() => {
+        if (isDemoMode) {
+            stopDemo();
+        } else {
+            startDemo();
+        }
+    }, [isDemoMode, stopDemo, startDemo]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (demoIntervalRef.current) {
+                clearInterval(demoIntervalRef.current);
+            }
+        };
+    }, []);
+
+    // Keyboard listener for debug panel toggle and demo mode
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.key === 'g' || e.key === 'G') && !MANUAL_TIME) {
-                setIsFastForward(prev => !prev);
-            }
-
-            if (e.key === 't' || e.key === 'T') {
-                if (isFastForward) return;
-                if (!userLocation) return;
-
-
-
-                const times = SunCalc.getTimes(currentTime, userLocation.location.latitude, userLocation.location.longitude);
-
-                const testPoints: { name: string, time: number }[] = [
-                    { name: 'night3 (pre-dawn)', time: times.nightEnd.getTime() - 2 * 3600000 },
-                    { name: 'dawn', time: times.nightEnd.getTime() + 60000 },
-                    { name: 'sunrise', time: times.sunrise.getTime() + 60000 },
-                    { name: 'morning', time: times.sunriseEnd.getTime() + 60000 },
-                    { name: 'noon', time: times.solarNoon.getTime() + 60000 },
-                    { name: 'afternoon', time: times.solarNoon.getTime() + 2.5 * 3600000 },
-                    { name: 'goldenHour', time: times.goldenHour.getTime() + 60000 },
-                    { name: 'sunset', time: times.sunsetStart.getTime() + 60000 },
-                    { name: 'dusk', time: times.sunset.getTime() + 60000 },
-                    { name: 'night1 (early)', time: times.dusk.getTime() + 60000 },
-                    { name: 'night2 (midnight)', time: times.dusk.getTime() + 4 * 3600000 },
-                ].sort((a, b) => a.time - b.time);
-
-                const currentMs = currentTime.getTime();
-                let nextPoint = testPoints.find(p => p.time > currentMs + 5000);
-
-                if (!nextPoint) {
-                    nextPoint = testPoints[0];
-                }
-
-                console.log(`[Debug] Jumping to ${nextPoint.name}`);
-                const nextDate = new Date(nextPoint.time);
-                setCurrentTime(nextDate);
-
-                const nextSun = USE_V2_THEME
-                    ? getDayV2(nextDate, userLocation.location)
-                    : getDay(nextDate, userLocation.location);
-                setSunObject(nextSun);
-            }
-
             if (e.key === 'Escape') {
-                setIsFastForward(false);
-                const now = getCurrentTime();
-                setCurrentTime(now);
-                if (userLocation) {
-                    setSunObject(USE_V2_THEME
-                        ? getDayV2(now, userLocation.location)
-                        : getDay(now, userLocation.location));
-                }
+                setIsDebugPanelOpen(prev => !prev);
+                stopDemo();
+            }
+            if (e.key === 't' || e.key === 'T') {
+                toggleDemo();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isFastForward, userLocation, currentTime]);
+    }, [toggleDemo, stopDemo]);
 
     const toggleFastForward = useCallback(() => {
         setIsFastForward(prev => !prev);
     }, []);
 
-    let themeColors;
-    if (sunObject) {
-        if (USE_V2_THEME) {
-            themeColors = THEME_COLORS_V2[sunObject.theme as ThemeNameV2];
-        } else {
-            themeColors = THEME_COLORS[sunObject.theme as ThemeName];
+    // Theme Color Selection State
+    const [baseVariantIndex, setBaseVariantIndex] = useState<number>(0);
+
+    // Update base variant when theme changes
+    useEffect(() => {
+        if (!sunObject || !USE_V2_THEME) return;
+
+        const variants = THEME_COLORS_V2[sunObject.theme as ThemeNameV2];
+        if (variants && variants.length > 0) {
+            // Pick a new random base index when the phase changes
+            setBaseVariantIndex(Math.floor(Math.random() * variants.length));
+            // Reset any manual override
+            setManualVariantIndex(null);
         }
-    }
+    }, [sunObject?.theme]);
+
+    // Compute final effective theme colors
+    useEffect(() => {
+        if (!sunObject) return;
+
+        if (USE_V2_THEME) {
+            const variants = THEME_COLORS_V2[sunObject.theme as ThemeNameV2];
+            if (variants && variants.length > 0) {
+                const index = manualVariantIndex !== null ? manualVariantIndex : baseVariantIndex;
+                // Ensure index is within bounds (safety fallback)
+                const safeIndex = index % variants.length;
+                setThemeColors(variants[safeIndex]);
+            } else {
+                setThemeColors(undefined);
+            }
+        } else {
+            // V1 Logic
+            setThemeColors(THEME_COLORS[sunObject.theme as ThemeName]);
+        }
+    }, [sunObject?.theme, manualVariantIndex, baseVariantIndex]);
 
     return (
         <DaylightContext.Provider value={{
@@ -255,7 +372,12 @@ export function DaylightProvider({ children }: DaylightProviderProps) {
             toggleFastForward,
             themeColors,
             isV2: USE_V2_THEME,
-            isV2Icons: USE_V2_ICONS
+            isV2Icons: USE_V2_ICONS,
+            isDebugPanelOpen,
+            setIsDebugPanelOpen,
+            jumpToPhase,
+            setManualVariantIndex,
+            isDemoMode
         }}>
             {children}
         </DaylightContext.Provider>

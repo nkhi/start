@@ -1,8 +1,6 @@
 # 🌳 Start
 
-Start aka Start Menu is my command center for habits, daily todos, notes, journals, lists, and goals. I use this as the "open" tab on my personal computer. It also makes it easy to access my calendar, my budgetting app, Linear, and Perplexity. It also allows me to record weekly vlogs using the Loom SDK recorder.
-
-This tool exists to help me bias my time towards action & expression rather than planinng and selecting "what to do". The ultimate goal of this app is to make **me** more organized, productive, and happy. I hope you find it useful too! Running `~/strongroots/go.sh` will handle setup from a cold boot and launch the app. 
+Start aka Start Menu is my command center for habits, daily todos, notes, journals, lists, and goals. I use this as the "open" tab on my personal computer. It also makes it easy to access my calendar, my budgetting app, Linear, and Perplexity. I also integrated Loom, and then replaced it with Screenity, to record weekly vlogs. 
 
 ## Features
 
@@ -60,11 +58,28 @@ Google Keep-style cards for ideas on what to do next.
 - **Visual card layout** with different sizes (small, medium, large, tall, wide)
 - **Start/Archive** - move cards when you begin or complete them
 
+### Bonus: Daylight (Screensaver)
+
+![phases and lines demo](/assets/demo.gif)
+
+<!-- ![day](assets/daylight-day.png)
+
+![alt text](image-1.png)
+
+![night](assets/daylight-night.png)
+
+![alt text](image.png) -->
+
+[Daylight by bakkenbaeck](https://daylight.today/app/) is a simple, beautiful sun position visualizer powered by `sunCalc`, a React library that returns the suns location based on your timezone. I decided to fork it to add more color schemes, more icons, more sayings, and fixed lines to mark the 9-5 and bedtime. I also zoomed in a bit, which is really satisfying. 
+
+In this app it's like a nice screensaver that you can leave on all day long.
+
 ## Getting Started
 
 ### Prerequisites
 - Node.js (v16+)
 - pnpm
+- CockroachDB or psql of some kind
 
 ### Installation
 

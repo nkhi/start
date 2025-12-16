@@ -46,3 +46,11 @@ src/
 pnpm run build    # Production build → dist/
 pnpm run preview  # Preview production build
 ```
+
+## Theme Management
+
+When you update `src/components/daylight/utils/themeConfigV2.ts`, run this command to regenerate the `THEMES.md` preview:
+
+```bash
+npm run generate:themes
+```

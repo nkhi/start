@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import styles from './Daylight.module.css';
 import { getSunPosition } from './utils/sun';
 import { generateSentence, timeFormatter } from './utils/format';
 import { useDaylight } from './DaylightContext';
+import { DaylightDebugPanel } from './DaylightDebugPanel';
+import { getLineConfig, isDayPhase, type LineMarker } from './utils/lineConfig';
 
 import { SunDim, Moon, MoonStars, Circle } from '@phosphor-icons/react';
 
@@ -20,7 +22,9 @@ export function Daylight({ apiBaseUrl: _apiBaseUrl, workMode = false }: Daylight
         isLoading,
         isFastForward,
         themeColors,
-        isV2Icons
+        isV2Icons,
+        isDebugPanelOpen,
+        isDemoMode
     } = useDaylight();
 
     const [messageIndex, setMessageIndex] = useState<number | undefined>(undefined);
@@ -73,123 +77,141 @@ export function Daylight({ apiBaseUrl: _apiBaseUrl, workMode = false }: Daylight
     }
 
     const sunPos = getSunPosition(cycleProgress);
+
+    // Determine transition speed
+    // If FastForward is on or Debug Panel is open (but not demo mode) -> 0s (instant)
+    // If Demo mode is on -> 0.5s (short smooth transition)
+    // Otherwise -> Default speeds
+    const getTransition = () => {
+        if (isFastForward || (isDebugPanelOpen && !isDemoMode)) return 'none';
+        if (isDemoMode) return 'background-color 0.5s ease, color 0.5s ease';
+        return 'background-color 3s ease, color 3s ease';
+    };
+
+    const getSunTransition = () => {
+        if (isFastForward || (isDebugPanelOpen && !isDemoMode)) return 'none';
+        if (isDemoMode) return 'bottom 0.5s ease, left 0.5s ease';
+        return 'bottom 0.5s ease, left 0.5s ease';
+    };
+
     const sunStyle: React.CSSProperties = {
         bottom: `${sunPos.y}%`,
         left: `${sunPos.x}%`,
         // Ensure smooth transition for position updates
-        transition: isFastForward ? 'none' : 'bottom 0.5s ease, left 0.5s ease',
+        transition: getSunTransition(),
     };
 
     const containerStyle = {
         '--theme-text-color': themeColors?.text,
         '--theme-bg-color': themeColors?.background,
         // Add a smooth transition for background color changes
-        transition: isFastForward ? 'none' : 'background-color 3s ease, color 3s ease',
+        transition: getTransition(),
     } as React.CSSProperties;
 
     // Determine if sun (or moon) is visible.
     // With disjoint cycles, progress is always 0..1 roughly.
     const isSunVisible = cycleProgress >= 0 && cycleProgress <= 1;
 
-    // --- Work Hour Markers (9am and 5pm) ---
-    // Calculate radial angle for work hour markers (like sundial spokes)
-    // Progress 0 = sunrise (0°), 0.5 = solar noon (90°), 1 = sunset (180°)
-    // Allow progress outside 0-1 for times before sunrise or after sunset (below horizon)
-    const getWorkHourMarker = (hour: number) => {
+    // --- Marker Lines Configuration ---
+    // Get the appropriate line config based on work mode
+    const lineConfig = getLineConfig(workMode);
+
+    // Determine if we're in a "day" cycle based on the current theme/phase
+    // This ensures lines update when jumping to phases via the debug panel
+    const isInDayCycle = sunObject?.theme ? isDayPhase(sunObject.theme) : isDay;
+
+    // Get the active lines based on the current cycle
+    const activeLines = isInDayCycle ? lineConfig.day : lineConfig.night;
+
+    // Calculate marker angle for a given hour
+    const getHourMarkerAngle = (marker: LineMarker): { angleDeg: number; isVisible: boolean } | null => {
         const targetTime = new Date(currentTime);
-        targetTime.setHours(hour, 0, 0, 0);
+        targetTime.setHours(marker.hour, 0, 0, 0);
         const targetMs = targetTime.getTime();
 
-        const progress = (targetMs - sunriseMs) / (sunsetMs - sunriseMs);
-        // Convert progress to degrees: 0 -> 0°, 0.5 -> 90°, 1 -> 180°
-        // Values < 0 or > 1 will produce angles beyond the visible arc (below horizon)
-        const angleDeg = progress * 180;
-
-        // Flag if marker is below horizon (before sunrise or after sunset)
-        const isBelow = progress < 0 || progress > 1;
-
-        return { progress, angleDeg, hour, isBelow };
-    };
-
-    const workStartMarker = workMode ? getWorkHourMarker(9) : null;
-    const workEndMarker = workMode ? getWorkHourMarker(17) : null;
-
-    // --- Night Markers (Sleep 11pm, Wake 7am) ---
-    // Only visible in "normal" mode (not work mode) and when it is night (moon visible)
-    const getNightHourMarker = (hour: number) => {
-        if (workMode || isDay) return null;
-
-        let nightStartMs: number;
-        let nightEndMs: number;
-        let targetTime: Date;
-
-        if (nowMs < sunriseMs) {
-            // Pre-dawn: Night started yesterday sunset, ends today sunrise
-            nightStartMs = sunObject.prevSunset.getTime();
-            nightEndMs = sunObject.sunrise.getTime();
-            targetTime = new Date(currentTime);
-
-            // If the marker hour is "late" (e.g. 23), it belongs to "yesterday" relative to this night span
-            // If the marker hour is "early" (e.g. 7), it belongs to "today" relative to this night span
-            // A simple heuristic is: if hour > 12, it's yesterday. If hour < 12, it's today.
-            if (hour > 12) {
-                targetTime.setDate(targetTime.getDate() - 1); // Yesterday
-            }
-            targetTime.setHours(hour, 0, 0, 0);
+        if (isInDayCycle) {
+            // Day cycle: Calculate based on sunrise to sunset
+            const progress = (targetMs - sunriseMs) / (sunsetMs - sunriseMs);
+            const angleDeg = progress * 180;
+            // Always show day markers - they'll render below horizon if outside 0-1 range
+            return { angleDeg, isVisible: true };
         } else {
-            // Post-sunset: Night starts today sunset, ends tomorrow sunrise
-            nightStartMs = sunObject.sunset.getTime();
-            nightEndMs = sunObject.nextSunrise.getTime();
-            targetTime = new Date(currentTime);
+            // Night cycle: Calculate based on sunset to sunrise
+            let nightStartMs: number;
+            let nightEndMs: number;
 
-            // If the marker hour is "early" (e.g. 7), it belongs to "tomorrow"
-            // If the marker hour is "late" (e.g. 23), it belongs to "today"
-            if (hour < 12) {
-                targetTime.setDate(targetTime.getDate() + 1); // Tomorrow
-            }
-            targetTime.setHours(hour, 0, 0, 0);
-        }
+            if (nowMs < sunriseMs) {
+                // Pre-dawn night
+                nightStartMs = sunObject.prevSunset.getTime();
+                nightEndMs = sunObject.sunrise.getTime();
 
-        const targetMs = targetTime.getTime();
-        const progress = (targetMs - nightStartMs) / (nightEndMs - nightStartMs);
-        const angleDeg = progress * 180;
-
-        // Hide if outside the visible night arc
-        // This handles cases like 7am being AFTER sunrise (progress > 1), so it won't show.
-        if (progress < 0 || progress > 1) return null;
-
-        return { angleDeg, hour };
-    };
-
-    const sleepMarker = getNightHourMarker(23); // 11pm
-    const wakeMarker = getNightHourMarker(7);   // 7am
-
-    // --- Icon Selection Logic (V2) ---
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let CurrentIcon: any = null; // null means use default circle (V1 behavior)
-
-    if (isV2Icons) {
-        // Default to Circle in V2 mode
-        CurrentIcon = Circle;
-
-        if (isDay) {
-            // Day: 0.25 - 0.75 use SunDim
-            if (cycleProgress > 0.25 && cycleProgress < 0.75) {
-                CurrentIcon = SunDim;
-            }
-        } else {
-            // Night
-            // cycleProgress 0 -> 1 (Sunset -> Sunrise)
-            // 0.0 - 0.25: Early Night (Moon)
-            // 0.25 - 0.75: Deep Night (MoonStars)
-            // 0.75 - 1.0: Pre-Dawn (Moon)
-            if (cycleProgress >= 0.25 && cycleProgress < 0.75) {
-                CurrentIcon = MoonStars;
+                // Adjust date for hours that belong to yesterday or today
+                if (marker.hour > 12) {
+                    targetTime.setDate(targetTime.getDate() - 1);
+                }
+                targetTime.setHours(marker.hour, 0, 0, 0);
             } else {
-                CurrentIcon = Moon;
+                // Post-sunset night
+                nightStartMs = sunObject.sunset.getTime();
+                nightEndMs = sunObject.nextSunrise.getTime();
+
+                // Adjust date for hours that belong to today or tomorrow
+                if (marker.hour < 12) {
+                    targetTime.setDate(targetTime.getDate() + 1);
+                }
+                targetTime.setHours(marker.hour, 0, 0, 0);
             }
+
+            const adjustedTargetMs = targetTime.getTime();
+            const progress = (adjustedTargetMs - nightStartMs) / (nightEndMs - nightStartMs);
+            const angleDeg = progress * 180;
+            // Visible if within the night arc (0-1 progress)
+            const isVisible = progress >= 0 && progress <= 1;
+            return { angleDeg, isVisible };
         }
-    }
+    };
+
+    // Calculate all active markers
+    const markerData = useMemo(() => {
+        return activeLines
+            .map(marker => {
+                const result = getHourMarkerAngle(marker);
+                if (!result || !result.isVisible) return null;
+                return { ...marker, angleDeg: result.angleDeg };
+            })
+            .filter((m): m is LineMarker & { angleDeg: number } => m !== null);
+    }, [activeLines, currentTime, sunriseMs, sunsetMs, isInDayCycle, sunObject]);
+
+    // --- Icon Selection Logic ---
+    const getIconComponent = () => {
+        if (isV2Icons) {
+            // V2 Logic: Dynamic icons based on cycle progress
+            // Default to Circle in V2 mode if no other condition met (though conditions below cover standard ranges)
+
+            if (isDay) {
+                // Day: 0.25 - 0.75 use SunDim
+                if (cycleProgress > 0.25 && cycleProgress < 0.75) {
+                    return SunDim;
+                }
+            } else {
+                // Night
+                // cycleProgress 0 -> 1 (Sunset -> Sunrise)
+                // 0.25 - 0.75: Deep Night (MoonStars)
+                // 0.0 - 0.25, 0.75 - 1.0: Early/Late Night (Moon)
+                if (cycleProgress >= 0.25 && cycleProgress < 0.75) {
+                    return MoonStars;
+                } else {
+                    return Moon;
+                }
+            }
+            return Circle; // Fallback for transition points 0-0.25 / 0.75-1.0 in Day
+        }
+
+        // V1 Logic: No icons, returns null (so we use default CSS circle/dot behavior logic or nothing)
+        return null;
+    };
+
+    const CurrentIcon = getIconComponent();
 
     // --- Horizon Labels & Times ---
     let horizonStartLabel = 'Sunrise';
@@ -220,7 +242,7 @@ export function Daylight({ apiBaseUrl: _apiBaseUrl, workMode = false }: Daylight
         <div className={`${styles.container} ${themeClass}`} style={containerStyle}>
             <div className={styles.contentWrapper}>
                 {/* Main Horizon Area */}
-                <div className={`${styles.horizon} ${styles.main}`}>
+                <div className={styles.horizon}>
                     <div className={styles.horizonSky} aria-hidden="true">
                         <div className={styles.horizonSkyWrap}>
                             <span
@@ -236,54 +258,18 @@ export function Daylight({ apiBaseUrl: _apiBaseUrl, workMode = false }: Daylight
                                             position: 'absolute',
                                             left: '50%',
                                             bottom: 0,
-                                            transform: 'translate(-50%, 0)' // Centered horizontally, bottom aligned like the circle?
-                                            // The circle is absolute, margin-left: -0.625rem (-10px), bottom: 0.
-                                            // The span itself is 2.5rem wide (40px). 
-                                            // The transform on PARENT moves it.
-                                            // We just need to center the icon in the 40px wide span.
-                                            // transform: translate(-50%, 0) with left: 50% does that.
+                                            transform: 'translate(-50%, 0)'
                                         }}
                                     />
                                 )}
                             </span>
-                            {/* Work Hour Markers (9am / 5pm radial lines from center) */}
-                            {workStartMarker && (
-                                <div
-                                    className={styles.workHourMarker}
-                                    style={{
-                                        transform: `rotate(${workStartMarker.angleDeg - 90}deg)`,
-                                    }}
-                                    title="9:00 AM"
-                                />
-                            )}
-                            {workEndMarker && (
-                                <div
-                                    className={styles.workHourMarker}
-                                    style={{
-                                        transform: `rotate(${workEndMarker.angleDeg - 90}deg)`,
-                                    }}
-                                    title="5:00 PM"
-                                />
-                            )}
-                            {sleepMarker && (
-                                <div
-                                    className={styles.workHourMarker}
-                                    style={{
-                                        transform: `rotate(${sleepMarker.angleDeg - 90}deg)`,
-                                    }}
-                                    title="11:00 PM"
-                                />
-                            )}
-                            {wakeMarker && (
-                                <div
-                                    className={styles.workHourMarker}
-                                    style={{
-                                        transform: `rotate(${wakeMarker.angleDeg - 90}deg)`,
-                                    }}
-                                    title="7:00 AM"
-                                />
-                            )}
                         </div>
+                    </div>
+                    {/* Hour Markers - positioned outside horizonSky to avoid overflow:hidden clipping */}
+                    <div className={styles.markerContainer}>
+                        {markerData.map((marker) => (
+                            <div key={marker.id} className={styles.workHourMarker} style={{ transform: `rotate(${marker.angleDeg - 90}deg)` }} title={marker.label} />
+                        ))}
                     </div>
                     <div className={styles.horizonLine}>
                         <time className={styles.jsSunrise} title={horizonStartLabel} dateTime={timeFormatter(horizonStartTime)}>
@@ -302,6 +288,7 @@ export function Daylight({ apiBaseUrl: _apiBaseUrl, workMode = false }: Daylight
                     dangerouslySetInnerHTML={{ __html: sentenceHtml }}
                 />
             </div>
+            <DaylightDebugPanel />
         </div>
     );
 }
