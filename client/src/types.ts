@@ -87,4 +87,5 @@ export interface List {
   createdAt: string;
   items: ListItem[];
   color?: string;
+  order?: string; // Fractional index for drag-to-reorder
 }

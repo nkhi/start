@@ -32,3 +32,14 @@ export async function deleteList(baseUrl: string, id: string): Promise<void> {
   });
   if (!response.ok) throw new Error('Failed to delete list');
 }
+
+// Reorder a list (update order only)
+export async function reorderList(baseUrl: string, id: string, order: string): Promise<List> {
+  const response = await fetch(`${baseUrl}/lists/${id}/reorder`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order })
+  });
+  if (!response.ok) throw new Error('Failed to reorder list');
+  return response.json();
+}

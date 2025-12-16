@@ -13,7 +13,8 @@ router.get('/lists', async (req, res) => {
     
     const lists = listsRes.rows.map(l => ({
       ...l,
-      createdAt: l.created_at
+      createdAt: l.created_at,
+      order: l.order
     }));
     
     const items = itemsRes.rows.map(i => ({
@@ -36,7 +37,7 @@ router.get('/lists', async (req, res) => {
 
 // Create a new list
 router.post('/lists', async (req, res) => {
-  const { id, title, color } = req.body;
+  const { id, title, color, order } = req.body;
   if (!id || !title) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -44,12 +45,12 @@ router.post('/lists', async (req, res) => {
   try {
     const createdAt = new Date().toISOString();
     await db.query(`
-      INSERT INTO lists (id, title, color, created_at)
-      VALUES ($1, $2, $3, $4)
-    `, [id, title, color || '#2D2D2D', createdAt]);
+      INSERT INTO lists (id, title, color, created_at, "order")
+      VALUES ($1, $2, $3, $4, $5)
+    `, [id, title, color || '#2D2D2D', createdAt, order || null]);
     
     res.json({
-      id, title, color, createdAt, items: []
+      id, title, color, createdAt, items: [], order
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -66,13 +67,14 @@ router.patch('/lists/:id', async (req, res) => {
     await client.query('BEGIN');
     
     // 1. Update List Metadata
-    if (updates.title || updates.color) {
+    if (updates.title || updates.color || updates.order !== undefined) {
       const fields = [];
       const values = [id];
       let idx = 2;
       
       if (updates.title) { fields.push(`title = $${idx++}`); values.push(updates.title); }
       if (updates.color) { fields.push(`color = $${idx++}`); values.push(updates.color); }
+      if (updates.order !== undefined) { fields.push(`"order" = $${idx++}`); values.push(updates.order); }
       
       if (fields.length > 0) {
         await client.query(`
@@ -135,6 +137,37 @@ router.delete('/lists/:id', async (req, res) => {
     res.status(500).json({ error: e.message });
   } finally {
     client.release();
+  }
+});
+
+// Reorder a list (update order only)
+router.patch('/lists/:id/reorder', async (req, res) => {
+  const { id } = req.params;
+  const { order } = req.body;
+
+  if (!order) {
+    return res.status(400).json({ error: 'order is required' });
+  }
+
+  try {
+    const result = await db.query(`
+      UPDATE lists SET "order" = $2 WHERE id = $1 RETURNING *
+    `, [id, order]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: `List with ID ${id} not found` });
+    }
+
+    const l = result.rows[0];
+    res.json({
+      id: l.id,
+      title: l.title,
+      color: l.color,
+      createdAt: l.created_at,
+      order: l.order
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 

@@ -179,3 +179,61 @@
   border-color: rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.6);
 }
+
+/* Drag and Drop Styles */
+.sortableListWrapper {
+  touch-action: none;
+  cursor: grab;
+}
+
+.sortableListWrapper:active {
+  cursor: grabbing;
+}
+
+.sortableListWrapper.dragging {
+  opacity: 0.5;
+}
+
+.listDragOverlay {
+  min-width: 320px;
+  width: 320px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  max-height: 300px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 16px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  transform: rotate(2deg) scale(1.02);
+  cursor: grabbing;
+  overflow: hidden;
+}
+
+.listDragOverlay .listHeader {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.listDragOverlay .listTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.listDragOverlay .listItems {
+  padding: 8px;
+  overflow: hidden;
+}
+
+.listDragOverlay .listItem {
+  padding: 6px 8px;
+  opacity: 0.8;
+}
+
+.moreItems {
+  padding: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-style: italic;
+}
