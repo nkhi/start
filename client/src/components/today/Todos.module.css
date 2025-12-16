@@ -654,3 +654,56 @@
        Let's stick to flex: 1 for now, as the user primarily wanted side-by-side on desktop. */
   }
 }
+
+/* Drag and Drop Styles */
+.draggableTask {
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.draggableTask:active {
+  cursor: grabbing;
+}
+
+.draggableTask.dragging {
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+}
+
+.taskDragOverlay {
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  transform: scale(1.02);
+  cursor: grabbing;
+}
+
+.taskDragOverlay .todoItem {
+  background: transparent;
+  border: none;
+}
+
+.droppableAccordion {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  border-radius: 8px;
+  min-height: 40px;
+}
+
+.droppableAccordion.dropTarget {
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px dashed rgba(52, 211, 153, 0.4);
+}
+
+/* Sortable placeholder */
+.sortablePlaceholder {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  height: 48px;
+  margin: 4px 0;
+}

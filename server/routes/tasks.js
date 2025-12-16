@@ -30,7 +30,8 @@ router.get('/tasks/week', async (req, res) => {
         date: dateStr,
         createdAt: t.created_at,
         category: t.category,
-        state: t.state
+        state: t.state,
+        order: t.order
       });
     });
     res.json(tasksByDate);
@@ -55,7 +56,8 @@ router.get('/tasks/work', async (req, res) => {
         date: dateStr,
         createdAt: t.created_at,
         category: t.category,
-        state: t.state
+        state: t.state,
+        order: t.order
       });
     });
     res.json(tasksByDate);
@@ -84,7 +86,8 @@ router.get('/tasks', async (req, res) => {
         date: dateStr,
         createdAt: t.created_at,
         category: t.category,
-        state: t.state
+        state: t.state,
+        order: t.order
       });
     });
     res.json(tasksByDate);
@@ -175,7 +178,8 @@ router.get('/tasks/grouped', async (req, res) => {
         date: dateStr,
         createdAt: t.created_at,
         category: t.category,
-        state: t.state || 'active'
+        state: t.state || 'active',
+        order: t.order
       };
       
       // Determine state (handle legacy tasks without state field)
@@ -198,15 +202,15 @@ router.get('/tasks/grouped', async (req, res) => {
 
 // Create a single task
 router.post('/tasks', async (req, res) => {
-  const { id, text, completed, date, createdAt, category, state } = req.body;
+  const { id, text, completed, date, createdAt, category, state, order } = req.body;
   if (!id || !date) {
     return res.status(400).json({ error: 'Missing required fields: id, date' });
   }
 
   try {
     await db.query(`
-      INSERT INTO tasks (id, text, completed, date, created_at, category, state)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO tasks (id, text, completed, date, created_at, category, state, "order")
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
       id,
       text || '',
@@ -214,7 +218,8 @@ router.post('/tasks', async (req, res) => {
       date,
       createdAt || new Date().toISOString(),
       category || 'life',
-      state || 'active'
+      state || 'active',
+      order || null
     ]);
 
     res.json({ ok: true });
@@ -253,6 +258,10 @@ router.patch('/tasks/:id', async (req, res) => {
     fields.push(`state = $${idx++}`);
     values.push(updates.state);
   }
+  if (updates.order !== undefined) {
+    fields.push(`"order" = $${idx++}`);
+    values.push(updates.order);
+  }
 
   if (fields.length === 0) {
     return res.json({ ok: true }); // Nothing to update
@@ -283,7 +292,8 @@ router.patch('/tasks/:id', async (req, res) => {
       date: dateStr,
       createdAt: t.created_at,
       category: t.category,
-      state: t.state
+      state: t.state,
+      order: t.order
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -417,6 +427,110 @@ router.post('/tasks/batch/fail', async (req, res) => {
       'UPDATE tasks SET state = $1, completed = $2 WHERE id = ANY($3)',
       ['failed', false, taskIds]
     );
+    
+    await client.query('COMMIT');
+    res.json({ ok: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Reorder a task (update order, optionally move to new date/category)
+router.patch('/tasks/:id/reorder', async (req, res) => {
+  const { id } = req.params;
+  const { order, date, category, state } = req.body;
+
+  if (!order) {
+    return res.status(400).json({ error: 'order is required' });
+  }
+
+  const fields = ['"order" = $2'];
+  const values = [id, order];
+  let idx = 3;
+
+  if (date !== undefined) {
+    fields.push(`date = $${idx++}`);
+    values.push(date);
+  }
+  if (category !== undefined) {
+    fields.push(`category = $${idx++}`);
+    values.push(category);
+  }
+  if (state !== undefined) {
+    fields.push(`state = $${idx++}`);
+    values.push(state);
+  }
+
+  try {
+    const result = await db.query(`
+      UPDATE tasks 
+      SET ${fields.join(', ')}
+      WHERE id = $1
+      RETURNING *
+    `, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: `Task with ID ${id} not found` });
+    }
+
+    const t = result.rows[0];
+    const dateStr = typeof t.date === 'string' ? t.date : t.date.toISOString().split('T')[0];
+
+    res.json({
+      id: t.id,
+      text: t.text,
+      completed: t.completed,
+      date: dateStr,
+      createdAt: t.created_at,
+      category: t.category,
+      state: t.state,
+      order: t.order
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Batch reorder tasks (for future multi-selection drag)
+router.post('/tasks/batch/reorder', async (req, res) => {
+  const { moves } = req.body;
+  
+  if (!moves || !Array.isArray(moves) || moves.length === 0) {
+    return res.status(400).json({ error: 'moves must be a non-empty array' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    for (const move of moves) {
+      const { id, order, date, category, state } = move;
+      if (!id || !order) continue;
+      
+      const fields = ['"order" = $2'];
+      const values = [id, order];
+      let idx = 3;
+
+      if (date !== undefined) {
+        fields.push(`date = $${idx++}`);
+        values.push(date);
+      }
+      if (category !== undefined) {
+        fields.push(`category = $${idx++}`);
+        values.push(category);
+      }
+      if (state !== undefined) {
+        fields.push(`state = $${idx++}`);
+        values.push(state);
+      }
+
+      await client.query(`
+        UPDATE tasks SET ${fields.join(', ')} WHERE id = $1
+      `, values);
+    }
     
     await client.query('COMMIT');
     res.json({ ok: true });

@@ -39,6 +39,7 @@ export interface Task {
   createdAt: string;
   category?: 'life' | 'work';
   state?: 'active' | 'completed' | 'failed';
+  order?: string; // Fractional index for drag-to-reorder
 }
 
 export interface Question {

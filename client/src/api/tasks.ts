@@ -97,3 +97,37 @@ export async function batchFailTasks(baseUrl: string, taskIds: string[]): Promis
   });
   if (!response.ok) throw new Error('Failed to batch fail tasks');
 }
+
+// Reorder a task with optional date/category/state change
+export async function reorderTask(
+  baseUrl: string,
+  id: string,
+  order: string,
+  options?: { date?: string; category?: 'life' | 'work'; state?: 'active' | 'completed' | 'failed' }
+): Promise<Task> {
+  const response = await fetch(`${baseUrl}/tasks/${id}/reorder`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order, ...options })
+  });
+  if (!response.ok) throw new Error('Failed to reorder task');
+  return response.json();
+}
+
+// Batch reorder multiple tasks (for future multi-selection drag)
+export interface ReorderMove {
+  id: string;
+  order: string;
+  date?: string;
+  category?: 'life' | 'work';
+  state?: 'active' | 'completed' | 'failed';
+}
+
+export async function batchReorderTasks(baseUrl: string, moves: ReorderMove[]): Promise<void> {
+  const response = await fetch(`${baseUrl}/tasks/batch/reorder`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ moves })
+  });
+  if (!response.ok) throw new Error('Failed to batch reorder tasks');
+}

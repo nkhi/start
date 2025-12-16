@@ -1,10 +1,14 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { getTasks, getWorkTasks, getTasksForWeek, createTask, updateTask, deleteTask as apiDeleteTask, batchPuntTasks, batchFailTasks } from '../../api/tasks';
+import { getTasks, getWorkTasks, getTasksForWeek, createTask, updateTask, deleteTask as apiDeleteTask, batchPuntTasks, batchFailTasks, reorderTask } from '../../api/tasks';
 import type { Task } from '../../types';
 import { generateId, DateUtility } from '../../utils';
+import { getOrderAfter, sortByOrder } from '../../utils/orderUtils';
 import { Trash, Check, X, ArrowBendDownRight, CaretDown, ArrowRight } from '@phosphor-icons/react';
 import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
 import { WeekView } from './WeekView';
+import { DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import styles from './Todos.module.css';
 
 // State overlay hover component
@@ -112,6 +116,43 @@ function StateOverlayWrapper({ taskId, dateStr, currentState, onSetState, onTogg
   );
 }
 
+// Sortable wrapper for task items
+interface SortableTaskItemProps {
+  task: Task;
+  children: React.ReactNode;
+}
+
+function SortableTaskItem({ task, children }: SortableTaskItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: 'grab',
+    touchAction: 'none',
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${styles.draggableTask} ${isDragging ? styles.dragging : ''}`}
+      {...attributes}
+      {...listeners}
+    >
+      {children}
+    </div>
+  );
+}
+
 interface TodosProps {
   apiBaseUrl: string;
   workMode?: boolean;
@@ -124,7 +165,143 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
   const [weekCategory, setWeekCategory] = useState<'life' | 'work'>('life');
   const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({});
 
+  // Drag and drop state
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [activeDragInfo, setActiveDragInfo] = useState<{ dateStr: string; category: 'life' | 'work'; state: 'active' | 'completed' | 'failed' } | null>(null);
+
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // DnD sensors with activation constraint (8px distance to start drag)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  // Parse droppable ID like "2024-12-16_life_active" into components
+  const parseDroppableId = (id: string) => {
+    const parts = id.split('_');
+    if (parts.length < 3) return null;
+    return {
+      date: parts[0],
+      category: parts[1] as 'life' | 'work',
+      state: parts[2] as 'active' | 'completed' | 'failed',
+    };
+  };
+
+  // Get tasks filtered by date, category, and state
+  const getFilteredTasks = (dateStr: string, category: 'life' | 'work', state: 'active' | 'completed' | 'failed') => {
+    const dayTasks = tasks[dateStr] || [];
+    return dayTasks.filter(t => {
+      const taskCategory = t.category || 'life';
+      const taskState = t.state || (t.completed ? 'completed' : 'active');
+      return taskCategory === category && taskState === state;
+    });
+  };
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const { active } = event;
+    const taskId = String(active.id);
+
+    // Find the task across all dates
+    for (const [dateStr, dayTasks] of Object.entries(tasks)) {
+      const task = dayTasks.find(t => t.id === taskId);
+      if (task) {
+        setActiveTask(task);
+        setActiveDragInfo({
+          dateStr,
+          category: task.category || 'life',
+          state: task.state || 'active',
+        });
+        break;
+      }
+    }
+  }, [tasks]);
+
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    setActiveTask(null);
+    setActiveDragInfo(null);
+
+    if (!over || !activeDragInfo) return;
+
+    const taskId = String(active.id);
+    const overId = String(over.id);
+
+    // Check if dropped on a sortable container (accordion)
+    const target = parseDroppableId(overId);
+    if (!target) return; // Dropped somewhere invalid
+
+    // Get target tasks and calculate new order
+    const targetTasks = getFilteredTasks(target.date, target.category, target.state);
+    const sortedTasks = sortByOrder(targetTasks.filter(t => t.id !== taskId));
+    const orders = sortedTasks.map(t => t.order).filter((o): o is string => o != null);
+    const newOrder = orders.length > 0 ? getOrderAfter(orders[orders.length - 1]) : getOrderAfter(null);
+
+    // Determine what changed
+    const dateChanged = target.date !== activeDragInfo.dateStr;
+    const categoryChanged = target.category !== activeDragInfo.category;
+    const stateChanged = target.state !== activeDragInfo.state;
+
+    if (!dateChanged && !categoryChanged && !stateChanged) {
+      // Same location, no change needed
+      return;
+    }
+
+    // Optimistic update
+    const sourceDate = activeDragInfo.dateStr;
+    const targetDate = target.date;
+
+    setTasks(prev => {
+      const updated = { ...prev };
+
+      // Remove from source
+      const sourceTasks = [...(updated[sourceDate] || [])];
+      const taskIndex = sourceTasks.findIndex(t => t.id === taskId);
+      if (taskIndex === -1) return prev;
+
+      const [movedTask] = sourceTasks.splice(taskIndex, 1);
+      updated[sourceDate] = sourceTasks;
+
+      // Update task properties
+      const updatedTask: Task = {
+        ...movedTask,
+        order: newOrder,
+        date: target.date,
+        category: target.category,
+        state: target.state,
+        completed: target.state === 'completed',
+      };
+
+      // Add to target
+      const targetTasks = [...(updated[targetDate] || [])];
+      targetTasks.push(updatedTask);
+      updated[targetDate] = targetTasks;
+
+      return updated;
+    });
+
+    // API call
+    try {
+      await reorderTask(apiBaseUrl, taskId, newOrder, {
+        date: dateChanged ? target.date : undefined,
+        category: categoryChanged ? target.category : undefined,
+        state: stateChanged ? target.state : undefined,
+      });
+    } catch (error) {
+      console.error('Failed to reorder task:', error);
+      // Reload to revert
+      loadTasks();
+    }
+  }, [activeDragInfo, apiBaseUrl, tasks]);
+
+  const handleDragCancel = useCallback(() => {
+    setActiveTask(null);
+    setActiveDragInfo(null);
+  }, []);
 
   useEffect(() => {
     loadTasks();
@@ -429,44 +606,43 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
   const renderTaskItem = (task: Task, dateStr: string) => {
     const taskState = task.state || (task.completed ? 'completed' : 'active');
     return (
-      <div
-        key={task.id}
-        className={`${styles.todoItem} ${styles[taskState] || ''}`}
-      >
-        <div className={styles.todoItemContent}>
-          <StateOverlayWrapper
-            taskId={task.id}
-            dateStr={dateStr}
-            currentState={taskState}
-            onSetState={setTaskState}
-            onToggle={() => toggleTask(dateStr, task.id)}
-          >
-            <button
-              type="button"
-              className={`${styles.todoCheckBtn} ${styles[taskState] || ''}`}
+      <SortableTaskItem key={task.id} task={task}>
+        <div className={`${styles.todoItem} ${styles[taskState] || ''}`}>
+          <div className={styles.todoItemContent}>
+            <StateOverlayWrapper
+              taskId={task.id}
+              dateStr={dateStr}
+              currentState={taskState}
+              onSetState={setTaskState}
+              onToggle={() => toggleTask(dateStr, task.id)}
             >
-              {taskState === 'completed' && <Check size={12} weight="bold" />}
-              {taskState === 'failed' && <X size={12} weight="bold" />}
+              <button
+                type="button"
+                className={`${styles.todoCheckBtn} ${styles[taskState] || ''}`}
+              >
+                {taskState === 'completed' && <Check size={12} weight="bold" />}
+                {taskState === 'failed' && <X size={12} weight="bold" />}
+              </button>
+            </StateOverlayWrapper>
+            <span className={styles.todoText}>{task.text}</span>
+          </div>
+          <div className={styles.todoActions}>
+            <button
+              className={styles.todoCloneBtn}
+              onClick={() => puntTask(dateStr, task.id)}
+              title="Fail & Punt to Next Day"
+            >
+              <ArrowBendDownRight size={14} />
             </button>
-          </StateOverlayWrapper>
-          <span className={styles.todoText}>{task.text}</span>
+            <button
+              className={styles.todoDeleteBtn}
+              onClick={() => deleteTask(dateStr, task.id)}
+            >
+              <Trash size={14} />
+            </button>
+          </div>
         </div>
-        <div className={styles.todoActions}>
-          <button
-            className={styles.todoCloneBtn}
-            onClick={() => puntTask(dateStr, task.id)}
-            title="Fail & Punt to Next Day"
-          >
-            <ArrowBendDownRight size={14} />
-          </button>
-          <button
-            className={styles.todoDeleteBtn}
-            onClick={() => deleteTask(dateStr, task.id)}
-          >
-            <Trash size={14} />
-          </button>
-        </div>
-      </div>
+      </SortableTaskItem>
     );
   };
 
@@ -538,9 +714,11 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
               )}
             </div>
             {isOpenExpanded && (
-              <div className={styles.accordionContent}>
-                {activeTasks.map(task => renderTaskItem(task, dateStr))}
-              </div>
+              <SortableContext items={sortByOrder(activeTasks).map(t => t.id)} strategy={verticalListSortingStrategy}>
+                <div className={styles.accordionContent} data-droppable={`${dateStr}_${category}_active`}>
+                  {sortByOrder(activeTasks).map(task => renderTaskItem(task, dateStr))}
+                </div>
+              </SortableContext>
             )}
           </div>
         )}
@@ -560,9 +738,11 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
               <span className={styles.accordionCount}>{completedTasks.length}</span>
             </button>
             {expandedAccordions[successKey] && (
-              <div className={styles.accordionContent}>
-                {completedTasks.map(task => renderTaskItem(task, dateStr))}
-              </div>
+              <SortableContext items={sortByOrder(completedTasks).map(t => t.id)} strategy={verticalListSortingStrategy}>
+                <div className={styles.accordionContent} data-droppable={`${dateStr}_${category}_completed`}>
+                  {sortByOrder(completedTasks).map(task => renderTaskItem(task, dateStr))}
+                </div>
+              </SortableContext>
             )}
           </div>
         )}
@@ -582,9 +762,11 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
               <span className={styles.accordionCount}>{failedTasks.length}</span>
             </button>
             {expandedAccordions[failedKey] && (
-              <div className={styles.accordionContent}>
-                {failedTasks.map(task => renderTaskItem(task, dateStr))}
-              </div>
+              <SortableContext items={sortByOrder(failedTasks).map(t => t.id)} strategy={verticalListSortingStrategy}>
+                <div className={styles.accordionContent} data-droppable={`${dateStr}_${category}_failed`}>
+                  {sortByOrder(failedTasks).map(task => renderTaskItem(task, dateStr))}
+                </div>
+              </SortableContext>
             )}
           </div>
         )}
@@ -778,12 +960,31 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
   }
 
   return (
-    <DayWeek
-      renderColumn={renderTodoColumn}
-      className={styles.todosScrollContainer}
-      columnClassName={styles.todoColumn}
-      onMoreClick={() => setViewMode('week')}
-      moreOverride="Week View"
-    />
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <DayWeek
+        renderColumn={renderTodoColumn}
+        className={styles.todosScrollContainer}
+        columnClassName={styles.todoColumn}
+        onMoreClick={() => setViewMode('week')}
+        moreOverride="Week View"
+      />
+      <DragOverlay>
+        {activeTask ? (
+          <div className={styles.taskDragOverlay}>
+            <div className={`${styles.todoItem} ${styles[activeTask.state || 'active']}`}>
+              <div className={styles.todoItemContent}>
+                <span className={styles.todoText}>{activeTask.text}</span>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
