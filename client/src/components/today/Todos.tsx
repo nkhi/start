@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { getTasks, getWorkTasks, getTasksForWeek, createTask, updateTask, deleteTask as apiDeleteTask, batchPuntTasks, batchFailTasks, reorderTask } from '../../api/tasks';
 import type { Task } from '../../types';
 import { generateId, DateUtility } from '../../utils';
-import { getOrderAfter, sortByOrder } from '../../utils/orderUtils';
-import { Trash, Check, X, ArrowBendDownRight, CaretDown, ArrowRight } from '@phosphor-icons/react';
+import { getOrderAfter, getOrderBefore, sortByOrder } from '../../utils/orderUtils';
+import { Trash, Check, X, ArrowBendDownRight, CaretDown, ArrowRight, ArrowUp } from '@phosphor-icons/react';
 import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
 import { WeekView } from './WeekView';
 import { DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
@@ -599,6 +599,48 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     }
   }
 
+  async function moveTaskToTop(dateStr: string, taskId: string) {
+    const currentDayTasks = tasks[dateStr] || [];
+    const task = currentDayTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Determine context (category + state)
+    const category = task.category || 'life';
+    const state = task.state || (task.completed ? 'completed' : 'active');
+
+    // Get siblings in the same list
+    const siblings = currentDayTasks.filter(t => {
+      const tCat = t.category || 'life';
+      const tState = t.state || (t.completed ? 'completed' : 'active');
+      return tCat === category && tState === state && t.id !== taskId;
+    });
+
+    // If no siblings, nothing to do
+    if (siblings.length === 0) return;
+
+    // Find current top order
+    const sortedSiblings = sortByOrder(siblings);
+    const topOrder = sortedSiblings[0].order || null;
+
+    // Calculate new order
+    const newOrder = getOrderBefore(topOrder);
+
+    // Optimistic update
+    const updatedTasks = { ...tasks };
+    updatedTasks[dateStr] = currentDayTasks.map(t =>
+      t.id === taskId ? { ...t, order: newOrder } : t
+    );
+    setTasks(updatedTasks);
+
+    // API Call
+    try {
+      await reorderTask(apiBaseUrl, taskId, newOrder);
+    } catch (error) {
+      console.error('Failed to move task to top:', error);
+      setTasks(tasks); // Revert
+    }
+  }
+
   const toggleAccordion = (key: string) => {
     setExpandedAccordions(prev => ({ ...prev, [key]: !prev[key] }));
   };
@@ -627,6 +669,13 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
             <span className={styles.todoText}>{task.text}</span>
           </div>
           <div className={styles.todoActions}>
+            <button
+              className={styles.todoMoveTopBtn}
+              onClick={() => moveTaskToTop(dateStr, task.id)}
+              title="Move to Top"
+            >
+              <ArrowUp size={14} />
+            </button>
             <button
               className={styles.todoCloneBtn}
               onClick={() => puntTask(dateStr, task.id)}

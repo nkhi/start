@@ -372,6 +372,25 @@
   transform: scale(1.1);
 }
 
+.todoMoveTopBtn {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.2s ease;
+}
+
+.todoItem:hover .todoMoveTopBtn {
+  opacity: 1;
+}
+
+.todoMoveTopBtn:hover {
+  color: #EAB308; /* Yellow/Gold for "Top" / Star / Priority */
+  transform: scale(1.1);
+}
+
 .todoColumnInput {
   margin-top: auto;
 }
