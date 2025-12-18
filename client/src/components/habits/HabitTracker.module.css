@@ -73,6 +73,7 @@
   left: 0;
   background: #110C09 !important;
   border-right: 1px solid #363029;
+  border-bottom: none;
   z-index: 5;
 }
 
@@ -815,6 +816,11 @@
 .weekSummaryCell {
   text-align: center;
   position: relative; /* Needed for absolute positioning of SVG */
+}
+
+/* Remove border when week is collapsed to not interfere with sparkline */
+.habitTable tbody td.weekSummaryCell {
+  border: none;
 }
 
 .scoreContent {

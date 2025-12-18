@@ -7,6 +7,16 @@ import { THEME_COLORS, type ThemeName } from './utils/themeConfig';
 import { THEME_COLORS_V2, type ThemeNameV2 } from './utils/themeConfigV2';
 import SunCalc from 'suncalc';
 
+// Fallback location for when geolocation is unavailable (e.g., external devices on LAN)
+// Set VITE_FALLBACK_LAT and VITE_FALLBACK_LON in .env.local to configure
+const FALLBACK_LOCATION: Location | null =
+    import.meta.env.VITE_FALLBACK_LAT && import.meta.env.VITE_FALLBACK_LON
+        ? {
+            latitude: parseFloat(import.meta.env.VITE_FALLBACK_LAT),
+            longitude: parseFloat(import.meta.env.VITE_FALLBACK_LON)
+        }
+        : null;
+
 const USE_V2_THEME = true;
 const USE_V2_ICONS = true;
 
@@ -101,7 +111,18 @@ export function DaylightProvider({ children }: DaylightProviderProps) {
                     resolve(fullLocation);
                 },
                 (error) => {
-                    reject(error);
+                    if (FALLBACK_LOCATION) {
+                        console.warn('Geolocation unavailable, using fallback location:', error.message);
+                        // Use fallback location when geolocation fails (e.g., non-HTTPS context)
+                        resolve({
+                            location: FALLBACK_LOCATION,
+                            city: null,
+                            country: null
+                        });
+                    } else {
+                        console.error('Geolocation failed and no fallback configured. Set VITE_FALLBACK_LAT and VITE_FALLBACK_LON in .env.local');
+                        reject(error);
+                    }
                 },
                 { enableHighAccuracy: false }
             );

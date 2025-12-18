@@ -129,12 +129,12 @@ export const THEME_COLORS_V2: Record<ThemeNameV2, ThemeColors[]> = {
         { id: 'goldenHour-10', background: '#f4a261', text: '#264653' } // Wes Anderson
     ],
     sunset: [
-        { id: 'sunset-1', background: '#4c1d95', text: '#22d3ee' }, // Aura
+        // { id: 'sunset-1', background: '#4c1d95', text: '#22d3ee' }, // Aura
         { id: 'sunset-2', background: '#3a0ca3', text: '#f72585' }, // Synth
         { id: 'sunset-3', background: '#fcd34d', text: '#be185d' }, // California
         { id: 'sunset-4', background: '#ffe4e6', text: '#e11d48' }, // Flamingo
         { id: 'sunset-5', background: '#fff1f2', text: '#be185d' }, // Blush
-        { id: 'sunset-6', background: '#9d4edd', text: '#00ffff' }, // Synthwave
+        // { id: 'sunset-6', background: '#9d4edd', text: '#00ffff' }, // Synthwave
         { id: 'sunset-7', background: '#1a0a24', text: '#7209b7' }, // Blade Runner
         { id: 'sunset-8', background: '#fdcb6e', text: '#6c5ce7' }, // Ghibli
         { id: 'sunset-9', background: '#7b2cbf', text: '#580550ff' }, // Outrun

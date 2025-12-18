@@ -535,7 +535,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                             {DateUtility.getDayName(week.start)} {DateUtility.getDayNumber(week.start)} - {DateUtility.getDayName(week.end)} {DateUtility.getDayNumber(week.end)}
                           </span>
                         </div>
-                        {hasVlog && <VideoCameraIcon size={16} weight="duotone" color="#d5c4fbff" />}
+                        {/* {hasVlog && <VideoCameraIcon size={16} weight="duotone" color="#d5c4fbff" />} */}
                       </div>
                     </th>
                   );
@@ -544,13 +544,14 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                 return week.days.map((date, idx) => {
                   const isSaturday = date.getDay() === 6;
                   const stats = getDayStats(date);
-                  const statusClass = DAILY_STATUS_CONFIG.find(
-                    c => stats.percentage >= c.min && stats.percentage <= c.max
-                  )?.className || '';
+                  // const statusClass = DAILY_STATUS_CONFIG.find(
+                  //   c => stats.percentage >= c.min && stats.percentage <= c.max
+                  // )?.className || '';
 
                   return (
                     <React.Fragment key={`${week.key}-${idx}`}>
-                      <th colSpan={1} className={statusClass}>
+                      {/* <th colSpan={1} className={statusClass}> */}
+                      <th colSpan={1}>
                         <div className={styles.dayHeader} style={{ position: 'relative' }}>
                           <span className={`${styles.dayName} ${DateUtility.isToday(date) ? styles.today : ''}`}>
                             {DateUtility.getDayName(date)}
@@ -706,7 +707,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                           <path key="conn-fill" d={fillD} fill={`url(#${gradId})`} mask={`url(#${maskId})`} style={{ pointerEvents: 'none' }} />
                         );
                         strokeElements.push(
-                          <path key="conn-stroke" d={pathD} className={styles.sparklinePath} style={{ stroke: `url(#${gradId})`, strokeWidth: 1.5625, opacity: 1 }} />
+                          <path key="conn-stroke" d={pathD} className={styles.sparklinePath} style={{ stroke: `url(#${gradId})`, strokeWidth: 1.5625, opacity: 0.55 }} />
                         );
                       } else {
                         const pathD = `M 0 ${yCurr} L 50 ${yCurr}`;
@@ -716,7 +717,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                           <path key="start-fill" d={fillD} fill={currentColor} mask={`url(#${maskId})`} style={{ pointerEvents: 'none' }} />
                         );
                         strokeElements.push(
-                          <path key="start-stroke" d={pathD} className={styles.sparklinePath} style={{ stroke: currentColor, strokeWidth: 1.5625, opacity: 1 }} />
+                          <path key="start-stroke" d={pathD} className={styles.sparklinePath} style={{ stroke: currentColor, strokeWidth: 1.5625, opacity: 0.55 }} />
                         );
                       }
 
@@ -728,7 +729,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                           <path key="end-fill" d={fillD} fill={currentColor} mask={`url(#${maskId})`} style={{ pointerEvents: 'none' }} />
                         );
                         strokeElements.push(
-                          <path key="end-stroke" d={pathD} className={styles.sparklinePath} style={{ stroke: currentColor, strokeWidth: 1.5625, opacity: 1 }} />
+                          <path key="end-stroke" d={pathD} className={styles.sparklinePath} style={{ stroke: currentColor, strokeWidth: 1.5625, opacity: 0.55 }} />
                         );
                       }
 
