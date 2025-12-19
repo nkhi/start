@@ -16,28 +16,28 @@
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  max-height: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  max-height: calc(100vh - 150px);
+  border: 1px solid rgba(255, 255, 255, 0.02);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .listColumn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
 .listHeader {
-  padding: 16px;
+  padding: 18px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  /* border-bottom: 1px solid rgba(255, 255, 255, 0.05); */
   cursor: grab;
 }
 
 .listTitle {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   color: #FFFFFF;
   background: transparent;
@@ -63,16 +63,17 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-height: 0;
+  max-height: 100%;
 }
 
 .listItem {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 8px;
   border-radius: 6px;
   transition: background 0.2s ease;
-
 }
 
 .listItem:hover {
@@ -82,6 +83,8 @@
 .itemCheckbox {
   width: 18px;
   height: 18px;
+  min-width: 18px;
+  min-height: 18px;
   border-radius: 4px;
   border: 2px solid #555;
   background: transparent;
@@ -91,6 +94,7 @@
   justify-content: center;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .itemCheckbox.checked {
@@ -110,6 +114,13 @@
   font-size: 14px;
   outline: none;
   font-family: inherit;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  min-width: 0;
 }
 
 .itemText.completed {
@@ -157,27 +168,41 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* Floating New List Button */
 .addListBtn {
-  min-width: 320px;
-  height: 100px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 2px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 16px;
-  font-weight: 500;
   gap: 8px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  z-index: 100;
+  animation: slideUp 0.3s ease;
+  opacity: 0.7;
 }
 
 .addListBtn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  opacity: 1;
+  transform: translateY(-2px);
+  background: black;
   border-color: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 0.7; transform: translateY(0); }
 }
 
 /* Drag and Drop Styles */
@@ -236,4 +261,69 @@
   color: rgba(255, 255, 255, 0.4);
   font-size: 12px;
   font-style: italic;
+}
+
+/* List Item Drag and Drop Styles */
+.draggableListItem {
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.draggableListItem:active {
+  cursor: grabbing;
+}
+
+.draggingItem {
+  opacity: 0.5;
+  z-index: 1000;
+}
+
+.sortingItem {
+  transition: transform 0.15s ease;
+}
+
+.listItemsDropTarget {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+}
+
+.listItemDragOverlay {
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  box-shadow: 
+    0 8px 16px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  transform: rotate(1deg) scale(1.02);
+  cursor: grabbing;
+  padding: 8px;
+}
+
+/* List Drop Zone - vertical line indicator */
+.listDropZoneWrapper {
+  width: 40px;
+  min-height: 200px;
+  height: calc(100vh - 200px);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0 -18px;
+  z-index: 10;
+}
+
+.listDropZone {
+  width: 4px;
+  height: 100%;
+  border-radius: 4px;
+  background: rgba(36, 28, 22, 0.3);
+  transition: all 0.15s ease;
+}
+
+.listDropZoneActive {
+  background: #c59169;
+  box-shadow: 
+    0 0 12px rgba(36, 28, 22, 0.8),
+    0 0 24px rgba(36, 28, 22, 0.5);
+  width: 3px;
 }

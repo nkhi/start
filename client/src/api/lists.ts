@@ -44,3 +44,23 @@ export async function reorderList(baseUrl: string, id: string, order: string): P
   if (!response.ok) throw new Error('Failed to reorder list');
   return response.json();
 }
+
+// Reorder items within a list (position update only - optimized)
+export async function reorderListItems(baseUrl: string, listId: string, itemOrder: string[]): Promise<void> {
+  const response = await fetchWithErrorReporting(`${baseUrl}/lists/${listId}/reorder-items`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ itemOrder })
+  });
+  if (!response.ok) throw new Error('Failed to reorder list items');
+}
+
+// Reorder lists (order update only - optimized, uses numeric ordering)
+export async function reorderLists(baseUrl: string, listOrder: string[]): Promise<void> {
+  const response = await fetchWithErrorReporting(`${baseUrl}/lists/reorder`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ listOrder })
+  });
+  if (!response.ok) throw new Error('Failed to reorder lists');
+}

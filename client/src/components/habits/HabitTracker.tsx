@@ -17,11 +17,11 @@ const CONFIG = {
   stateClasses: [styles.state0, styles.state1, styles.state2, styles.state3, styles.state4]
 };
 
-const DAILY_STATUS_CONFIG = [
-  { min: 0, max: 33, className: styles.dailyStatusRed },
-  { min: 34, max: 66, className: styles.dailyStatusOrange },
-  { min: 67, max: 100, className: styles.dailyStatusGreen }
-];
+// const DAILY_STATUS_CONFIG = [
+//   { min: 0, max: 33, className: styles.dailyStatusRed },
+//   { min: 34, max: 66, className: styles.dailyStatusOrange },
+//   { min: 67, max: 100, className: styles.dailyStatusGreen }
+// ];
 
 interface HabitTrackerProps {
   apiBaseUrl: string;

@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Plus, Trash, Check } from '@phosphor-icons/react';
 import { CARD_COLORS } from '../../constants/colors';
-import { getLists, createList, updateList as apiUpdateList, deleteList, reorderList } from '../../api/lists';
-import { getOrderAfter, sortByOrder, getOrderBetween } from '../../utils/orderUtils';
+import { getLists, createList, updateList as apiUpdateList, deleteList, reorderLists, reorderListItems } from '../../api/lists';
 import type { List, ListItem } from '../../types';
-import { DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, useDroppable, pointerWithin, type DragStartEvent, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import styles from './Lists.module.css';
 
@@ -13,13 +12,19 @@ interface ListsProps {
     apiBaseUrl: string;
 }
 
-// Sortable wrapper for list columns
-interface SortableListColumnProps {
-    list: List;
-    children: React.ReactNode;
+/**
+ * Convert a hex color to rgba with specified opacity
+ */
+function hexToRgba(hex: string, opacity: number): string {
+    const cleanHex = hex.replace('#', '');
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
-function SortableListColumn({ list, children }: SortableListColumnProps) {
+// Draggable list column (non-sortable, just draggable)
+function DraggableListColumn({ list, children }: { list: List; children: React.ReactNode }) {
     const {
         attributes,
         listeners,
@@ -27,12 +32,15 @@ function SortableListColumn({ list, children }: SortableListColumnProps) {
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: list.id });
+    } = useSortable({
+        id: `list-${list.id}`,
+        data: { type: 'list', list }
+    });
 
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
+        opacity: isDragging ? 0.3 : 1,
         zIndex: isDragging ? 1000 : 1,
     };
 
@@ -49,12 +57,72 @@ function SortableListColumn({ list, children }: SortableListColumnProps) {
     );
 }
 
+// Drop zone between lists - shows a line when dragging over
+function ListDropZone({ position, isActive }: { position: number; isActive: boolean }) {
+    const { setNodeRef, isOver } = useDroppable({
+        id: `drop-zone-${position}`,
+        data: { type: 'listDropZone', position }
+    });
+
+    const showActive = isOver || isActive;
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={styles.listDropZoneWrapper}
+        >
+            <div className={`${styles.listDropZone} ${showActive ? styles.listDropZoneActive : ''}`} />
+        </div>
+    );
+}
+
+// Sortable wrapper for list items
+function SortableListItem({ item, listId, children }: { item: ListItem; listId: string; children: React.ReactNode }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
+        id: `item-${item.id}`,
+        data: { type: 'listItem', item, listId }
+    });
+
+    const style: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        cursor: isDragging ? 'grabbing' : 'grab',
+        touchAction: 'none',
+        zIndex: isDragging ? 1000 : undefined,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={`${styles.draggableListItem} ${isDragging ? styles.draggingItem : ''}`}
+            {...attributes}
+            {...listeners}
+        >
+            {children}
+        </div>
+    );
+}
+
 export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
     const [lists, setLists] = useState<List[]>([]);
     const [newItemText, setNewItemText] = useState<Record<string, string>>({});
-    const [activeList, setActiveList] = useState<List | null>(null);
 
-    // DnD sensors
+    // Track what's being dragged
+    const [activeList, setActiveList] = useState<List | null>(null);
+    const [activeItem, setActiveItem] = useState<{ item: ListItem; listId: string } | null>(null);
+
+    // Track which drop zone is being hovered
+    const [activeDropZone, setActiveDropZone] = useState<number | null>(null);
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -70,15 +138,17 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
     const fetchLists = async () => {
         try {
             const data = await getLists(apiBaseUrl);
-            setLists(sortByOrder(data));
+            setLists(data.sort((a, b) => parseInt(a.order || '0', 10) - parseInt(b.order || '0', 10)));
         } catch (error) {
             console.error('Error fetching lists:', error);
         }
     };
 
-    const updateList = async (id: string, updates: Partial<List>) => {
-        // Optimistic update
-        setLists(prev => sortByOrder(prev.map(l => l.id === id ? { ...l, ...updates } : l)));
+    const updateList = useCallback(async (id: string, updates: Partial<List>) => {
+        setLists(prev => {
+            const updated = prev.map(l => l.id === id ? { ...l, ...updates } : l);
+            return updated.sort((a, b) => parseInt(a.order || '0', 10) - parseInt(b.order || '0', 10));
+        });
 
         try {
             await apiUpdateList(apiBaseUrl, id, updates);
@@ -86,101 +156,154 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
             console.error('Error updating list:', error);
             fetchLists();
         }
-    };
+    }, [apiBaseUrl]);
 
     const handleDragStart = useCallback((event: DragStartEvent) => {
         const { active } = event;
-        const listId = String(active.id);
-        const list = lists.find(l => l.id === listId);
-        if (list) {
-            setActiveList(list);
+        const data = active.data.current;
+        if (!data) return;
+
+        if (data.type === 'list') {
+            setActiveList(data.list);
+            setActiveItem(null);
+        } else if (data.type === 'listItem') {
+            setActiveItem({ item: data.item, listId: data.listId });
+            setActiveList(null);
         }
-    }, [lists]);
+    }, []);
+
+    const handleDragOver = useCallback((event: DragOverEvent) => {
+        const { over } = event;
+
+        if (over?.data.current?.type === 'listDropZone') {
+            setActiveDropZone(over.data.current.position);
+        } else {
+            setActiveDropZone(null);
+        }
+    }, []);
 
     const handleDragEnd = useCallback(async (event: DragEndEvent) => {
         const { active, over } = event;
 
+        // Reset states
+        const draggedList = activeList;
         setActiveList(null);
+        setActiveItem(null);
+        setActiveDropZone(null);
 
-        if (!over || active.id === over.id) return;
+        if (!over) return;
 
-        const activeId = String(active.id);
-        const overId = String(over.id);
+        const activeType = active.data.current?.type;
 
-        const sortedLists = sortByOrder(lists);
-        const oldIndex = sortedLists.findIndex(l => l.id === activeId);
-        const newIndex = sortedLists.findIndex(l => l.id === overId);
+        if (activeType === 'list' && over.data.current?.type === 'listDropZone') {
+            // Handle list drop on a drop zone
+            if (!draggedList) return;
 
-        if (oldIndex === -1 || newIndex === -1) return;
+            const dropPosition = over.data.current.position;
 
-        // Calculate new order
-        // First, filter to only lists that have valid orders for proper index calculation
-        const listsWithoutActive = sortedLists.filter(l => l.id !== activeId);
-
-        // Determine the target position based on the over element
-        const targetIndex = listsWithoutActive.findIndex(l => l.id === overId);
-
-        // Get the orders of neighboring items at the target position
-        let beforeOrder: string | null = null;
-        let afterOrder: string | null = null;
-
-        if (targetIndex > 0) {
-            beforeOrder = listsWithoutActive[targetIndex - 1]?.order ?? null;
-        }
-        if (targetIndex < listsWithoutActive.length) {
-            afterOrder = listsWithoutActive[targetIndex]?.order ?? null;
-        }
-
-        // If we're moving to a position where items don't have orders yet, generate fresh
-        let newOrder: string;
-        if (beforeOrder === null && afterOrder === null) {
-            // No orders exist yet, start fresh
-            newOrder = getOrderAfter(null);
-        } else if (beforeOrder === null) {
-            // Moving to first position
-            newOrder = getOrderBetween(null, afterOrder);
-        } else if (afterOrder === null) {
-            // Moving to last position or after items without order
-            newOrder = getOrderAfter(beforeOrder);
-        } else {
-            // Moving between two items with orders
-            newOrder = getOrderBetween(beforeOrder, afterOrder);
-        }
-
-        // Optimistic update
-        setLists(prev => {
-            const updated = prev.map(l =>
-                l.id === activeId ? { ...l, order: newOrder } : l
+            // Current sorted lists
+            const currentSorted = [...lists].sort((a, b) =>
+                parseInt(a.order || '0', 10) - parseInt(b.order || '0', 10)
             );
-            return sortByOrder(updated);
-        });
 
-        // API call
-        try {
-            await reorderList(apiBaseUrl, activeId, newOrder);
-        } catch (error) {
-            console.error('Failed to reorder list:', error);
-            fetchLists();
+            // Find current index of dragged list
+            const currentIndex = currentSorted.findIndex(l => l.id === draggedList.id);
+            if (currentIndex === -1) return;
+
+            // Calculate target index
+            // dropPosition 0 = before first list, dropPosition 1 = after first list, etc.
+            let targetIndex = dropPosition;
+
+            // If dropping after current position, adjust for removal
+            if (currentIndex < dropPosition) {
+                targetIndex = dropPosition - 1;
+            }
+
+            // If same position, no change needed
+            if (currentIndex === targetIndex) return;
+
+            // Reorder
+            const newLists = [...currentSorted];
+            const [movedList] = newLists.splice(currentIndex, 1);
+            newLists.splice(targetIndex, 0, movedList);
+
+            const newListOrder = newLists.map(l => l.id);
+
+            // Optimistic update
+            setLists(newLists.map((l, i) => ({ ...l, order: String(i) })));
+
+            try {
+                await reorderLists(apiBaseUrl, newListOrder);
+            } catch (error) {
+                console.error('Failed to reorder lists:', error);
+                fetchLists();
+            }
+
+        } else if (activeType === 'listItem') {
+            // Handle item reordering
+            if (active.id === over.id) return;
+
+            const activeItemId = String(active.id).replace('item-', '');
+            const overItemId = String(over.id).replace('item-', '');
+            const listId = active.data.current?.listId;
+
+            if (!listId) return;
+
+            const list = lists.find(l => l.id === listId);
+            if (!list) return;
+
+            const sortedItems = [...list.items].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+            const oldIndex = sortedItems.findIndex(i => i.id === activeItemId);
+            const newIndex = sortedItems.findIndex(i => i.id === overItemId);
+
+            if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+
+            const newItems = [...sortedItems];
+            const [movedItem] = newItems.splice(oldIndex, 1);
+            newItems.splice(newIndex, 0, movedItem);
+
+            const newItemOrder = newItems.map(item => item.id);
+
+            setLists(prev => prev.map(l => {
+                if (l.id !== listId) return l;
+
+                const reorderedItems: ListItem[] = [];
+                for (let i = 0; i < newItemOrder.length; i++) {
+                    const item = l.items.find(it => it.id === newItemOrder[i]);
+                    if (item) {
+                        reorderedItems.push({ ...item, position: i });
+                    }
+                }
+
+                return { ...l, items: reorderedItems };
+            }));
+
+            try {
+                await reorderListItems(apiBaseUrl, listId, newItemOrder);
+            } catch (error) {
+                console.error('Error reordering list items:', error);
+                fetchLists();
+            }
         }
-    }, [lists, apiBaseUrl]);
+    }, [lists, apiBaseUrl, activeList]);
 
     const handleDragCancel = useCallback(() => {
         setActiveList(null);
+        setActiveItem(null);
+        setActiveDropZone(null);
     }, []);
 
     const handleAddList = async () => {
-        // Get the last list's color to avoid repetition
-        const sortedLists = sortByOrder(lists);
-        const lastColor = sortedLists.length > 0 ? sortedLists[sortedLists.length - 1].color : null;
-        const lastOrder = sortedLists.length > 0 ? (sortedLists[sortedLists.length - 1].order ?? null) : null;
+        const currentSorted = [...lists].sort((a, b) => parseInt(a.order || '0', 10) - parseInt(b.order || '0', 10));
+        const lastColor = currentSorted.length > 0 ? currentSorted[currentSorted.length - 1].color : null;
+        const lastOrder = currentSorted.length > 0 ? parseInt(currentSorted[currentSorted.length - 1].order || '0', 10) : -1;
+        const newOrder = String(lastOrder + 1);
 
-        // Filter out the last color if possible
         const availableColors = lastColor
             ? CARD_COLORS.filter(c => c !== lastColor)
             : CARD_COLORS;
 
         const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
-        const newOrder = getOrderAfter(lastOrder);
 
         const newList: Partial<List> = {
             id: crypto.randomUUID(),
@@ -191,7 +314,10 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
 
         try {
             const savedList = await createList(apiBaseUrl, newList);
-            setLists(prev => sortByOrder([...prev, savedList]));
+            setLists(prev => {
+                const updated = [...prev, savedList];
+                return updated.sort((a, b) => parseInt(a.order || '0', 10) - parseInt(b.order || '0', 10));
+            });
         } catch (error) {
             console.error('Error creating list:', error);
         }
@@ -207,25 +333,6 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
             console.error('Error deleting list:', error);
             fetchLists();
         }
-    };
-
-    const handleAddItem = async (listId: string) => {
-        const text = newItemText[listId]?.trim();
-        if (!text) return;
-
-        const list = lists.find(l => l.id === listId);
-        if (!list) return;
-
-        const newItem: ListItem = {
-            id: crypto.randomUUID(),
-            text,
-            completed: false,
-            createdAt: new Date().toISOString(),
-        };
-
-        const updatedItems = [...list.items, newItem];
-        updateList(listId, { items: updatedItems });
-        setNewItemText(prev => ({ ...prev, [listId]: '' }));
     };
 
     const handleToggleItem = (listId: string, itemId: string) => {
@@ -247,114 +354,184 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
     };
 
     const handleUpdateItemText = (listId: string, itemId: string, newText: string) => {
-        const list = lists.find(l => l.id === listId);
-        if (!list) return;
-
-        const updatedItems = list.items.map(item =>
-            item.id === itemId ? { ...item, text: newText } : item
-        );
-
-        setLists(prev => prev.map(l => l.id === listId ? { ...l, items: updatedItems } : l));
+        setLists(prev => prev.map(l => {
+            if (l.id !== listId) return l;
+            return {
+                ...l,
+                items: l.items.map(item =>
+                    item.id === itemId ? { ...item, text: newText } : item
+                )
+            };
+        }));
     };
 
     const handleItemBlur = (listId: string) => {
         const list = lists.find(l => l.id === listId);
         if (list) {
-            // Sync the current state of items to the server
             updateList(listId, { items: list.items });
         }
-    }
+    };
 
-    const sortedLists = sortByOrder(lists);
+    const handleAddItem = (listId: string) => {
+        const text = newItemText[listId]?.trim();
+        if (!text) return;
+
+        const list = lists.find(l => l.id === listId);
+        if (!list) return;
+
+        const newItem: ListItem = {
+            id: crypto.randomUUID(),
+            text,
+            completed: false,
+            createdAt: new Date().toISOString(),
+            position: list.items.length,
+        };
+
+        const updatedItems = [...list.items, newItem];
+        updateList(listId, { items: updatedItems });
+        setNewItemText(prev => ({ ...prev, [listId]: '' }));
+    };
+
+    const sortedLists = [...lists].sort((a, b) =>
+        parseInt(a.order || '0', 10) - parseInt(b.order || '0', 10)
+    );
+
+    // Only show drop zones when dragging a list
+    const isDraggingList = activeList !== null;
 
     return (
         <DndContext
             sensors={sensors}
-            collisionDetection={closestCenter}
+            collisionDetection={pointerWithin}
             onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
         >
             <div className={styles.listsContainer}>
-                <SortableContext items={sortedLists.map(l => l.id)} strategy={horizontalListSortingStrategy}>
-                    {sortedLists.map(list => (
-                        <SortableListColumn key={list.id} list={list}>
-                            <div
-                                className={styles.listColumn}
-                                style={{ backgroundColor: list.color || '#2D2D2D' }}
-                            >
-                                <div className={styles.listHeader}>
-                                    <input
-                                        className={styles.listTitle}
-                                        value={list.title}
-                                        onChange={(e) => updateList(list.id, { title: e.target.value })}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onPointerDown={(e) => e.stopPropagation()}
-                                    />
-                                    <button
-                                        className={styles.itemDeleteBtn}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteList(list.id);
-                                        }}
-                                        onPointerDown={(e) => e.stopPropagation()}
-                                        title="Delete List"
+                {/* Drop zone before first list */}
+                {isDraggingList && (
+                    <ListDropZone position={0} isActive={activeDropZone === 0} />
+                )}
+
+                {sortedLists.map((list, index) => {
+                    const sortedItems = [...list.items].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+                    return (
+                        <React.Fragment key={list.id}>
+                            <DraggableListColumn list={list}>
+                                <div
+                                    className={styles.listColumn}
+                                    style={{ backgroundColor: hexToRgba(list.color || '#2D2D2D', 0.33) }}
+                                >
+                                    <div className={styles.listHeader}>
+                                        <input
+                                            className={styles.listTitle}
+                                            value={list.title}
+                                            onChange={(e) => updateList(list.id, { title: e.target.value })}
+                                            onClick={(e) => e.stopPropagation()}
+                                            onPointerDown={(e) => e.stopPropagation()}
+                                        />
+                                        <button
+                                            className={styles.itemDeleteBtn}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteList(list.id);
+                                            }}
+                                            onPointerDown={(e) => e.stopPropagation()}
+                                            title="Delete List"
+                                        >
+                                            <Trash size={16} />
+                                        </button>
+                                    </div>
+
+                                    <SortableContext
+                                        items={sortedItems.map(i => `item-${i.id}`)}
+                                        strategy={verticalListSortingStrategy}
                                     >
-                                        <Trash size={16} />
-                                    </button>
-                                </div>
-
-                                <div className={styles.listItems} onPointerDown={(e) => e.stopPropagation()}>
-                                    {list.items.map(item => (
-                                        <div key={item.id} className={styles.listItem}>
-                                            <div
-                                                className={`${styles.itemCheckbox} ${item.completed ? styles.checked : ''}`}
-                                                onClick={() => handleToggleItem(list.id, item.id)}
-                                            >
-                                                {item.completed && <Check size={12} weight="bold" color="#151515" />}
-                                            </div>
-                                            <input
-                                                className={`${styles.itemText} ${item.completed ? styles.completed : ''}`}
-                                                value={item.text}
-                                                onChange={(e) => handleUpdateItemText(list.id, item.id, e.target.value)}
-                                                onBlur={() => handleItemBlur(list.id)}
-                                            />
-                                            <button
-                                                className={styles.itemDeleteBtn}
-                                                onClick={() => handleDeleteItem(list.id, item.id)}
-                                            >
-                                                <Trash size={14} />
-                                            </button>
+                                        <div className={styles.listItems} onPointerDown={(e) => e.stopPropagation()}>
+                                            {sortedItems.map(item => (
+                                                <SortableListItem key={item.id} item={item} listId={list.id}>
+                                                    <div className={styles.listItem}>
+                                                        <div
+                                                            className={`${styles.itemCheckbox} ${item.completed ? styles.checked : ''}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleToggleItem(list.id, item.id);
+                                                            }}
+                                                            onPointerDown={(e) => e.stopPropagation()}
+                                                        >
+                                                            {item.completed && <Check size={12} weight="bold" color="#151515" />}
+                                                        </div>
+                                                        <textarea
+                                                            ref={(el) => {
+                                                                if (el) {
+                                                                    el.style.height = 'auto';
+                                                                    el.style.height = el.scrollHeight + 'px';
+                                                                }
+                                                            }}
+                                                            className={`${styles.itemText} ${item.completed ? styles.completed : ''}`}
+                                                            value={item.text}
+                                                            onChange={(e) => handleUpdateItemText(list.id, item.id, e.target.value)}
+                                                            onBlur={() => handleItemBlur(list.id)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onPointerDown={(e) => e.stopPropagation()}
+                                                            rows={1}
+                                                            onInput={(e) => {
+                                                                const target = e.target as HTMLTextAreaElement;
+                                                                target.style.height = 'auto';
+                                                                target.style.height = target.scrollHeight + 'px';
+                                                            }}
+                                                        />
+                                                        <button
+                                                            className={styles.itemDeleteBtn}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteItem(list.id, item.id);
+                                                            }}
+                                                            onPointerDown={(e) => e.stopPropagation()}
+                                                        >
+                                                            <Trash size={14} />
+                                                        </button>
+                                                    </div>
+                                                </SortableListItem>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    </SortableContext>
 
-                                <div className={styles.addItemContainer} onPointerDown={(e) => e.stopPropagation()}>
-                                    <input
-                                        className={styles.addItemInput}
-                                        placeholder="+ Add a task"
-                                        value={newItemText[list.id] || ''}
-                                        onChange={(e) => setNewItemText(prev => ({ ...prev, [list.id]: e.target.value }))}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') handleAddItem(list.id);
-                                        }}
-                                    />
+                                    <div className={styles.addItemContainer} onPointerDown={(e) => e.stopPropagation()}>
+                                        <input
+                                            className={styles.addItemInput}
+                                            placeholder="+ Add a task"
+                                            value={newItemText[list.id] || ''}
+                                            onChange={(e) => setNewItemText(prev => ({ ...prev, [list.id]: e.target.value }))}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleAddItem(list.id);
+                                            }}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        </SortableListColumn>
-                    ))}
-                </SortableContext>
+                            </DraggableListColumn>
+
+                            {/* Drop zone after each list */}
+                            {isDraggingList && (
+                                <ListDropZone position={index + 1} isActive={activeDropZone === index + 1} />
+                            )}
+                        </React.Fragment>
+                    );
+                })}
 
                 <button className={styles.addListBtn} onClick={handleAddList}>
-                    <Plus size={20} />
-                    Add New List
+                    <Plus size={16} />
+                    New
                 </button>
             </div>
+
             <DragOverlay>
                 {activeList ? (
                     <div
                         className={styles.listDragOverlay}
-                        style={{ backgroundColor: activeList.color || '#2D2D2D' }}
+                        style={{ backgroundColor: hexToRgba(activeList.color || '#2D2D2D', 0.33) }}
                     >
                         <div className={styles.listHeader}>
                             <span className={styles.listTitle}>{activeList.title}</span>
@@ -375,6 +552,17 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
                                     +{activeList.items.length - 3} more
                                 </div>
                             )}
+                        </div>
+                    </div>
+                ) : activeItem ? (
+                    <div className={styles.listItemDragOverlay}>
+                        <div className={styles.listItem}>
+                            <div className={`${styles.itemCheckbox} ${activeItem.item.completed ? styles.checked : ''}`}>
+                                {activeItem.item.completed && <Check size={12} weight="bold" color="#151515" />}
+                            </div>
+                            <span className={`${styles.itemText} ${activeItem.item.completed ? styles.completed : ''}`}>
+                                {activeItem.item.text}
+                            </span>
                         </div>
                     </div>
                 ) : null}

@@ -240,7 +240,7 @@
 .todoCheckBtn {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: 8px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   background: transparent;
   cursor: pointer;
@@ -340,7 +340,7 @@
 .overlayDot {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: 8px;
   border: 2px solid;
   background: transparent;
   cursor: pointer;

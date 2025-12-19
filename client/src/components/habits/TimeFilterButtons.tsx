@@ -43,7 +43,7 @@ export function TimeFilterButtons({ selectedTimeFilter, onFilterChange, chartDat
                 })}
 
                 {/* Show All / Clear Filter Button */}
-                <button
+                {/* <button
                     className={`${styles.timeFilterBtn} ${!selectedTimeFilter ? styles.inactive : ''}`}
                     onClick={() => onFilterChange(null)}
                     title="Show all habits"
@@ -51,8 +51,7 @@ export function TimeFilterButtons({ selectedTimeFilter, onFilterChange, chartDat
                     disabled={!selectedTimeFilter}
                 >
                     <X size={18} color={selectedTimeFilter ? '#ffffff' : '#ffffff00'} />
-                    {/* <SelectionAll size={18} weight="duotone" /> */}
-                </button>
+                </button> */}
 
                 {/* Separator */}
                 <span className={styles.filterSeparator} />

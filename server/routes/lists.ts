@@ -181,4 +181,67 @@ router.patch('/lists/:id/reorder', async (req: Request<{ id: string }, object, {
   }
 });
 
+// Reorder list items (position update only - optimized)
+router.patch('/lists/:id/reorder-items', async (req: Request<{ id: string }, object, { itemOrder: string[] }>, res: Response) => {
+  const { id } = req.params;
+  const { itemOrder } = req.body;
+
+  if (!itemOrder || !Array.isArray(itemOrder)) {
+    return res.status(400).json({ error: 'itemOrder array is required' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // Update position for each item based on its index in the itemOrder array
+    for (let i = 0; i < itemOrder.length; i++) {
+      await client.query(
+        'UPDATE list_items SET position = $1 WHERE id = $2 AND list_id = $3',
+        [i, itemOrder[i], id]
+      );
+    }
+    
+    await client.query('COMMIT');
+    res.json({ ok: true, itemOrder });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    const error = e as Error;
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Reorder lists (order update only - optimized, uses numeric ordering)
+router.patch('/lists/reorder', async (req: Request<object, object, { listOrder: string[] }>, res: Response) => {
+  const { listOrder } = req.body;
+
+  if (!listOrder || !Array.isArray(listOrder)) {
+    return res.status(400).json({ error: 'listOrder array is required' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // Update order for each list based on its index in the listOrder array
+    for (let i = 0; i < listOrder.length; i++) {
+      await client.query(
+        'UPDATE lists SET "order" = $1 WHERE id = $2',
+        [String(i), listOrder[i]]
+      );
+    }
+    
+    await client.query('COMMIT');
+    res.json({ ok: true, listOrder });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    const error = e as Error;
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 export default router;
