@@ -38,7 +38,7 @@ export interface Task {
   id: string;
   text: string;
   completed: boolean;
-  date: string;
+  date: string | null; // null = graveyarded (not on any day)
   createdAt: string;
   category: string; // 'life' | 'work' - relaxed for server compatibility
   state: string;    // 'active' | 'completed' | 'failed' - relaxed for server
@@ -132,7 +132,7 @@ export interface CreateTaskRequest {
   id: string;
   text?: string;
   completed?: boolean;
-  date: string;
+  date: string | null; // null = create directly in graveyard
   createdAt?: string;
   category?: string;
   state?: string;

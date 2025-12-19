@@ -99,6 +99,15 @@ export async function batchFailTasks(baseUrl: string, taskIds: string[]): Promis
   if (!response.ok) throw new Error('Failed to batch fail tasks');
 }
 
+export async function batchGraveyardTasks(baseUrl: string, taskIds: string[]): Promise<void> {
+  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/batch/graveyard`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ taskIds })
+  });
+  if (!response.ok) throw new Error('Failed to batch graveyard tasks');
+}
+
 // Reorder a task with optional date/category/state change
 export async function reorderTask(
   baseUrl: string,
@@ -131,4 +140,35 @@ export async function batchReorderTasks(baseUrl: string, moves: ReorderMove[]): 
     body: JSON.stringify({ moves })
   });
   if (!response.ok) throw new Error('Failed to batch reorder tasks');
+}
+
+// ============================================
+// Graveyard API
+// ============================================
+
+// Get all graveyarded tasks (date = null)
+export async function getGraveyardTasks(baseUrl: string): Promise<Task[]> {
+  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/graveyard`);
+  if (!response.ok) throw new Error('Failed to fetch graveyard tasks');
+  return response.json();
+}
+
+// Move a task to the graveyard (set date = null)
+export async function graveyardTask(baseUrl: string, id: string): Promise<Task> {
+  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/${id}/graveyard`, {
+    method: 'PATCH'
+  });
+  if (!response.ok) throw new Error('Failed to graveyard task');
+  return response.json();
+}
+
+// Resurrect a task from graveyard to a specific date
+export async function resurrectTask(baseUrl: string, id: string, date: string): Promise<Task> {
+  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/${id}/resurrect`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date })
+  });
+  if (!response.ok) throw new Error('Failed to resurrect task');
+  return response.json();
 }

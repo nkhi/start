@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, type ReactNode } from 'react';
 import { DateUtility } from '../../utils';
-import { ArrowCircleLeft, StrategyIcon } from '@phosphor-icons/react';
+import { ArrowCircleLeft, StrategyIcon, Ghost } from '@phosphor-icons/react';
 import styles from './DayWeek.module.css';
 
 export interface DayWeekColumnData {
@@ -46,6 +46,16 @@ interface DayWeekProps {
    * Optional: Custom text for the "More" button.
    */
   moreOverride?: string;
+
+  /**
+   * Optional: Callback when the "Graveyard" button is clicked.
+   */
+  onGraveyardClick?: () => void;
+
+  /**
+   * Optional: Whether the graveyard panel is currently open.
+   */
+  isGraveyardOpen?: boolean;
 }
 
 /**
@@ -67,7 +77,9 @@ export function DayWeek({
   className,
   columnClassName,
   onMoreClick,
-  moreOverride
+  moreOverride,
+  onGraveyardClick,
+  isGraveyardOpen
 }: DayWeekProps) {
   const [dates, setDates] = useState<Date[]>([]);
   const [focusedDateStr, setFocusedDateStr] = useState<string>('');
@@ -171,6 +183,21 @@ export function DayWeek({
         />
         <span>{moreOverride ? moreOverride : 'More'}</span>
       </button>
+
+      {/* Floating "Graveyard" button (optional) */}
+      {onGraveyardClick && (
+        <button
+          className={`${styles.graveyardFloatingBtn} ${isGraveyardOpen ? styles.active : ''}`}
+          onClick={onGraveyardClick}
+          title="Task Graveyard"
+        >
+          <Ghost
+            weight={isGraveyardOpen ? 'fill' : 'duotone'}
+            size={20}
+          />
+          <span>Grave</span>
+        </button>
+      )}
 
       {/* Floating "Back to Today" button */}
       {(() => {

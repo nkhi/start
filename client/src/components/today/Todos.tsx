@@ -17,17 +17,18 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { getTasks, getWorkTasks, getTasksForWeek, createTask, updateTask, deleteTask as apiDeleteTask, batchPuntTasks, batchFailTasks, reorderTask } from '../../api/tasks';
+import { getTasks, getWorkTasks, getTasksForWeek, createTask, updateTask, deleteTask as apiDeleteTask, batchPuntTasks, batchFailTasks, batchGraveyardTasks, reorderTask, getGraveyardTasks, graveyardTask as apiGraveyardTask, resurrectTask as apiResurrectTask } from '../../api/tasks';
 import type { Task } from '../../types';
 import { generateId, DateUtility } from '../../utils';
 import { getOrderBefore, sortByOrder } from '../../utils/orderUtils';
-import { Trash, Check, X, ArrowBendDownRight, CaretDown, ArrowRight, ArrowUp, DotsThreeVertical } from '@phosphor-icons/react';
+import { Trash, Check, X, ArrowBendDownRight, CaretDown, ArrowRight, ArrowUp, DotsThreeVertical, Ghost } from '@phosphor-icons/react';
 import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
 import { WeekView } from './WeekView';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { useTaskDragAndDrop, createContainerId, type TaskCategory, type TaskState } from '../../hooks/useTaskDragAndDrop';
 import { DraggableTask, TaskDragOverlay } from './DraggableTask';
 import { SortableTaskList } from './SortableTaskList';
+import { Graveyard } from './Graveyard';
 import styles from './Todos.module.css';
 
 // ============================================
@@ -209,9 +210,10 @@ interface TaskActionsOverlayProps {
   onMoveToTop: () => void;
   onPunt: () => void;
   onDelete: () => void;
+  onGraveyard: () => void;
 }
 
-function TaskActionsOverlay({ onMoveToTop, onPunt, onDelete }: TaskActionsOverlayProps) {
+function TaskActionsOverlay({ onMoveToTop, onPunt, onDelete, onGraveyard }: TaskActionsOverlayProps) {
   const [showOverlay, setShowOverlay] = useState(false);
   const [isHoveringOverlay, setIsHoveringOverlay] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -302,7 +304,7 @@ function TaskActionsOverlay({ onMoveToTop, onPunt, onDelete }: TaskActionsOverla
             onClick={(e) => handleAction(e, onMoveToTop)}
             title="Move to Top"
           >
-            <ArrowUp size={14} />
+            <ArrowUp type="duotone" size={14} />
           </button>
           <button
             type="button"
@@ -310,7 +312,7 @@ function TaskActionsOverlay({ onMoveToTop, onPunt, onDelete }: TaskActionsOverla
             onClick={(e) => handleAction(e, onPunt)}
             title="Punt to Next Day"
           >
-            <ArrowBendDownRight size={14} />
+            <ArrowBendDownRight type="duotone" size={14} />
           </button>
           <button
             type="button"
@@ -318,7 +320,15 @@ function TaskActionsOverlay({ onMoveToTop, onPunt, onDelete }: TaskActionsOverla
             onClick={(e) => handleAction(e, onDelete)}
             title="Delete"
           >
-            <Trash size={14} />
+            <Trash type="duotone" size={14} />
+          </button>
+          <button
+            type="button"
+            className={`${styles.actionOverlayBtn} ${styles.graveyardAction}`}
+            onClick={(e) => handleAction(e, onGraveyard)}
+            title="Send to Graveyard"
+          >
+            <Ghost type="duotone" size={14} />
           </button>
         </div>,
         document.body
@@ -382,6 +392,10 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [weekCategory, setWeekCategory] = useState<TaskCategory>('life');
   const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({});
+
+  // Graveyard state
+  const [isGraveyardOpen, setIsGraveyardOpen] = useState(false);
+  const [graveyardTasks, setGraveyardTasks] = useState<Task[]>([]);
 
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -450,6 +464,89 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
       console.error('Failed to load week tasks:', error);
     }
   }
+
+  async function loadGraveyardTasks() {
+    try {
+      const data = await getGraveyardTasks(apiBaseUrl);
+      setGraveyardTasks(data || []);
+    } catch (error) {
+      console.error('Failed to load graveyard tasks:', error);
+    }
+  }
+
+  // Load graveyard tasks when panel opens
+  useEffect(() => {
+    if (isGraveyardOpen) {
+      loadGraveyardTasks();
+    }
+  }, [isGraveyardOpen]);
+
+  // ----------------------------------------
+  // Graveyard Operations
+  // ----------------------------------------
+
+  async function sendToGraveyard(dateStr: string, taskId: string) {
+    const currentDayTasks = tasks[dateStr] || [];
+    const task = currentDayTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Optimistic update: remove from day, add to graveyard
+    setTasks(prev => ({
+      ...prev,
+      [dateStr]: (prev[dateStr] || []).filter(t => t.id !== taskId)
+    }));
+    setGraveyardTasks(prev => [{ ...task, date: null, state: 'active' }, ...prev]);
+
+    try {
+      await apiGraveyardTask(apiBaseUrl, taskId);
+    } catch (error) {
+      console.error('Failed to graveyard task:', error);
+      // Rollback
+      setTasks(prev => ({ ...prev, [dateStr]: [...(prev[dateStr] || []), task] }));
+      setGraveyardTasks(prev => prev.filter(t => t.id !== taskId));
+    }
+  }
+
+  async function resurrectFromGraveyard(taskId: string, targetDate: string) {
+    const task = graveyardTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Optimistic update: remove from graveyard, add to target date
+    setGraveyardTasks(prev => prev.filter(t => t.id !== taskId));
+    setTasks(prev => ({
+      ...prev,
+      [targetDate]: [...(prev[targetDate] || []), { ...task, date: targetDate, state: 'active' }]
+    }));
+
+    try {
+      await apiResurrectTask(apiBaseUrl, taskId, targetDate);
+    } catch (error) {
+      console.error('Failed to resurrect task:', error);
+      // Rollback
+      setGraveyardTasks(prev => [task, ...prev]);
+      setTasks(prev => ({
+        ...prev,
+        [targetDate]: (prev[targetDate] || []).filter(t => t.id !== taskId)
+      }));
+    }
+  }
+
+  async function deleteGraveyardTask(taskId: string) {
+    const task = graveyardTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Optimistic update
+    setGraveyardTasks(prev => prev.filter(t => t.id !== taskId));
+
+    try {
+      await apiDeleteTask(apiBaseUrl, taskId);
+    } catch (error) {
+      console.error('Failed to delete graveyard task:', error);
+      // Rollback
+      setGraveyardTasks(prev => [task, ...prev]);
+    }
+  }
+
 
   // ----------------------------------------
   // Task Operations
@@ -713,6 +810,32 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     }
   }
 
+  async function batchGraveyardAllTasks(dateStr: string, taskIds: string[]) {
+    if (taskIds.length === 0) return;
+
+    const currentDayTasks = tasks[dateStr] || [];
+    const tasksToGrave = currentDayTasks.filter(t => taskIds.includes(t.id));
+    const updatedDayTasks = currentDayTasks.filter(t => !taskIds.includes(t.id));
+
+    // Optimistic update: remove from day, add to graveyard
+    setTasks(prev => ({
+      ...prev,
+      [dateStr]: updatedDayTasks
+    }));
+    setGraveyardTasks(prev => [
+      ...tasksToGrave.map(t => ({ ...t, date: null, state: 'active' })),
+      ...prev
+    ]);
+
+    try {
+      await batchGraveyardTasks(apiBaseUrl, taskIds);
+    } catch (error) {
+      console.error('Failed to batch graveyard tasks:', error);
+      setTasks(tasks);
+      setGraveyardTasks(graveyardTasks);
+    }
+  }
+
   async function moveTaskToTop(dateStr: string, taskId: string) {
     const currentDayTasks = tasks[dateStr] || [];
     const task = currentDayTasks.find(t => t.id === taskId);
@@ -790,6 +913,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
             onMoveToTop={() => moveTaskToTop(dateStr, task.id)}
             onPunt={() => puntTask(dateStr, task.id)}
             onDelete={() => deleteTask(dateStr, task.id)}
+            onGraveyard={() => sendToGraveyard(dateStr, task.id)}
           />
           {taskState === 'active' && puntDays > 0 && (
             <span
@@ -861,6 +985,16 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
                     title="Fail All"
                   >
                     <X size={14} />
+                  </button>
+                  <button
+                    className={styles.accordionActionBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      batchGraveyardAllTasks(dateStr, activeTasks.map(t => t.id));
+                    }}
+                    title="Graveyard All"
+                  >
+                    <Ghost size={14} />
                   </button>
                 </div>
               )}
@@ -949,11 +1083,11 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
       <>
         <div className={styles.todoColumnHeader}>
           <span className={`${styles.todoDate} ${isToday ? 'today' : ''}`}>
-            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            {date.toLocaleDateString('en-US', { weekday: 'long' })}, {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
-          <span className={styles.todoDayName}>
+          {/* <span className={styles.todoDayName}>
             {date.toLocaleDateString('en-US', { weekday: 'short' })}
-          </span>
+          </span> */}
         </div>
 
         <div className={styles.todoContentRow}>
@@ -1064,6 +1198,15 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
         columnClassName={styles.todoColumn}
         onMoreClick={() => setViewMode('week')}
         moreOverride="Week View"
+        onGraveyardClick={() => setIsGraveyardOpen(prev => !prev)}
+        isGraveyardOpen={isGraveyardOpen}
+      />
+      <Graveyard
+        isOpen={isGraveyardOpen}
+        tasks={graveyardTasks}
+        onClose={() => setIsGraveyardOpen(false)}
+        onResurrect={resurrectFromGraveyard}
+        onDelete={deleteGraveyardTask}
       />
       <DragOverlay>
         {activeTask ? (

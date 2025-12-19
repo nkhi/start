@@ -13,8 +13,24 @@ const router = express.Router();
 
 // Helper to transform DB row to API response
 function dbTaskToTask(t: DbTask): Task {
-  const dateStr = formatDate(t.date!);
   const createdAtStr = t.created_at?.toISOString() || new Date().toISOString();
+  
+  // Handle null dates (graveyard tasks)
+  if (!t.date) {
+    return {
+      id: t.id,
+      text: t.text,
+      completed: t.completed ?? false,
+      date: null,
+      createdAt: createdAtStr,
+      category: t.category || 'life',
+      state: t.state || 'active',
+      order: t.order,
+      puntDays: 0
+    };
+  }
+  
+  const dateStr = formatDate(t.date);
   
   // Calculate punt days: difference between active date and created date
   const activeDate = new Date(dateStr + 'T00:00:00Z');
@@ -64,7 +80,7 @@ router.get('/tasks/week', async (req: Request, res: Response) => {
 // Get only work tasks (for work mode - privacy on work laptops)
 router.get('/tasks/work', async (_req: Request, res: Response) => {
   try {
-    const result = await db.query<DbTask>(`SELECT * FROM tasks WHERE category = 'work'`);
+    const result = await db.query<DbTask>(`SELECT * FROM tasks WHERE category = 'work' AND date IS NOT NULL`);
 
     const tasksByDate: TasksByDate = {};
     result.rows.forEach(t => {
@@ -82,7 +98,7 @@ router.get('/tasks/work', async (_req: Request, res: Response) => {
 // Get all tasks (bulk fetch for initial load)
 router.get('/tasks', async (_req: Request, res: Response) => {
   try {
-    const result = await db.query<DbTask>('SELECT * FROM tasks');
+    const result = await db.query<DbTask>('SELECT * FROM tasks WHERE date IS NOT NULL');
 
     const tasksByDate: TasksByDate = {};
     result.rows.forEach(t => {
@@ -102,11 +118,11 @@ router.get('/tasks/counts', async (req: Request, res: Response) => {
   const { category } = req.query as { category?: string };
   
   try {
-    let queryText = 'SELECT date, state, completed, COUNT(*) as count FROM tasks';
+    let queryText = 'SELECT date, state, completed, COUNT(*) as count FROM tasks WHERE date IS NOT NULL';
     const params: string[] = [];
     
     if (category) {
-      queryText += ' WHERE category = $1';
+      queryText += ' AND category = $1';
       params.push(category);
     }
     
@@ -147,11 +163,11 @@ router.get('/tasks/grouped', async (req: Request, res: Response) => {
   const { category } = req.query as { category?: string };
   
   try {
-    let queryText = 'SELECT * FROM tasks';
+    let queryText = 'SELECT * FROM tasks WHERE date IS NOT NULL';
     const params: string[] = [];
     
     if (category) {
-      queryText += ' WHERE category = $1';
+      queryText += ' AND category = $1';
       params.push(category);
     }
     
@@ -416,6 +432,34 @@ router.post('/tasks/batch/fail', async (req: Request<object, object, BatchFailRe
   }
 });
 
+// Batch graveyard tasks (set date = NULL for all)
+router.post('/tasks/batch/graveyard', async (req: Request<object, object, { taskIds: string[] }>, res: Response) => {
+  const { taskIds } = req.body;
+  
+  if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
+    return res.status(400).json({ error: 'taskIds must be a non-empty array' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    await client.query(
+      'UPDATE tasks SET date = NULL, state = $1, completed = $2 WHERE id = ANY($3)',
+      ['active', false, taskIds]
+    );
+    
+    await client.query('COMMIT');
+    res.json({ ok: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    const error = e as Error;
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Reorder a task (update order, optionally move to new date/category)
 router.patch('/tasks/:id/reorder', async (req: Request<{ id: string }, object, ReorderRequest>, res: Response) => {
   const { id } = req.params;
@@ -507,6 +551,73 @@ router.post('/tasks/batch/reorder', async (req: Request<object, object, BatchReo
     res.status(500).json({ error: error.message });
   } finally {
     client.release();
+  }
+});
+
+// ============================================
+// Graveyard Endpoints
+// ============================================
+
+// Get all graveyarded tasks (date IS NULL)
+router.get('/tasks/graveyard', async (_req: Request, res: Response) => {
+  try {
+    const result = await db.query<DbTask>('SELECT * FROM tasks WHERE date IS NULL ORDER BY created_at DESC');
+    const tasks = result.rows.map(dbTaskToTask);
+    res.json(tasks);
+  } catch (e) {
+    const error = e as Error;
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Move a task to the graveyard (set date = NULL)
+router.patch('/tasks/:id/graveyard', async (req: Request<{ id: string }>, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const result = await db.query<DbTask>(`
+      UPDATE tasks 
+      SET date = NULL, state = 'active', completed = false
+      WHERE id = $1
+      RETURNING *
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: `Task with ID ${id} not found` });
+    }
+
+    res.json(dbTaskToTask(result.rows[0]));
+  } catch (e) {
+    const error = e as Error;
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Resurrect a task from the graveyard (set date to target date)
+router.patch('/tasks/:id/resurrect', async (req: Request<{ id: string }, object, { date: string }>, res: Response) => {
+  const { id } = req.params;
+  const { date } = req.body;
+
+  if (!date) {
+    return res.status(400).json({ error: 'date is required' });
+  }
+
+  try {
+    const result = await db.query<DbTask>(`
+      UPDATE tasks 
+      SET date = $2, state = 'active', completed = false
+      WHERE id = $1
+      RETURNING *
+    `, [id, date]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: `Task with ID ${id} not found` });
+    }
+
+    res.json(dbTaskToTask(result.rows[0]));
+  } catch (e) {
+    const error = e as Error;
+    res.status(500).json({ error: error.message });
   }
 });
 
