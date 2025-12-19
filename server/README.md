@@ -1,11 +1,13 @@
 # Server
 
-Express.js API server with CockroachDB backend.
+← [Back to main README](../README.md)
+
+Express + TypeScript API server running on Bun with CockroachDB backend.
 
 ## Quick Start
 
 ```bash
-node index.js
+bun run index.ts
 ```
 
 Runs on `http://localhost:3000` (binds to `0.0.0.0` for local network access).
@@ -23,16 +25,19 @@ DATABASE_URL=<your-cockroachdb-connection-string>
 
 ```
 server/
-├── index.js        # Express app setup, middleware, route mounting
-├── db.js           # PostgreSQL connection pool (pg)
-├── logger.js       # File logging utility
+├── index.ts        # Express app setup, middleware, route mounting
+├── db.ts           # PostgreSQL connection pool (pg)
+├── db-types.ts     # Database type definitions
+├── logger.ts       # File logging utility
+├── db_utils/
+│   └── table_setup.sql  # Database schema DDL
 ├── routes/
-│   ├── habits.js   # Habit definitions and entries
-│   ├── tasks.js    # Todo tasks with batch operations
-│   ├── diary.js    # Journal entries and questions
-│   ├── lists.js    # Lists with items
-│   ├── next.js     # Ideas/notes cards
-│   └── vlogs.js    # Weekly video reflections
+│   ├── habits.ts   # Habit definitions and entries
+│   ├── tasks.ts    # Todo tasks with batch operations
+│   ├── diary.ts    # Journal entries and questions
+│   ├── lists.ts    # Lists with items
+│   ├── next.ts     # Ideas/notes cards
+│   └── vlogs.ts    # Weekly video reflections
 └── server.log      # Request logs
 ```
 
@@ -51,6 +56,14 @@ All data is stored in **CockroachDB**. The following tables are used:
 | `list_items` | Items within lists (list_id, text, completed, position) |
 | `next_items` | Ideas/notes cards (title, content, color, size, started_at, deleted_at) |
 | `vlogs` | Weekly video reflections (week_start_date, video_url, embed_html) |
+
+> **Note:** CockroachDB's free tier is very generous and should be more than enough for personal use. They do require a CC but with price limiting, and $15 of free credits every month, this works very well for this project.
+
+### Database Setup
+
+To initialize the database tables, run the SQL in [`db_utils/table_setup.sql`](db_utils/table_setup.sql). This creates all required tables with proper constraints.
+
+> ⚠️ **Warning:** The setup script uses `DROP TABLE IF EXISTS` — running it will delete existing data.
 
 ## API Reference
 
@@ -132,3 +145,16 @@ All requests are logged to console and `server.log` with:
 - Error details (for 4xx/5xx responses)
 
 Health check requests (`/health`) are excluded from logs to reduce noise.
+
+## Development
+
+```bash
+bun run dev      # Start with auto-reload (nodemon)
+bun run start    # Production mode
+```
+
+Or use the root startup script to run both client and server:
+
+```bash
+./go.sh          # From project root
+```

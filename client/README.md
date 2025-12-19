@@ -1,15 +1,19 @@
 # Client
 
+← [Back to main README](../README.md)
+
 React + TypeScript + Vite frontend for Start.
 
 ## Quick Start
 
 ```bash
-pnpm install
-pnpm run dev
+bun install      # or pnpm install
+bun run dev      # or pnpm run dev
 ```
 
 Runs on `http://localhost:5173` (with `--host 0.0.0.0` for local network access).
+
+> **Tip:** Use `./go.sh` from the project root to start both client and server together.
 
 ## Tech Stack
 
@@ -92,7 +96,7 @@ src/
 
 ### Work Mode
 
-Access `?mode=work` to use a privacy-focused mode that only shows work-related tasks and hides personal data. Useful for work laptops.
+Append `?w` / `?mode=work` to the URL to use a privacy-focused mode that only shows work-related tasks and hides personal data. Useful for work laptops with VPNs.
 
 ### Daylight Themes
 
