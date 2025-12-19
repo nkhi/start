@@ -99,7 +99,7 @@
 .tabBtn.active {
   color: white;
   /* background: #1d1d1d; */
-  border-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
   font-weight: 550;
 }
 

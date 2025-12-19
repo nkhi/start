@@ -5,7 +5,8 @@ import {
     TreeIcon,
     BarbellIcon,
     ResizeIcon,
-    AxeIcon
+    AxeIcon,
+    BlueprintIcon
 } from '@phosphor-icons/react';
 import type { Habit } from '../../types';
 
@@ -56,6 +57,12 @@ export const HABIT_TIME_CONFIG: Record<HabitDefaultTime, HabitTimeConfig> = {
         icon: MoonIcon,
         color: '#3ddde6',
         label: 'Night habits',
+        showInFilter: true,
+    },
+    routine: {
+        icon: BlueprintIcon,
+        color: '#3ddde6',
+        label: 'Routine habits',
         showInFilter: true,
     },
     // Types that exist but don't need filter buttons or visible icons

@@ -13,7 +13,7 @@ export interface Habit {
   id: string;
   name: string;
   order: number;
-  defaultTime: 'morning' | 'night' | 'neither' | 'health' | 'exercise' | 'weekdays' | 'quitting' | 'growth';
+  defaultTime: 'morning' | 'night' | 'neither' | 'health' | 'exercise' | 'weekdays' | 'quitting' | 'growth' | 'routine';
   active: boolean;
   createdDate: string;
   comment?: string | null;
