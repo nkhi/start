@@ -21,7 +21,7 @@ import { getTasks, getWorkTasks, getTasksForWeek, createTask, updateTask, delete
 import type { Task } from '../../types';
 import { generateId, DateUtility } from '../../utils';
 import { getOrderBefore, sortByOrder } from '../../utils/orderUtils';
-import { Trash, Check, X, ArrowBendDownRight, CaretDown, ArrowRight, ArrowUp, DotsThreeVertical, Ghost } from '@phosphor-icons/react';
+import { Trash, Check, X, ArrowBendDownRight, CaretDown, ArrowRight, ArrowUp, DotsThreeVertical, Ghost, Copy } from '@phosphor-icons/react';
 import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
 import { WeekView } from './WeekView';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
@@ -211,9 +211,10 @@ interface TaskActionsOverlayProps {
   onPunt: () => void;
   onDelete: () => void;
   onGraveyard: () => void;
+  onCopy: () => void;
 }
 
-function TaskActionsOverlay({ onMoveToTop, onPunt, onDelete, onGraveyard }: TaskActionsOverlayProps) {
+function TaskActionsOverlay({ onMoveToTop, onPunt, onDelete, onGraveyard, onCopy }: TaskActionsOverlayProps) {
   const [showOverlay, setShowOverlay] = useState(false);
   const [isHoveringOverlay, setIsHoveringOverlay] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -269,15 +270,28 @@ function TaskActionsOverlay({ onMoveToTop, onPunt, onDelete, onGraveyard }: Task
   }, [clearTimers]);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [overlayPosition, setOverlayPosition] = useState({ top: 0, left: 0 });
+  const [overlayPosition, setOverlayPosition] = useState<{ top: number; left?: number; right?: number }>({ top: 0, left: 0 });
 
   useEffect(() => {
     if (showOverlay && wrapperRef.current) {
       const rect = wrapperRef.current.getBoundingClientRect();
-      setOverlayPosition({
-        top: rect.top + rect.height / 2,
-        left: rect.right + 8
-      });
+      const windowWidth = window.innerWidth;
+      const spaceRight = windowWidth - rect.right;
+
+      // Smart positioning: If we're close to the right edge (right-most column), 
+      // render to the left to avoid overflow. 
+      // Note: User mentioned "left most column" but likely meant right-most as that causes overflow.
+      if (spaceRight < 180) {
+        setOverlayPosition({
+          top: rect.top + rect.height / 2,
+          right: windowWidth - rect.left + 8
+        });
+      } else {
+        setOverlayPosition({
+          top: rect.top + rect.height / 2,
+          left: rect.right + 8
+        });
+      }
     }
   }, [showOverlay]);
 
@@ -294,7 +308,7 @@ function TaskActionsOverlay({ onMoveToTop, onPunt, onDelete, onGraveyard }: Task
       {showOverlay && createPortal(
         <div
           className={styles.taskActionsOverlay}
-          style={{ top: overlayPosition.top, left: overlayPosition.left }}
+          style={overlayPosition}
           onMouseEnter={handleOverlayEnter}
           onMouseLeave={handleOverlayLeave}
         >
@@ -305,6 +319,14 @@ function TaskActionsOverlay({ onMoveToTop, onPunt, onDelete, onGraveyard }: Task
             title="Move to Top"
           >
             <ArrowUp type="duotone" size={14} />
+          </button>
+          <button
+            type="button"
+            className={styles.actionOverlayBtn}
+            onClick={(e) => handleAction(e, onCopy)}
+            title="Copy Text"
+          >
+            <Copy type="duotone" size={14} />
           </button>
           <button
             type="button"
@@ -994,6 +1016,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
             onPunt={() => puntTask(dateStr, task.id)}
             onDelete={() => deleteTask(dateStr, task.id)}
             onGraveyard={() => sendToGraveyard(dateStr, task.id)}
+            onCopy={() => navigator.clipboard.writeText(task.text)}
           />
           {taskState === 'active' && puntDays > 0 && (
             <span
