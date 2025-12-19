@@ -1,9 +1,9 @@
-import { CalendarCheck, ListChecks, TipJarIcon, LightbulbIcon, ListDashes, TreeIcon, HeartbeatIcon, CarrotIcon, SunDim } from '@phosphor-icons/react';
+import { CalendarCheck, ListChecks, TipJarIcon, LightbulbIcon, ListDashes, TreeIcon, HeartbeatIcon, CarrotIcon, SunDim, VideoCameraIcon, CalendarDotsIcon } from '@phosphor-icons/react';
 import { ServerStatus } from './ServerStatus';
 import styles from './Navigation.module.css';
 import { useDaylight } from '../daylight/DaylightContext';
 
-type TabType = 'habits' | 'todos' | 'logs' | 'memos' | 'next' | 'lists' | 'daylight';
+export type TabType = 'habits' | 'todos' | 'journal' | 'memos' | 'next' | 'lists' | 'daylight' | 'vlogs';
 
 interface NavigationProps {
     activeTab: TabType;
@@ -48,7 +48,6 @@ export function Navigation({ activeTab, lastTab, onTabChange, apiBaseUrl, workMo
                         onClick={() => onTabChange('habits')}
                     >
                         <CalendarCheck size={20} weight={activeTab === 'habits' ? 'duotone' : 'regular'} className={styles.navIcon} />
-                        <span className={styles.navText}>Habits</span>
                     </button>
                 )}
                 <button
@@ -56,37 +55,39 @@ export function Navigation({ activeTab, lastTab, onTabChange, apiBaseUrl, workMo
                     onClick={() => onTabChange('todos')}
                 >
                     <ListChecks size={20} weight={activeTab === 'todos' ? 'bold' : 'regular'} className={styles.navIcon} />
-                    <span className={styles.navText}>Todos</span>
                 </button>
                 {!workMode && (
                     <>
+
+                        <button
+                            className={`${styles.tabBtn} ${activeTab === 'journal' ? styles.active : ''}`}
+                            onClick={() => onTabChange('journal')}
+                        >
+                            <HeartbeatIcon size={20} weight={activeTab === 'journal' ? 'duotone' : 'regular'} className={styles.navIcon} />
+                        </button>
                         <button
                             className={`${styles.tabBtn} ${activeTab === 'memos' ? styles.active : ''}`}
                             onClick={() => onTabChange('memos')}
                         >
                             <LightbulbIcon size={20} weight={activeTab === 'memos' ? 'duotone' : 'regular'} className={styles.navIcon} />
-                            <span className={styles.navText}>Memos</span>
-                        </button>
-                        <button
-                            className={`${styles.tabBtn} ${activeTab === 'logs' ? styles.active : ''}`}
-                            onClick={() => onTabChange('logs')}
-                        >
-                            <HeartbeatIcon size={20} weight={activeTab === 'logs' ? 'duotone' : 'regular'} className={styles.navIcon} />
-                            <span className={styles.navText}>Journal</span>
                         </button>
                         <button
                             className={`${styles.tabBtn} ${activeTab === 'lists' ? styles.active : ''}`}
                             onClick={() => onTabChange('lists')}
                         >
                             <ListDashes size={20} weight={activeTab === 'lists' ? 'duotone' : 'regular'} className={styles.navIcon} />
-                            <span className={styles.navText}>Lists</span>
                         </button>
                         <button
                             className={`${styles.tabBtn} ${activeTab === 'next' ? styles.active : ''}`}
                             onClick={() => onTabChange('next')}
                         >
                             <TreeIcon size={20} weight={activeTab === 'next' ? 'duotone' : 'regular'} className={styles.navIcon} />
-                            <span className={styles.navText}>Grow</span>
+                        </button>
+                        <button
+                            className={`${styles.tabBtn} ${activeTab === 'vlogs' ? styles.active : ''}`}
+                            onClick={() => onTabChange('vlogs')}
+                        >
+                            <VideoCameraIcon size={20} weight={activeTab === 'vlogs' ? 'duotone' : 'regular'} className={styles.navIcon} />
                         </button>
                     </>
                 )}

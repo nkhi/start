@@ -83,13 +83,12 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  padding: 6px 12px;
+  padding: 6px;
   transition: all 0.2s ease;
   border-radius: 6px;
-  display: grid;
-  grid-template-columns: 20px 1fr;
+  display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
 }
 
 .tabBtn:hover {
@@ -124,15 +123,4 @@
 
 .iconLink:hover {
   color: white;
-}
-
-@media (max-width: 910px) {
-  .tabSwitcher .tabBtn .navText {
-    display: none;
-  }
-
-  .tabSwitcher .tabBtn {
-    padding: 6px;
-    gap: 0;
-  }
 }
