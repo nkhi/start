@@ -7,7 +7,7 @@ Start aka Start Menu is my command center for habits, daily todos, notes, journa
 ### 📊 **Habits**
 Track your daily habits with convenient rollup metrics.
 
-![habits](assets/habits.png)
+![habits](assets/habits.gif)
 
 - **Sunday Reflection**: Record an end-of-week video reflection using the built-in **Loom SDK recorder**
 - **Flexible categories**: morning, night, exercise, health, weekdays, etc with icon differentiation and quick filtering
@@ -18,6 +18,7 @@ Track your daily habits with convenient rollup metrics.
 Daily task management separated by **Life** and **Work**. Inspired by [Tweek](https://tweek.so/).
 
 ![todos](assets/todos.png)
+![todos](assets/todos-week.png)
 
 - **Easy task punting** - move incomplete tasks to the next day
 - **Status sorting** - unfinished tasks always appear first
