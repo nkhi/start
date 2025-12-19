@@ -562,12 +562,16 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     const text = newTaskTexts[inputKey];
     if (!text?.trim()) return;
 
+    // Set createdAt to noon on the target date (not "now")
+    // This ensures puntDays calculates from the date the task was created for
+    const createdAt = new Date(`${dateStr}T12:00:00`).toISOString();
+
     const newTask: Task = {
       id: generateId(),
       text: text,
       completed: false,
       date: dateStr,
-      createdAt: new Date().toISOString(),
+      createdAt: createdAt,
       category: category,
       state: 'active'
     };
