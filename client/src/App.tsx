@@ -14,8 +14,6 @@ import { ApiErrorProvider, useApiError } from './components/shared/ApiErrorConte
 import { ApiErrorToast } from './components/shared/ApiErrorToast';
 import { setGlobalErrorReporter, clearGlobalErrorReporter } from './api/errorReporter';
 
-const API_BASE_URL = `http://${window.location.hostname}:3000`;
-
 // Detect work mode from URL query params (?mode=work)
 const urlParams = new URLSearchParams(window.location.search);
 const WORK_MODE = urlParams.get('mode') === 'work' || urlParams.has('w');
@@ -51,17 +49,16 @@ function AppContent() {
           activeTab={activeTab}
           lastTab={lastTab}
           onTabChange={handleTabChange}
-          apiBaseUrl={API_BASE_URL}
           workMode={WORK_MODE}
         />
         <main id="habit-container" className={activeTab}>
-          {activeTab === 'todos' && <Todos apiBaseUrl={API_BASE_URL} workMode={WORK_MODE} />}
-          {activeTab === 'daylight' && <Daylight apiBaseUrl={API_BASE_URL} workMode={WORK_MODE} />}
-          {!WORK_MODE && activeTab === 'habits' && <HabitTracker apiBaseUrl={API_BASE_URL} />}
+          {activeTab === 'todos' && <Todos workMode={WORK_MODE} />}
+          {activeTab === 'daylight' && <Daylight workMode={WORK_MODE} />}
+          {!WORK_MODE && activeTab === 'habits' && <HabitTracker />}
           {!WORK_MODE && activeTab === 'memos' && <Memos />}
-          {!WORK_MODE && activeTab === 'journal' && <Diary apiBaseUrl={API_BASE_URL} />}
-          {!WORK_MODE && activeTab === 'next' && <Next apiBaseUrl={API_BASE_URL} />}
-          {!WORK_MODE && activeTab === 'lists' && <Lists apiBaseUrl={API_BASE_URL} />}
+          {!WORK_MODE && activeTab === 'journal' && <Diary />}
+          {!WORK_MODE && activeTab === 'next' && <Next />}
+          {!WORK_MODE && activeTab === 'lists' && <Lists />}
         </main>
       </div>
       <ApiErrorToast />
@@ -80,4 +77,3 @@ function App() {
 }
 
 export default App;
-

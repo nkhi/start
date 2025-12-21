@@ -14,11 +14,7 @@ const TIME_QUESTION_IDS = {
   SLEEP: 'q14'
 };
 
-interface DiaryProps {
-  apiBaseUrl: string;
-}
-
-export function Diary({ apiBaseUrl }: DiaryProps) {
+export function Diary() {
   const [viewMode, setViewMode] = useState<'day' | 'question'>('day');
   const [diary, setDiary] = useState<Record<string, DiaryEntry[]>>({});
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -33,8 +29,8 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
   async function loadData() {
     try {
       const [questionsData, diaryData] = await Promise.all([
-        getQuestions(apiBaseUrl),
-        getDiary(apiBaseUrl)
+        getQuestions(),
+        getDiary()
       ]);
       setQuestions(questionsData);
       setDiary(diaryData || {});
@@ -100,7 +96,7 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
           answer,
           createdAt: existingEntry ? existingEntry.createdAt : new Date().toISOString()
         };
-        await saveDiaryEntry(apiBaseUrl, entryToSave);
+        await saveDiaryEntry(entryToSave);
       } catch (err) {
         console.error('Failed to save diary entry:', err);
         // Revert optimistic update on error
@@ -123,10 +119,10 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
     };
 
     try {
-      await saveQuestion(apiBaseUrl, newQuestion);
+      await saveQuestion(newQuestion);
       setNewQuestionTexts({ ...newQuestionTexts, [dateStr]: '' });
       // Reload questions to see the new one
-      const updatedQuestions = await getQuestions(apiBaseUrl);
+      const updatedQuestions = await getQuestions();
       setQuestions(updatedQuestions);
     } catch (error) {
       console.error('Failed to add question:', error);
@@ -233,7 +229,7 @@ export function Diary({ apiBaseUrl }: DiaryProps) {
 
 
   if (viewMode === 'question') {
-    return <QuestionView apiBaseUrl={apiBaseUrl} onBack={() => setViewMode('day')} />;
+    return <QuestionView onBack={() => setViewMode('day')} />;
   }
 
   return (

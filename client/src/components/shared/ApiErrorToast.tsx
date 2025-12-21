@@ -31,10 +31,10 @@ export function ApiErrorToast() {
                         </svg>
                     </div>
                     <div className={styles.content}>
-                        <span className={styles.code}>{error.statusCode}</span>
+                        <span className={styles.code}>{error.statusCode === 0 ? 'offline' : error.statusCode}</span>
                         <span className={styles.separator}>;</span>
                         <span className={styles.route}>{error.route}</span>
-                        <span className={styles.message}>failed</span>
+                        <span className={styles.message}>{error.statusCode === 0 ? '' : 'failed'}</span>
                     </div>
                 </div>
             ))}

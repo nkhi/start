@@ -360,11 +360,10 @@ function getCountsForCategory(taskList: Task[]) {
 // ============================================
 
 interface TodosProps {
-  apiBaseUrl: string;
   workMode?: boolean;
 }
 
-export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
+export function Todos({ workMode = false }: TodosProps) {
   // State
   const [tasks, setTasks] = useState<Record<string, Task[]>>({});
   const [newTaskTexts, setNewTaskTexts] = useState<Record<string, string>>({});
@@ -445,8 +444,8 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     newOrder: string,
     options?: { date?: string; category?: TaskCategory; state?: TaskState }
   ) => {
-    await reorderTask(apiBaseUrl, taskId, newOrder, options);
-  }, [apiBaseUrl]);
+    await reorderTask(taskId, newOrder, options);
+  }, []);
 
   const handleOptimisticUpdate = useCallback((updater: (prev: Record<string, Task[]>) => Record<string, Task[]>) => {
     setTasks(updater);
@@ -487,8 +486,8 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
   async function loadTasks() {
     try {
       const data = workMode
-        ? await getWorkTasks(apiBaseUrl)
-        : await getTasks(apiBaseUrl);
+        ? await getWorkTasks()
+        : await getTasks();
       setTasks(data || {});
     } catch (error) {
       console.error('Failed to load tasks:', error);
@@ -499,7 +498,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     try {
       const startStr = DateUtility.formatDate(start);
       const endStr = DateUtility.formatDate(end);
-      const data = await getTasksForWeek(apiBaseUrl, startStr, endStr);
+      const data = await getTasksForWeek(startStr, endStr);
       setTasks(prev => ({ ...prev, ...data }));
     } catch (error) {
       console.error('Failed to load week tasks:', error);
@@ -517,8 +516,8 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     setIsGraveyardLoading(true);
     try {
       const data = workMode
-        ? await getWorkGraveyardTasks(apiBaseUrl)
-        : await getGraveyardTasks(apiBaseUrl);
+        ? await getWorkGraveyardTasks()
+        : await getGraveyardTasks();
       setGraveyardTasks(data || []);
     } catch (error) {
       console.error('Failed to load graveyard tasks:', error);
@@ -551,7 +550,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     setGraveyardTasks(prev => [{ ...task, date: null, state: 'active' }, ...prev]);
 
     try {
-      await apiGraveyardTask(apiBaseUrl, taskId);
+      await apiGraveyardTask(taskId);
     } catch (error) {
       console.error('Failed to graveyard task:', error);
       // Rollback
@@ -572,7 +571,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     }));
 
     try {
-      await apiResurrectTask(apiBaseUrl, taskId, targetDate);
+      await apiResurrectTask(taskId, targetDate);
     } catch (error) {
       console.error('Failed to resurrect task:', error);
       // Rollback
@@ -592,7 +591,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     setGraveyardTasks(prev => prev.filter(t => t.id !== taskId));
 
     try {
-      await apiDeleteTask(apiBaseUrl, taskId);
+      await apiDeleteTask(taskId);
     } catch (error) {
       console.error('Failed to delete graveyard task:', error);
       // Rollback
@@ -634,7 +633,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     setNewTaskTexts({ ...newTaskTexts, [inputKey]: '' });
 
     try {
-      await createTask(apiBaseUrl, newTask);
+      await createTask(newTask);
     } catch (error) {
       console.error('Failed to create task:', error);
       setTasks(tasks);
@@ -679,7 +678,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
 
     debounceTimers.current[debounceKey] = setTimeout(async () => {
       try {
-        await updateTask(apiBaseUrl, taskId, {
+        await updateTask(taskId, {
           completed: newState === 'completed',
           state: newState
         });
@@ -717,7 +716,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
 
     debounceTimers.current[debounceKey] = setTimeout(async () => {
       try {
-        await updateTask(apiBaseUrl, taskId, {
+        await updateTask(taskId, {
           completed: newState === 'completed',
           state: newState
         });
@@ -775,7 +774,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
 
     try {
       // Just update the task's date (move it)
-      await updateTask(apiBaseUrl, taskId, { date: targetDateStr, state: 'active', completed: false });
+      await updateTask(taskId, { date: targetDateStr, state: 'active', completed: false });
     } catch (error) {
       console.error('Failed to punt task:', error);
       setTasks(tasks);
@@ -790,7 +789,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     setTasks(updatedTasks);
 
     try {
-      await apiDeleteTask(apiBaseUrl, taskId);
+      await apiDeleteTask(taskId);
     } catch (error) {
       console.error('Failed to delete task:', error);
       setTasks(tasks);
@@ -841,7 +840,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     }));
 
     try {
-      await batchPuntTasks(apiBaseUrl, taskIds, dateStr, targetDateStr);
+      await batchPuntTasks(taskIds, dateStr, targetDateStr);
     } catch (error) {
       console.error('Failed to batch punt tasks:', error);
       setTasks(tasks);
@@ -862,7 +861,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     }));
 
     try {
-      await batchFailTasks(apiBaseUrl, taskIds);
+      await batchFailTasks(taskIds);
     } catch (error) {
       console.error('Failed to batch fail tasks:', error);
       setTasks(tasks);
@@ -887,7 +886,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     ]);
 
     try {
-      await batchGraveyardTasks(apiBaseUrl, taskIds);
+      await batchGraveyardTasks(taskIds);
     } catch (error) {
       console.error('Failed to batch graveyard tasks:', error);
       setTasks(tasks);
@@ -924,7 +923,7 @@ export function Todos({ apiBaseUrl, workMode = false }: TodosProps) {
     setTasks(updatedTasks);
 
     try {
-      await reorderTask(apiBaseUrl, taskId, newOrder);
+      await reorderTask(taskId, newOrder);
     } catch (error) {
       console.error('Failed to move task to top:', error);
       setTasks(tasks);

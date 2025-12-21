@@ -6,11 +6,10 @@ import dayWeekStyles from '../shared/DayWeek.module.css';
 import diaryStyles from './Diary.module.css';
 
 interface QuestionViewProps {
-    apiBaseUrl: string;
     onBack: () => void;
 }
 
-export function QuestionView({ apiBaseUrl, onBack }: QuestionViewProps) {
+export function QuestionView({ onBack }: QuestionViewProps) {
     const [data, setData] = useState<DiaryByQuestion[]>([]);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -35,7 +34,7 @@ export function QuestionView({ apiBaseUrl, onBack }: QuestionViewProps) {
 
     async function loadData() {
         try {
-            const result = await getDiaryByQuestion(apiBaseUrl);
+            const result = await getDiaryByQuestion();
             setData(result);
         } catch (error) {
             console.error('Failed to load diary by question:', error);

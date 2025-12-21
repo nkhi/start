@@ -8,9 +8,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import styles from './Lists.module.css';
 
-interface ListsProps {
-    apiBaseUrl: string;
-}
+
 
 /**
  * Convert a hex color to rgba with specified opacity
@@ -112,7 +110,7 @@ function SortableListItem({ item, listId, children }: { item: ListItem; listId: 
     );
 }
 
-export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
+export const Lists: React.FC = () => {
     const [lists, setLists] = useState<List[]>([]);
     const [newItemText, setNewItemText] = useState<Record<string, string>>({});
 
@@ -137,7 +135,7 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
 
     const fetchLists = async () => {
         try {
-            const data = await getLists(apiBaseUrl);
+            const data = await getLists();
             setLists(data.sort((a, b) => parseInt(a.order || '0', 10) - parseInt(b.order || '0', 10)));
         } catch (error) {
             console.error('Error fetching lists:', error);
@@ -151,12 +149,12 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
         });
 
         try {
-            await apiUpdateList(apiBaseUrl, id, updates);
+            await apiUpdateList(id, updates);
         } catch (error) {
             console.error('Error updating list:', error);
             fetchLists();
         }
-    }, [apiBaseUrl]);
+    }, []);
 
     const handleDragStart = useCallback((event: DragStartEvent) => {
         const { active } = event;
@@ -233,7 +231,7 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
             setLists(newLists.map((l, i) => ({ ...l, order: String(i) })));
 
             try {
-                await reorderLists(apiBaseUrl, newListOrder);
+                await reorderLists(newListOrder);
             } catch (error) {
                 console.error('Failed to reorder lists:', error);
                 fetchLists();
@@ -279,13 +277,13 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
             }));
 
             try {
-                await reorderListItems(apiBaseUrl, listId, newItemOrder);
+                await reorderListItems(listId, newItemOrder);
             } catch (error) {
                 console.error('Error reordering list items:', error);
                 fetchLists();
             }
         }
-    }, [lists, apiBaseUrl, activeList]);
+    }, [lists, activeList]);
 
     const handleDragCancel = useCallback(() => {
         setActiveList(null);
@@ -313,7 +311,7 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
         };
 
         try {
-            const savedList = await createList(apiBaseUrl, newList);
+            const savedList = await createList(newList);
             setLists(prev => {
                 const updated = [...prev, savedList];
                 return updated.sort((a, b) => parseInt(a.order || '0', 10) - parseInt(b.order || '0', 10));
@@ -328,7 +326,7 @@ export const Lists: React.FC<ListsProps> = ({ apiBaseUrl }) => {
 
         setLists(prev => prev.filter(l => l.id !== id));
         try {
-            await deleteList(apiBaseUrl, id);
+            await deleteList(id);
         } catch (error) {
             console.error('Error deleting list:', error);
             fetchLists();

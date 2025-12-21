@@ -1,5 +1,6 @@
 import type { Task } from '../types';
 import { fetchWithErrorReporting } from './errorReporter';
+import { API_BASE_URL } from '../config';
 
 export type GroupedTasks = Record<string, {
   active: Task[];
@@ -7,28 +8,28 @@ export type GroupedTasks = Record<string, {
   failed: Task[];
 }>;
 
-export async function getTasks(baseUrl: string): Promise<Record<string, Task[]>> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks`);
+export async function getTasks(): Promise<Record<string, Task[]>> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks`);
   if (!response.ok) throw new Error('Failed to fetch tasks');
   return response.json();
 }
 
-export async function getWorkTasks(baseUrl: string): Promise<Record<string, Task[]>> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/work`);
+export async function getWorkTasks(): Promise<Record<string, Task[]>> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/work`);
   if (!response.ok) throw new Error('Failed to fetch work tasks');
   return response.json();
 }
 
-export async function getTasksForWeek(baseUrl: string, start: string, end: string): Promise<Record<string, Task[]>> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/week?start=${start}&end=${end}`);
+export async function getTasksForWeek(start: string, end: string): Promise<Record<string, Task[]>> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/week?start=${start}&end=${end}`);
   if (!response.ok) throw new Error('Failed to fetch tasks for week');
   return response.json();
 }
 
-export async function getGroupedTasks(baseUrl: string, category?: 'life' | 'work'): Promise<GroupedTasks> {
-  const url = category 
-    ? `${baseUrl}/tasks/grouped?category=${category}`
-    : `${baseUrl}/tasks/grouped`;
+export async function getGroupedTasks(category?: 'life' | 'work'): Promise<GroupedTasks> {
+  const url = category
+    ? `${API_BASE_URL}/tasks/grouped?category=${category}`
+    : `${API_BASE_URL}/tasks/grouped`;
   const response = await fetchWithErrorReporting(url);
   if (!response.ok) throw new Error('Failed to fetch grouped tasks');
   return response.json();
@@ -40,17 +41,17 @@ export type TaskCounts = Record<string, {
   failed: number;
 }>;
 
-export async function getTaskCounts(baseUrl: string, category?: 'life' | 'work'): Promise<TaskCounts> {
-  const url = category 
-    ? `${baseUrl}/tasks/counts?category=${category}`
-    : `${baseUrl}/tasks/counts`;
+export async function getTaskCounts(category?: 'life' | 'work'): Promise<TaskCounts> {
+  const url = category
+    ? `${API_BASE_URL}/tasks/counts?category=${category}`
+    : `${API_BASE_URL}/tasks/counts`;
   const response = await fetchWithErrorReporting(url);
   if (!response.ok) throw new Error('Failed to fetch task counts');
   return response.json();
 }
 
-export async function createTask(baseUrl: string, task: Task): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks`, {
+export async function createTask(task: Task): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(task)
@@ -58,8 +59,8 @@ export async function createTask(baseUrl: string, task: Task): Promise<void> {
   if (!response.ok) throw new Error('Failed to create task');
 }
 
-export async function updateTask(baseUrl: string, id: string, updates: Partial<Task>): Promise<Task> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/${id}`, {
+export async function updateTask(id: string, updates: Partial<Task>): Promise<Task> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates)
@@ -68,20 +69,19 @@ export async function updateTask(baseUrl: string, id: string, updates: Partial<T
   return response.json();
 }
 
-export async function deleteTask(baseUrl: string, id: string): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/${id}`, {
+export async function deleteTask(id: string): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/${id}`, {
     method: 'DELETE'
   });
   if (!response.ok) throw new Error('Failed to delete task');
 }
 
 export async function batchPuntTasks(
-  baseUrl: string, 
-  taskIds: string[], 
-  sourceDate: string, 
+  taskIds: string[],
+  sourceDate: string,
   targetDate: string
 ): Promise<{ ok: boolean; newTasks: Task[] }> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/batch/punt`, {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/batch/punt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ taskIds, sourceDate, targetDate })
@@ -90,8 +90,8 @@ export async function batchPuntTasks(
   return response.json();
 }
 
-export async function batchFailTasks(baseUrl: string, taskIds: string[]): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/batch/fail`, {
+export async function batchFailTasks(taskIds: string[]): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/batch/fail`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ taskIds })
@@ -99,8 +99,8 @@ export async function batchFailTasks(baseUrl: string, taskIds: string[]): Promis
   if (!response.ok) throw new Error('Failed to batch fail tasks');
 }
 
-export async function batchGraveyardTasks(baseUrl: string, taskIds: string[]): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/batch/graveyard`, {
+export async function batchGraveyardTasks(taskIds: string[]): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/batch/graveyard`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ taskIds })
@@ -108,14 +108,12 @@ export async function batchGraveyardTasks(baseUrl: string, taskIds: string[]): P
   if (!response.ok) throw new Error('Failed to batch graveyard tasks');
 }
 
-// Reorder a task with optional date/category/state change
 export async function reorderTask(
-  baseUrl: string,
   id: string,
   order: string,
   options?: { date?: string; category?: 'life' | 'work'; state?: 'active' | 'completed' | 'failed' }
 ): Promise<Task> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/${id}/reorder`, {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/${id}/reorder`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ order, ...options })
@@ -124,7 +122,6 @@ export async function reorderTask(
   return response.json();
 }
 
-// Batch reorder multiple tasks (for future multi-selection drag)
 export interface ReorderMove {
   id: string;
   order: string;
@@ -133,8 +130,8 @@ export interface ReorderMove {
   state?: 'active' | 'completed' | 'failed';
 }
 
-export async function batchReorderTasks(baseUrl: string, moves: ReorderMove[]): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/batch/reorder`, {
+export async function batchReorderTasks(moves: ReorderMove[]): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/batch/reorder`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ moves })
@@ -142,36 +139,28 @@ export async function batchReorderTasks(baseUrl: string, moves: ReorderMove[]): 
   if (!response.ok) throw new Error('Failed to batch reorder tasks');
 }
 
-// ============================================
-// Graveyard API
-// ============================================
-
-// Get all graveyarded tasks (date = null)
-export async function getGraveyardTasks(baseUrl: string): Promise<Task[]> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/graveyard`);
+export async function getGraveyardTasks(): Promise<Task[]> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/graveyard`);
   if (!response.ok) throw new Error('Failed to fetch graveyard tasks');
   return response.json();
 }
 
-// Get work-only graveyarded tasks
-export async function getWorkGraveyardTasks(baseUrl: string): Promise<Task[]> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/graveyard/work`);
+export async function getWorkGraveyardTasks(): Promise<Task[]> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/graveyard/work`);
   if (!response.ok) throw new Error('Failed to fetch work graveyard tasks');
   return response.json();
 }
 
-// Move a task to the graveyard (set date = null)
-export async function graveyardTask(baseUrl: string, id: string): Promise<Task> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/${id}/graveyard`, {
+export async function graveyardTask(id: string): Promise<Task> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/${id}/graveyard`, {
     method: 'PATCH'
   });
   if (!response.ok) throw new Error('Failed to graveyard task');
   return response.json();
 }
 
-// Resurrect a task from graveyard to a specific date
-export async function resurrectTask(baseUrl: string, id: string, date: string): Promise<Task> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/tasks/${id}/resurrect`, {
+export async function resurrectTask(id: string, date: string): Promise<Task> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/tasks/${id}/resurrect`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ date })

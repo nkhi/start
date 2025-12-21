@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import styles from './ServerStatus.module.css';
+import { API_BASE_URL } from '../../config';
 
-export const ServerStatus = ({ apiBaseUrl }: { apiBaseUrl: string }) => {
-    const [isOnline, setIsOnline] = useState<boolean | null>(null); // null = initial check
+export const ServerStatus = () => {
+    const [isOnline, setIsOnline] = useState<boolean | null>(null);
 
     useEffect(() => {
         const checkStatus = async () => {
             try {
-                const res = await fetch(`${apiBaseUrl}/health`);
+                const res = await fetch(`${API_BASE_URL}/health`);
                 if (res.ok) {
                     setIsOnline(true);
                 } else {
@@ -18,16 +19,12 @@ export const ServerStatus = ({ apiBaseUrl }: { apiBaseUrl: string }) => {
             }
         };
 
-        // Check immediately
         checkStatus();
-
-        // Then every 2 seconds
         const interval = setInterval(checkStatus, 2000);
 
         return () => clearInterval(interval);
-    }, [apiBaseUrl]);
+    }, []);
 
-    // Only show when definitely offline
     if (isOnline !== false) {
         return null;
     }

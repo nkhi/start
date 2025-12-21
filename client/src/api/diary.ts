@@ -1,14 +1,15 @@
 import type { Question, DiaryEntry, DiaryByQuestion } from '../types';
 import { fetchWithErrorReporting } from './errorReporter';
+import { API_BASE_URL } from '../config';
 
-export async function getQuestions(baseUrl: string): Promise<Question[]> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/questions`);
+export async function getQuestions(): Promise<Question[]> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/questions`);
   if (!response.ok) throw new Error('Failed to fetch questions');
   return response.json();
 }
 
-export async function saveQuestion(baseUrl: string, question: Question): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/questions`, {
+export async function saveQuestion(question: Question): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/questions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(question)
@@ -16,14 +17,14 @@ export async function saveQuestion(baseUrl: string, question: Question): Promise
   if (!response.ok) throw new Error('Failed to save question');
 }
 
-export async function getDiary(baseUrl: string): Promise<Record<string, DiaryEntry[]>> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/diary`);
+export async function getDiary(): Promise<Record<string, DiaryEntry[]>> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/diary`);
   if (!response.ok) throw new Error('Failed to fetch diary');
   return response.json();
 }
 
-export async function createDiaryEntry(baseUrl: string, entry: DiaryEntry): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/diary-entries`, {
+export async function createDiaryEntry(entry: DiaryEntry): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/diary-entries`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(entry)
@@ -31,8 +32,8 @@ export async function createDiaryEntry(baseUrl: string, entry: DiaryEntry): Prom
   if (!response.ok) throw new Error('Failed to create diary entry');
 }
 
-export async function saveDiaryEntry(baseUrl: string, entry: DiaryEntry): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/diary-entries`, {
+export async function saveDiaryEntry(entry: DiaryEntry): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/diary-entries`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(entry)
@@ -40,8 +41,8 @@ export async function saveDiaryEntry(baseUrl: string, entry: DiaryEntry): Promis
   if (!response.ok) throw new Error('Failed to save diary entry');
 }
 
-export async function updateDiaryEntry(baseUrl: string, id: string, updates: Partial<DiaryEntry>): Promise<DiaryEntry> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/diary-entries/${id}`, {
+export async function updateDiaryEntry(id: string, updates: Partial<DiaryEntry>): Promise<DiaryEntry> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/diary-entries/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates)
@@ -50,20 +51,19 @@ export async function updateDiaryEntry(baseUrl: string, id: string, updates: Par
   return response.json();
 }
 
-export async function deleteDiaryEntry(baseUrl: string, id: string): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/diary-entries/${id}`, {
+export async function deleteDiaryEntry(id: string): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/diary-entries/${id}`, {
     method: 'DELETE'
   });
   if (!response.ok) throw new Error('Failed to delete diary entry');
 }
 
-export async function getDiaryByQuestion(baseUrl: string): Promise<DiaryByQuestion[]> {
+export async function getDiaryByQuestion(): Promise<DiaryByQuestion[]> {
   const [questions, diary] = await Promise.all([
-    getQuestions(baseUrl),
-    getDiary(baseUrl)
+    getQuestions(),
+    getDiary()
   ]);
 
-  // diary is Record<string, DiaryEntry[]> (keyed by date)
   const allEntries = Object.values(diary).flat();
 
   return questions.map(question => ({

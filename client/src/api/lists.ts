@@ -1,14 +1,15 @@
 import type { List } from '../types';
 import { fetchWithErrorReporting } from './errorReporter';
+import { API_BASE_URL } from '../config';
 
-export async function getLists(baseUrl: string): Promise<List[]> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/lists`);
+export async function getLists(): Promise<List[]> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/lists`);
   if (!response.ok) throw new Error('Failed to fetch lists');
   return response.json();
 }
 
-export async function createList(baseUrl: string, list: Partial<List>): Promise<List> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/lists`, {
+export async function createList(list: Partial<List>): Promise<List> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/lists`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(list)
@@ -17,8 +18,8 @@ export async function createList(baseUrl: string, list: Partial<List>): Promise<
   return response.json();
 }
 
-export async function updateList(baseUrl: string, id: string, updates: Partial<List>): Promise<List> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/lists/${id}`, {
+export async function updateList(id: string, updates: Partial<List>): Promise<List> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/lists/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates)
@@ -27,16 +28,15 @@ export async function updateList(baseUrl: string, id: string, updates: Partial<L
   return response.json();
 }
 
-export async function deleteList(baseUrl: string, id: string): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/lists/${id}`, {
+export async function deleteList(id: string): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/lists/${id}`, {
     method: 'DELETE'
   });
   if (!response.ok) throw new Error('Failed to delete list');
 }
 
-// Reorder a list (update order only)
-export async function reorderList(baseUrl: string, id: string, order: string): Promise<List> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/lists/${id}/reorder`, {
+export async function reorderList(id: string, order: string): Promise<List> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/lists/${id}/reorder`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ order })
@@ -45,9 +45,8 @@ export async function reorderList(baseUrl: string, id: string, order: string): P
   return response.json();
 }
 
-// Reorder items within a list (position update only - optimized)
-export async function reorderListItems(baseUrl: string, listId: string, itemOrder: string[]): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/lists/${listId}/reorder-items`, {
+export async function reorderListItems(listId: string, itemOrder: string[]): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/lists/${listId}/reorder-items`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ itemOrder })
@@ -55,9 +54,8 @@ export async function reorderListItems(baseUrl: string, listId: string, itemOrde
   if (!response.ok) throw new Error('Failed to reorder list items');
 }
 
-// Reorder lists (order update only - optimized, uses numeric ordering)
-export async function reorderLists(baseUrl: string, listOrder: string[]): Promise<void> {
-  const response = await fetchWithErrorReporting(`${baseUrl}/lists/reorder`, {
+export async function reorderLists(listOrder: string[]): Promise<void> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/lists/reorder`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ listOrder })

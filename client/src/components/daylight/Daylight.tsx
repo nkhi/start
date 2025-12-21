@@ -12,12 +12,10 @@ import { SunDim, Moon, MoonStars, Circle } from '@phosphor-icons/react';
 const SHOW_SENTENCE_TEXT = false;
 
 interface DaylightProps {
-    apiBaseUrl?: string;
     workMode?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function Daylight({ apiBaseUrl: _apiBaseUrl, workMode = false }: DaylightProps) {
+export function Daylight({ workMode = false }: DaylightProps) {
     const {
         userLocation,
         sunObject,

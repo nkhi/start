@@ -24,15 +24,24 @@ export async function fetchWithErrorReporting(
   url: string,
   options?: RequestInit
 ): Promise<Response> {
-  const response = await fetch(url, options);
-  
+  let response: Response;
+
+  try {
+    response = await fetch(url, options);
+  } catch (error) {
+    // Network error (server down, no internet, etc.)
+    if (globalErrorReporter) {
+      const route = extractRoute(url);
+      globalErrorReporter(0, route); // 0 = network error
+    }
+    throw error;
+  }
+
   if (!response.ok && globalErrorReporter) {
-    // Extract route from URL (remove base URL and query params)
-    const urlObj = new URL(url);
-    const route = urlObj.pathname;
+    const route = extractRoute(url);
     globalErrorReporter(response.status, route);
   }
-  
+
   return response;
 }
 

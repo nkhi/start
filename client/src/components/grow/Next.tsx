@@ -5,11 +5,7 @@ import { getNotes, createNote, updateNote as apiUpdateNote } from '../../api/nex
 import type { Note } from '../../types';
 import styles from './Next.module.css';
 
-interface NextProps {
-    apiBaseUrl: string;
-}
-
-export const Next: React.FC<NextProps> = ({ apiBaseUrl }) => {
+export const Next: React.FC = () => {
     const [notes, setNotes] = useState<Note[]>([]);
 
 
@@ -19,7 +15,7 @@ export const Next: React.FC<NextProps> = ({ apiBaseUrl }) => {
 
     const fetchNotes = async () => {
         try {
-            const data = await getNotes(apiBaseUrl);
+            const data = await getNotes();
             setNotes(data);
         } catch (error) {
             console.error('Error fetching notes:', error);
@@ -31,7 +27,7 @@ export const Next: React.FC<NextProps> = ({ apiBaseUrl }) => {
         setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates } : n));
 
         try {
-            await apiUpdateNote(apiBaseUrl, id, updates);
+            await apiUpdateNote(id, updates);
         } catch (error) {
             console.error('Error updating note:', error);
             // Revert on failure (could be improved)
@@ -66,7 +62,7 @@ export const Next: React.FC<NextProps> = ({ apiBaseUrl }) => {
         };
 
         try {
-            const savedNote = await createNote(apiBaseUrl, newNote);
+            const savedNote = await createNote(newNote);
             setNotes(prev => [...prev, savedNote]);
         } catch (error) {
             console.error('Error creating note:', error);
