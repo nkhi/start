@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import * as db from '../db.ts';
 import { logToFile } from '../logger.ts';
 import type { DbTask } from '../db-types.ts';
-import type { 
+import type {
   Task, TasksByDate, GroupedTasks, TaskCounts,
   CreateTaskRequest, UpdateTaskRequest, ReorderRequest,
   BatchPuntRequest, BatchFailRequest, BatchReorderRequest
@@ -14,7 +14,7 @@ const router = express.Router();
 // Helper to transform DB row to API response
 function dbTaskToTask(t: DbTask): Task {
   const createdAtStr = t.created_at?.toISOString() || new Date().toISOString();
-  
+
   // Handle null dates (graveyard tasks)
   if (!t.date) {
     return {
@@ -29,15 +29,15 @@ function dbTaskToTask(t: DbTask): Task {
       puntDays: 0
     };
   }
-  
+
   const dateStr = formatDate(t.date);
-  
+
   // Calculate punt days: difference between active date and created date
   const activeDate = new Date(dateStr + 'T00:00:00Z');
   const createdDate = new Date(createdAtStr);
   const createdDateOnly = new Date(createdDate.toISOString().split('T')[0] + 'T00:00:00Z');
   const puntDays = Math.max(0, Math.floor((activeDate.getTime() - createdDateOnly.getTime()) / (1000 * 60 * 60 * 24)));
-  
+
   return {
     id: t.id,
     text: t.text,
@@ -78,6 +78,7 @@ router.get('/tasks/week', async (req: Request, res: Response) => {
 });
 
 // Get only work tasks (for work mode - privacy on work laptops)
+// Also filters out Saturday (day 6) and Sunday (day 0) dates
 router.get('/tasks/work', async (_req: Request, res: Response) => {
   try {
     const result = await db.query<DbTask>(`SELECT * FROM tasks WHERE category = 'work' AND date IS NOT NULL`);
@@ -85,6 +86,14 @@ router.get('/tasks/work', async (_req: Request, res: Response) => {
     const tasksByDate: TasksByDate = {};
     result.rows.forEach(t => {
       const dateStr = formatDate(t.date!);
+
+      // Filter out weekends (Saturday = 6, Sunday = 0)
+      const dateObj = new Date(dateStr + 'T00:00:00');
+      const dayOfWeek = dateObj.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        return; // Skip weekend dates
+      }
+
       if (!tasksByDate[dateStr]) tasksByDate[dateStr] = [];
       tasksByDate[dateStr].push(dbTaskToTask(t));
     });
@@ -116,32 +125,32 @@ router.get('/tasks', async (_req: Request, res: Response) => {
 // Get task counts by state for each date
 router.get('/tasks/counts', async (req: Request, res: Response) => {
   const { category } = req.query as { category?: string };
-  
+
   try {
     let queryText = 'SELECT date, state, completed, COUNT(*) as count FROM tasks WHERE date IS NOT NULL';
     const params: string[] = [];
-    
+
     if (category) {
       queryText += ' AND category = $1';
       params.push(category);
     }
-    
+
     queryText += ' GROUP BY date, state, completed';
-    
+
     const result = await db.query<{ date: Date; state: string | null; completed: boolean | null; count: string }>(queryText, params);
 
     const countsByDate: TaskCounts = {};
-    
+
     result.rows.forEach(row => {
       const dateStr = formatDate(row.date);
-      
+
       if (!countsByDate[dateStr]) {
         countsByDate[dateStr] = { active: 0, completed: 0, failed: 0 };
       }
-      
+
       const state = row.state || (row.completed ? 'completed' : 'active');
       const count = parseInt(row.count, 10);
-      
+
       if (state === 'completed') {
         countsByDate[dateStr].completed += count;
       } else if (state === 'failed') {
@@ -150,7 +159,7 @@ router.get('/tasks/counts', async (req: Request, res: Response) => {
         countsByDate[dateStr].active += count;
       }
     });
-    
+
     res.json(countsByDate);
   } catch (e) {
     const error = e as Error;
@@ -161,30 +170,30 @@ router.get('/tasks/counts', async (req: Request, res: Response) => {
 // Get tasks grouped by state (active, completed, failed) for each date
 router.get('/tasks/grouped', async (req: Request, res: Response) => {
   const { category } = req.query as { category?: string };
-  
+
   try {
     let queryText = 'SELECT * FROM tasks WHERE date IS NOT NULL';
     const params: string[] = [];
-    
+
     if (category) {
       queryText += ' AND category = $1';
       params.push(category);
     }
-    
+
     const result = await db.query<DbTask>(queryText, params);
 
     const groupedByDate: GroupedTasks = {};
-    
+
     result.rows.forEach(t => {
       const dateStr = formatDate(t.date!);
-      
+
       if (!groupedByDate[dateStr]) {
         groupedByDate[dateStr] = { active: [], completed: [], failed: [] };
       }
-      
+
       const task = dbTaskToTask(t);
       const state = t.state || (t.completed ? 'completed' : 'active');
-      
+
       if (state === 'completed') {
         groupedByDate[dateStr].completed.push(task);
       } else if (state === 'failed') {
@@ -193,7 +202,7 @@ router.get('/tasks/grouped', async (req: Request, res: Response) => {
         groupedByDate[dateStr].active.push(task);
       }
     });
-    
+
     res.json(groupedByDate);
   } catch (e) {
     const error = e as Error;
@@ -348,7 +357,7 @@ router.put('/tasks/:id', async (req: Request<{ id: string }, object, Partial<Tas
 // Batch punt tasks (move tasks to target date by updating their date)
 router.post('/tasks/batch/punt', async (req: Request<object, object, BatchPuntRequest>, res: Response) => {
   const { taskIds, sourceDate, targetDate } = req.body;
-  
+
   if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
     return res.status(400).json({ error: 'taskIds must be a non-empty array' });
   }
@@ -359,21 +368,21 @@ router.post('/tasks/batch/punt', async (req: Request<object, object, BatchPuntRe
   const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
-    
+
     // Simply move tasks to target date (update date, keep state as active)
     await client.query(
       'UPDATE tasks SET date = $1, state = $2, completed = $3 WHERE id = ANY($4)',
       [targetDate, 'active', false, taskIds]
     );
-    
+
     // Fetch updated tasks to return
     const tasksResult = await client.query<DbTask>(
       'SELECT * FROM tasks WHERE id = ANY($1)',
       [taskIds]
     );
-    
+
     const movedTasks: Task[] = tasksResult.rows.map(task => dbTaskToTask(task));
-    
+
     await client.query('COMMIT');
     res.json({ ok: true, movedTasks });
   } catch (e) {
@@ -388,7 +397,7 @@ router.post('/tasks/batch/punt', async (req: Request<object, object, BatchPuntRe
 // Batch fail tasks
 router.post('/tasks/batch/fail', async (req: Request<object, object, BatchFailRequest>, res: Response) => {
   const { taskIds } = req.body;
-  
+
   if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
     return res.status(400).json({ error: 'taskIds must be a non-empty array' });
   }
@@ -396,12 +405,12 @@ router.post('/tasks/batch/fail', async (req: Request<object, object, BatchFailRe
   const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
-    
+
     await client.query(
       'UPDATE tasks SET state = $1, completed = $2 WHERE id = ANY($3)',
       ['failed', false, taskIds]
     );
-    
+
     await client.query('COMMIT');
     res.json({ ok: true });
   } catch (e) {
@@ -416,7 +425,7 @@ router.post('/tasks/batch/fail', async (req: Request<object, object, BatchFailRe
 // Batch graveyard tasks (set date = NULL for all)
 router.post('/tasks/batch/graveyard', async (req: Request<object, object, { taskIds: string[] }>, res: Response) => {
   const { taskIds } = req.body;
-  
+
   if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
     return res.status(400).json({ error: 'taskIds must be a non-empty array' });
   }
@@ -424,12 +433,12 @@ router.post('/tasks/batch/graveyard', async (req: Request<object, object, { task
   const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
-    
+
     await client.query(
       'UPDATE tasks SET date = NULL, state = $1, completed = $2 WHERE id = ANY($3)',
       ['active', false, taskIds]
     );
-    
+
     await client.query('COMMIT');
     res.json({ ok: true });
   } catch (e) {
@@ -489,7 +498,7 @@ router.patch('/tasks/:id/reorder', async (req: Request<{ id: string }, object, R
 // Batch reorder tasks (for future multi-selection drag)
 router.post('/tasks/batch/reorder', async (req: Request<object, object, BatchReorderRequest>, res: Response) => {
   const { moves } = req.body;
-  
+
   if (!moves || !Array.isArray(moves) || moves.length === 0) {
     return res.status(400).json({ error: 'moves must be a non-empty array' });
   }
@@ -497,11 +506,11 @@ router.post('/tasks/batch/reorder', async (req: Request<object, object, BatchReo
   const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
-    
+
     for (const move of moves) {
       const { id, order, date, category, state } = move;
       if (!id || !order) continue;
-      
+
       const fields = ['"order" = $2'];
       const values: unknown[] = [id, order];
       let idx = 3;
@@ -523,7 +532,7 @@ router.post('/tasks/batch/reorder', async (req: Request<object, object, BatchReo
         UPDATE tasks SET ${fields.join(', ')} WHERE id = $1
       `, values);
     }
-    
+
     await client.query('COMMIT');
     res.json({ ok: true });
   } catch (e) {

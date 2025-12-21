@@ -741,6 +741,14 @@ export function Todos({ workMode = false }: TodosProps) {
     if (dateStr >= todayStr) {
       const d = new Date(dateStr);
       d.setUTCDate(d.getUTCDate() + 1);
+
+      // In work mode, skip weekends (Saturday/Sunday)
+      if (workMode) {
+        while (d.getUTCDay() === 0 || d.getUTCDay() === 6) {
+          d.setUTCDate(d.getUTCDate() + 1);
+        }
+      }
+
       targetDateStr = d.toISOString().split('T')[0];
     }
 
@@ -806,6 +814,14 @@ export function Todos({ workMode = false }: TodosProps) {
     if (dateStr >= todayStr) {
       const d = new Date(dateStr);
       d.setUTCDate(d.getUTCDate() + 1);
+
+      // In work mode, skip weekends (Saturday/Sunday)
+      if (workMode) {
+        while (d.getUTCDay() === 0 || d.getUTCDay() === 6) {
+          d.setUTCDate(d.getUTCDate() + 1);
+        }
+      }
+
       targetDateStr = d.toISOString().split('T')[0];
     }
 
@@ -1282,6 +1298,7 @@ export function Todos({ workMode = false }: TodosProps) {
           moreOverride="Week"
           onGraveyardClick={() => setIsGraveyardOpen(prev => !prev)}
           isGraveyardOpen={isGraveyardOpen}
+          workMode={workMode}
         />
       )}
 

@@ -57,6 +57,11 @@ interface DayWeekProps {
    * Optional: Whether the graveyard panel is currently open.
    */
   isGraveyardOpen?: boolean;
+
+  /**
+   * Optional: Work mode - filters out Saturday and Sunday when true.
+   */
+  workMode?: boolean;
 }
 
 /**
@@ -80,7 +85,8 @@ export function DayWeek({
   onMoreClick,
   moreOverride,
   onGraveyardClick,
-  isGraveyardOpen
+  isGraveyardOpen,
+  workMode = false
 }: DayWeekProps) {
   const [dates, setDates] = useState<Date[]>([]);
   const [focusedDateStr, setFocusedDateStr] = useState<string>('');
@@ -93,7 +99,7 @@ export function DayWeek({
 
   useEffect(() => {
     initializeDates();
-  }, []);
+  }, [workMode]);
 
   function initializeDates() {
     const allDates = DateUtility.getAllDatesFromStart(startDate);
@@ -107,7 +113,17 @@ export function DayWeek({
       futureDatesList.push(d);
     }
 
-    setDates([...allDates, ...futureDatesList]);
+    let finalDates = [...allDates, ...futureDatesList];
+
+    // Filter out weekends in work mode
+    if (workMode) {
+      finalDates = finalDates.filter(d => {
+        const day = d.getDay();
+        return day !== 0 && day !== 6; // Exclude Sunday (0) and Saturday (6)
+      });
+    }
+
+    setDates(finalDates);
 
     // Scroll to today after dates are set
     setTimeout(() => scrollToToday(), 100);
@@ -147,7 +163,23 @@ export function DayWeek({
 
   function scrollToToday() {
     if (scrollContainerRef.current) {
-      const todayEl = scrollContainerRef.current.querySelector('.today');
+      let todayEl = scrollContainerRef.current.querySelector('.today');
+
+      // In work mode, if today is a weekend, find the next Monday
+      if (!todayEl && workMode) {
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+
+        // If today is Sunday (0) or Saturday (6), find next weekday
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          const nextWeekday = new Date(today);
+          // Sunday -> Monday (+1), Saturday -> Monday (+2)
+          nextWeekday.setDate(today.getDate() + (dayOfWeek === 0 ? 1 : 2));
+          const nextWeekdayStr = DateUtility.formatDate(nextWeekday);
+          todayEl = scrollContainerRef.current.querySelector(`[data-date="${nextWeekdayStr}"]`);
+        }
+      }
+
       if (todayEl) {
         todayEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       }
