@@ -26,6 +26,7 @@ export interface HabitEntry {
   state: number;
   time?: string;
   timestamp: string;
+  comment?: string | null;
 }
 
 export interface Vlog {

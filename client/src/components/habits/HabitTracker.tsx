@@ -3,6 +3,7 @@ import { getHabits, getEntries, saveEntry } from '../../api/habits';
 import { getVlogsBatch, saveVlog } from '../../api/vlogs';
 import type { Habit, HabitEntry, Vlog } from '../../types';
 import { DateUtility, getGrade, generateId } from '../../utils';
+import { useEntryComment } from '../../hooks/useEntryComment';
 import VlogModal from './VlogModal';
 // import ChartModal from './ChartModal';
 import { TimeFilterButtons } from './TimeFilterButtons';
@@ -10,6 +11,7 @@ import { HabitTimeIcon } from './habitTimeConfig';
 import { VideoCameraIcon } from '@phosphor-icons/react';
 import styles from './HabitTracker.module.css';
 import { HabitNameCell } from './HabitNameCell';
+import { CommentPanel } from './CommentPanel';
 
 const CONFIG = {
   startDate: new Date('2025-11-09T00:00:00'),
@@ -23,11 +25,7 @@ const CONFIG = {
 //   { min: 67, max: 100, className: styles.dailyStatusGreen }
 // ];
 
-interface HabitTrackerProps {
-  apiBaseUrl: string;
-}
-
-export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
+export function HabitTracker() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [entries, setEntries] = useState<Map<string, HabitEntry>>(new Map());
   const [dates, setDates] = useState<Date[]>([]);
@@ -45,10 +43,21 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
   const theadRef = useRef<HTMLTableSectionElement>(null);
   const recordingWeekRef = useRef<Date | null>(null);
 
-  // Comment tooltip state
+  // Comment tooltip state (for habit name hover)
   const [hoveredHabitId, setHoveredHabitId] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const hoverTimerRef = useRef<number | null>(null);
+
+  // Entry comment hook
+  const handleEntriesChange = useCallback((updater: (prev: Map<string, HabitEntry>) => Map<string, HabitEntry>) => {
+    setEntries(prev => updater(prev));
+  }, []);
+
+  const { getCellHandlers, commentPanel, cellTooltip, wasLongPress } = useEntryComment({
+    entries,
+    habits,
+    onEntriesChange: handleEntriesChange
+  });
 
   const weeks = useMemo(() => {
     const weeksMap = new Map<string, Date[]>();
@@ -240,9 +249,8 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     try {
       setIsLoading(true);
       const [habitsData, entriesData] = await Promise.all([
-        getHabits(apiBaseUrl),
+        getHabits(),
         getEntries(
-          apiBaseUrl,
           DateUtility.formatDate(CONFIG.startDate),
           DateUtility.formatDate(new Date())
         )
@@ -282,7 +290,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     });
 
     // Single batch API call instead of N individual calls
-    const vlogsData = await getVlogsBatch(apiBaseUrl, Array.from(weeks));
+    const vlogsData = await getVlogsBatch(Array.from(weeks));
     const vlogsMap = new Map<string, Vlog>();
     Object.entries(vlogsData).forEach(([weekStart, vlog]) => {
       vlogsMap.set(weekStart, vlog as Vlog);
@@ -332,7 +340,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     setEntries(newEntries);
 
     try {
-      await saveEntry(apiBaseUrl, newEntry);
+      await saveEntry(newEntry);
     } catch (error) {
       console.error('Failed to save entry:', error);
       setEntries(entries);
@@ -401,7 +409,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
     const vlog: Vlog = { weekStartDate: weekStartStr, videoUrl, embedHtml };
 
     try {
-      await saveVlog(apiBaseUrl, vlog);
+      await saveVlog(vlog);
       const newVlogs = new Map(vlogs);
       newVlogs.set(weekStartStr, vlog);
       setVlogs(newVlogs);
@@ -748,19 +756,29 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
                       return (
                         <React.Fragment key={`${week.key}-${idx}`}>
                           <td>
-                            <div
-                              className={`${styles.cell} ${CONFIG.stateClasses[state]} ${habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0) ? styles.disabled : ''}`}
-                              onClick={() => {
-                                if (habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0)) return;
-                                cycleState(date, habit.id);
-                              }}
-                            >
-                              {habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0) ? (
-                                <span style={{ color: '#333', fontSize: '12px' }}>-</span>
-                              ) : (
-                                CONFIG.stateIcons[state]
-                              )}
-                            </div>
+                            {(() => {
+                              const handlers = getCellHandlers(date, habit, entry);
+                              return (
+                                <div
+                                  className={`${styles.cell} ${CONFIG.stateClasses[state]} ${habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0) ? styles.disabled : ''} ${entry?.comment ? styles.hasComment : ''}`}
+                                  onClick={() => {
+                                    if (wasLongPress()) return;
+                                    if (habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0)) return;
+                                    cycleState(date, habit.id);
+                                  }}
+                                  onMouseDown={handlers.onMouseDown}
+                                  onMouseUp={handlers.onMouseUp}
+                                  onMouseLeave={handlers.onMouseLeave}
+                                  onMouseEnter={handlers.onMouseEnter}
+                                >
+                                  {habit.defaultTime === 'weekdays' && (isSaturday || date.getDay() === 0) ? (
+                                    <span style={{ color: '#333', fontSize: '12px' }}>-</span>
+                                  ) : (
+                                    CONFIG.stateIcons[state]
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </td>
                           {isSaturday && (() => {
                             const weekStartDate = new Date(date.getTime() - 6 * 24 * 60 * 60 * 1000);
@@ -792,7 +810,7 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
         />
       )}
 
-      {/* Comment Tooltip */}
+      {/* Habit Name Comment Tooltip */}
       {hoveredHabitId && tooltipPosition && (
         <div
           className={styles.habitCommentTooltip}
@@ -804,6 +822,22 @@ export function HabitTracker({ apiBaseUrl }: HabitTrackerProps) {
           {habits.find(h => h.id === hoveredHabitId)?.comment}
         </div>
       )}
+
+      {/* Cell Comment Tooltip */}
+      {cellTooltip && (
+        <div
+          className={styles.cellCommentTooltip}
+          style={{
+            left: cellTooltip.x,
+            top: cellTooltip.y
+          }}
+        >
+          {cellTooltip.comment}
+        </div>
+      )}
+
+      {/* Comment Panel */}
+      {commentPanel && <CommentPanel {...commentPanel} />}
     </>
   );
 }

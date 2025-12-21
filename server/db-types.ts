@@ -27,6 +27,7 @@ export interface DbEntry {
   habit_id: string;
   state: number | null;
   timestamp: Date | null;
+  comment: string | null;
 }
 
 export interface DbQuestion {

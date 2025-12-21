@@ -1,0 +1,108 @@
+/* Comment Panel - Floating input in bottom-right */
+.commentPanel {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 320px;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    z-index: 200;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+.commentPanel.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+/* Close button */
+.closeBtn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    z-index: 2;
+}
+
+.closeBtn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 24px;
+}
+
+.habitName {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.date {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Input */
+.input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    color: white;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+}
+
+.input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.input:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Hint */
+.hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.35);
+    text-align: center;
+}
+
+.hint kbd {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 10px;
+}
