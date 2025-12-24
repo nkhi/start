@@ -70,7 +70,7 @@ router.post('/habit-entry', async (req: Request<object, object, CreateHabitEntry
       INSERT INTO entries (entry_id, date, habit_id, state, timestamp)
       VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (entry_id) 
-      DO UPDATE SET state = EXCLUDED.state, timestamp = EXCLUDED.timestamp
+      DO UPDATE SET state = EXCLUDED.state, timestamp = EXCLUDED.timestamp, comment = entries.comment
     `, [entryId, date, habitId, state, timestamp]);
 
     res.json({ ok: true });
