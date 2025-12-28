@@ -4,10 +4,12 @@ import { getVlogsBatch, saveVlog } from '../../api/vlogs';
 import type { Habit, HabitEntry, Vlog } from '../../types';
 import { DateUtility, getGrade, generateId } from '../../utils';
 import { useEntryComment } from '../../hooks/useEntryComment';
+import { useHabitDeadlineToast } from '../../hooks/useHabitDeadlineToast';
 import VlogModal from './VlogModal';
 // import ChartModal from './ChartModal';
 import { TimeFilterButtons } from './TimeFilterButtons';
 import { HabitTimeIcon } from './habitTimeConfig';
+import { HabitDeadlineToast } from './HabitDeadlineToast';
 import { VideoCameraIcon } from '@phosphor-icons/react';
 import styles from './HabitTracker.module.css';
 import { HabitNameCell } from './HabitNameCell';
@@ -53,6 +55,9 @@ export function HabitTracker() {
   const [reorderingHabit, setReorderingHabit] = useState<Habit | null>(null);
   const [reorderPosition, setReorderPosition] = useState<{ x: number; y: number } | null>(null);
 
+  // Deadline tooltip state
+  const [deadlineTooltip, setDeadlineTooltip] = useState<{ x: number; y: number; time: string } | null>(null);
+
   // Entry comment hook
   const handleEntriesChange = useCallback((updater: (prev: Map<string, HabitEntry>) => Map<string, HabitEntry>) => {
     setEntries(prev => updater(prev));
@@ -63,6 +68,9 @@ export function HabitTracker() {
     habits,
     onEntriesChange: handleEntriesChange
   });
+
+  // Deadline toast hook
+  const { toasts: deadlineToasts, showDeadlineToast, dismissToast: dismissDeadlineToast } = useHabitDeadlineToast();
 
   const weeks = useMemo(() => {
     const weeksMap = new Map<string, Date[]>();
@@ -318,15 +326,34 @@ export function HabitTracker() {
     }
   }
 
+  // Check if deadline has passed for a habit on a given date
+  function isDeadlinePassed(habit: Habit, date: Date): boolean {
+    if (!habit.deadlineTime) return false;
+    if (!DateUtility.isToday(date)) return false;
+
+    const now = new Date();
+    const [hours, minutes] = habit.deadlineTime.split(':').map(Number);
+    const deadline = new Date();
+    deadline.setHours(hours, minutes, 0, 0);
+
+    return now > deadline;
+  }
+
   async function cycleState(date: Date, habitId: string) {
     const dateStr = DateUtility.formatDate(date);
     const key = `${dateStr}_${habitId}`;
     const current = entries.get(key);
     const currentState = current?.state || 0;
-    const nextState = (currentState + 1) % 5;
+    let nextState = (currentState + 1) % 5;
 
     const habit = habits.find(h => h.id === habitId);
     const time = habit?.defaultTime || 'neither';
+
+    // If deadline has passed and we're trying to go to state 1 (checkmark), skip it
+    if (habit && nextState === 1 && isDeadlinePassed(habit, date)) {
+      nextState = 2; // Skip to X
+      showDeadlineToast(habitId, habit.name);
+    }
 
     const entryId = current?.entryId || generateId();
     const timestamp = new Date().toISOString();
@@ -576,6 +603,20 @@ export function HabitTracker() {
     setReorderPosition(null);
   }, []);
 
+  // Deadline tooltip handlers
+  const handleDeadlineMouseEnter = useCallback((event: React.MouseEvent, deadlineTime: string) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setDeadlineTooltip({
+      x: rect.right + 8,
+      y: rect.top + rect.height / 2,
+      time: deadlineTime
+    });
+  }, []);
+
+  const handleDeadlineMouseLeave = useCallback(() => {
+    setDeadlineTooltip(null);
+  }, []);
+
   if (isLoading || habits.length === 0 || dates.length === 0) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
@@ -710,6 +751,8 @@ export function HabitTracker() {
                       onMouseEnter={(e, id, comment) => handleHabitNameMouseEnter(id, comment, e)}
                       onMouseLeave={handleHabitNameMouseLeave}
                       onReorderStart={handleReorderStart}
+                      onDeadlineMouseEnter={handleDeadlineMouseEnter}
+                      onDeadlineMouseLeave={handleDeadlineMouseLeave}
                     />
                   </td>
                   {weeks.map((week, weekIndex) => {
@@ -911,6 +954,19 @@ export function HabitTracker() {
         </div>
       )}
 
+      {/* Deadline Tooltip */}
+      {deadlineTooltip && (
+        <div
+          className={styles.deadlineTooltip}
+          style={{
+            left: deadlineTooltip.x,
+            top: deadlineTooltip.y
+          }}
+        >
+          {deadlineTooltip.time}
+        </div>
+      )}
+
       {/* Comment Panel */}
       {commentPanel && <CommentPanel {...commentPanel} />}
 
@@ -924,6 +980,9 @@ export function HabitTracker() {
           onClose={handleReorderClose}
         />
       )}
+
+      {/* Deadline Toast */}
+      <HabitDeadlineToast toasts={deadlineToasts} onDismiss={dismissDeadlineToast} />
     </>
   );
 }

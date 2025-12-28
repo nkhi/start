@@ -924,3 +924,24 @@
   background: rgba(139, 92, 246, 0.7);
   border-radius: 50%;
 }
+
+/* Deadline Tooltip */
+.deadlineTooltip {
+  position: fixed;
+  transform: translateY(-50%);
+  background: #111111;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 6px 10px;
+  z-index: 1000;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 12px 24px -4px rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  animation: tooltipFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  white-space: nowrap;
+}

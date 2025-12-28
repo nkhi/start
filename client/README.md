@@ -45,7 +45,8 @@ src/
 │   ├── diary.ts
 │   ├── lists.ts
 │   ├── next.ts
-│   └── vlogs.ts
+│   ├── vlogs.ts
+│   └── calendar.ts         # Google Calendar API calls
 │
 ├── components/
 │   ├── habits/             # Habit tracking with calendar view
@@ -54,10 +55,15 @@ src/
 │   │   ├── LoomRecorder.tsx
 │   │   └── ...
 │   │
-│   ├── today/              # Todo management
+│   ├── todos/              # Todo management
 │   │   ├── Todos.tsx
 │   │   ├── WeekView.tsx
 │   │   ├── DraggableTask.tsx
+│   │   ├── calendar/       # Calendar popover components
+│   │   │   ├── CalendarPopover.tsx
+│   │   │   ├── AllDayEventCard.tsx
+│   │   │   ├── TimedEventCard.tsx
+│   │   │   └── CalendarColors.ts
 │   │   └── ...
 │   │
 │   ├── journal/            # Daily diary/journal
@@ -91,6 +97,7 @@ src/
 │       └── ServerStatus.tsx
 │
 ├── hooks/                  # Custom React hooks
+│   ├── useCalendarEvents.ts  # Calendar event fetching and state
 │   └── useListReorder.ts
 │
 ├── constants/              # App constants
@@ -137,3 +144,4 @@ All shared types are in `src/types.ts`:
 | `List` / `ListItem` | List containers and their items |
 | `Note` | Ideas card (used in Grow/Next) |
 | `Vlog` | Weekly video reflection |
+| `CalendarEvent` | Google Calendar event (summary, start_time, end_time, all_day) |

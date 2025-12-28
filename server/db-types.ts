@@ -19,6 +19,7 @@ export interface DbHabit {
   active: boolean | null;
   created_date: Date | null;
   comment: string | null;
+  deadline_time: string | null;
 }
 
 export interface DbEntry {
@@ -77,10 +78,24 @@ export interface DbListItem {
   position: number | null;
 }
 
+
 export interface DbDiaryEntry {
   id: string;
   date: Date;
   question_id: string;
   answer: string | null;
   created_at: Date | null;
+}
+
+export interface DbCalendarEvent {
+  id: string;
+  summary: string | null;
+  description: string | null;
+  start_time: Date | null;
+  end_time: Date | null;
+  all_day: boolean | null;
+  status: string | null;
+  html_link: string | null;
+  created_at: Date | null;
+  updated_at: Date | null;
 }

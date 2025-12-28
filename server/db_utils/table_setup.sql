@@ -105,3 +105,18 @@ CREATE TABLE public.diary_entries (
 	CONSTRAINT diary_entries_pkey PRIMARY KEY (id ASC)
 );
 
+
+DROP TABLE IF EXISTS "public"."calendar_events";
+CREATE TABLE public.calendar_events (
+	id STRING NOT NULL,
+	summary STRING NULL,
+	description STRING NULL,
+	start_time TIMESTAMPTZ NULL,
+	end_time TIMESTAMPTZ NULL,
+	all_day BOOL NULL,
+	status STRING NULL,
+	html_link STRING NULL,
+	created_at TIMESTAMPTZ NULL DEFAULT now(),
+	updated_at TIMESTAMPTZ NULL DEFAULT now(),
+	CONSTRAINT calendar_events_pkey PRIMARY KEY (id ASC)
+);

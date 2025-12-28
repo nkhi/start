@@ -1,0 +1,176 @@
+/* ===========================================
+   CalendarPopover Styles
+   Organized into: Wrapper, Trigger, Panel, Header, Content, States
+   =========================================== */
+
+/* --- Wrapper --- */
+.calendarPopoverWrapper {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+/* --- Trigger Button --- */
+.calendarBtn {
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: #A3A3A3;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendarBtn:hover,
+.calendarBtn[aria-expanded="true"] {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #EDEDED;
+}
+
+/* --- Popover Panel --- */
+.popoverPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: -4px;
+  width: 320px;
+  background-color: #1A1A1A;
+  border: 1px solid #333;
+  border-radius: 12px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* --- Header --- */
+.popoverHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  background-color: transparent;
+  border-bottom: 1px solid #2A2A2A;
+}
+
+.popoverTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #EDEDED;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.syncButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  padding: 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.syncButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #EDEDED;
+}
+
+.syncButton.spinning {
+  animation: spin 1s linear infinite;
+  color: #8AB4F8;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Content Area --- */
+.popoverContent {
+  padding: 0;
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: #1A1A1A;
+}
+
+.popoverContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.popoverContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.popoverContent::-webkit-scrollbar-thumb {
+  background-color: #333;
+  border-radius: 3px;
+}
+
+/* --- Event Lists --- */
+.allDayList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #2A2A2A;
+}
+
+.timeList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+/* --- Empty/Loading/Error States --- */
+.emptyState,
+.loadingState,
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  gap: 12px;
+  text-align: center;
+}
+
+.emptyIcon {
+  color: #444;
+}
+
+.emptyText {
+  font-size: 13px;
+  color: #888;
+}
+
+.errorState .emptyText {
+  color: #EF4444;
+}

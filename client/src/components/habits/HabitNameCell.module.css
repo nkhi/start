@@ -68,6 +68,14 @@
   transition: all 0.2s ease;
 }
 
+/* Badges Container - groups streak and deadline icons */
+.badgesContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 /* Streak Styles */
 .streakBadge {
   display: inline-flex;
@@ -78,7 +86,6 @@
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
-  margin-left: 12px;
   transition: all 0.2s ease;
 }
 
@@ -94,12 +101,16 @@
 }
 
 @keyframes heartbeat {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   10% {
     transform: scale(1.1);
   }
+
   20% {
     transform: scale(1);
   }
@@ -116,7 +127,6 @@
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
-  margin-left: 12px;
   transition: all 0.2s ease;
 }
 
@@ -132,13 +142,31 @@
 }
 
 @keyframes warningPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   10% {
     transform: scale(1.1);
   }
+
   20% {
     transform: scale(1);
   }
+}
+
+/* Deadline Clock Icon */
+.deadlineBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: help;
+  transition: color 0.2s ease;
+}
+
+.deadlineBadge:hover {
+  color: rgba(255, 255, 255, 0.6);
 }

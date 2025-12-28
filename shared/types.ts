@@ -17,6 +17,7 @@ export interface Habit {
   active: boolean;
   createdDate: string;
   comment?: string | null;
+  deadlineTime?: string | null;
 }
 
 export interface HabitEntry {
@@ -91,6 +92,17 @@ export interface List {
   items: ListItem[];
   color?: string | null;
   order?: string | null;
+}
+
+export interface CalendarEvent {
+  id: string;
+  summary: string;
+  description: string;
+  start_time: string;
+  end_time: string;
+  all_day: boolean;
+  status: string;
+  html_link: string;
 }
 
 // ============================================

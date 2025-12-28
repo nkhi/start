@@ -22,7 +22,8 @@ router.get('/habits', async (_req: Request, res: Response) => {
       defaultTime: h.default_time,
       active: h.active,
       createdDate: h.created_date,
-      comment: h.comment || null
+      comment: h.comment || null,
+      deadlineTime: h.deadline_time || null
     }));
 
     res.json(habits);

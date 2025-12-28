@@ -1,0 +1,13 @@
+/* All-day event card styles */
+
+.card {
+    padding: 6px 10px;
+    align-items: center;
+    min-height: 32px;
+}
+
+.text {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}

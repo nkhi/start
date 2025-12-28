@@ -1,0 +1,16 @@
+/* Shared base styles for event cards */
+
+.eventCard {
+    display: flex;
+    text-decoration: none;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.eventCard:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+}

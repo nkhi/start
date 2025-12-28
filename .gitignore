@@ -8,3 +8,4 @@ data copy/
 server.log
 junk
 .env
+/server/google-calendar-key.json

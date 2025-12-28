@@ -35,12 +35,13 @@ import { DateUtility } from '../../utils';
 import { useTaskOperations } from '../../hooks/useTaskOperations';
 import { useGraveyard } from '../../hooks/useGraveyard';
 import { useWeekNavigation } from '../../hooks/useWeekNavigation';
+import { useCalendarEventsContext } from '../../contexts/CalendarEventsContext';
 
 // components
 import { StateOverlayWrapper } from './StateOverlayWrapper';
 import { TaskActionsOverlay } from './TaskActionsOverlay';
 import { StatusBar } from './StatusBar';
-import { CalendarPopover } from './CalendarPopover';
+import { CalendarPopover } from './calendar';
 
 // utilities
 import {
@@ -92,6 +93,34 @@ export function Todos({ workMode = false }: TodosProps) {
       taskOps.loadWeekTasks(weekNav.weekDates[0], weekNav.weekDates[weekNav.weekDates.length - 1]);
     }
   }, [viewMode, weekNav.weekDates]);
+
+  // ----------------------------------------
+  // Calendar Prefetching
+  // ----------------------------------------
+  const calendarContext = useCalendarEventsContext();
+
+  // Day View: Prefetch today ± 3 days on mount
+  useEffect(() => {
+    if (viewMode !== 'day' || !calendarContext) return;
+
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 3);
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 3);
+
+    calendarContext.prefetchDateRange(startDate, endDate);
+  }, [viewMode, calendarContext]);
+
+  // Week View: Prefetch the full visible week
+  useEffect(() => {
+    if (viewMode !== 'week' || !calendarContext || weekNav.weekDates.length === 0) return;
+
+    const startDate = weekNav.weekDates[0];
+    const endDate = weekNav.weekDates[weekNav.weekDates.length - 1];
+
+    calendarContext.prefetchDateRange(startDate, endDate);
+  }, [viewMode, weekNav.weekDates, calendarContext]);
 
   // ----------------------------------------
   // Drag and Drop

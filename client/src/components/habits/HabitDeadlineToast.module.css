@@ -1,0 +1,80 @@
+.toastContainer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #2d1f3d 0%, #1a1525 100%);
+    border: 1px solid rgba(255, 180, 100, 0.3);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 150, 50, 0.1);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    pointer-events: auto;
+    animation: slideIn 0.3s ease-out;
+    max-width: 320px;
+}
+
+.toast:hover {
+    border-color: rgba(255, 180, 100, 0.5);
+    transform: translateX(-2px);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.iconWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+    color: #ffaa55;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.habitName {
+    font-size: 12px;
+    font-weight: 500;
+    color: #ffcc88;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.message {
+    font-size: 13px;
+    color: #a89bb0;
+    white-space: nowrap;
+}

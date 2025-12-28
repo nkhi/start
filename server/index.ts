@@ -9,6 +9,7 @@ import tasksRoutes from './routes/tasks.ts';
 import diaryRoutes from './routes/diary.ts';
 import nextRoutes from './routes/next.ts';
 import listsRoutes from './routes/lists.ts';
+import calendarRoutes from './routes/calendar.ts';
 
 console.log('[SERVER] 🏁 Starting server process...');
 
@@ -31,7 +32,7 @@ app.use((req: Request, res: LoggingResponse, next: NextFunction) => {
   }
 
   const start = Date.now();
-  
+
   // Wrap res.json to capture body for logging
   const originalJson = res.json.bind(res);
   res.json = function (body: unknown) {
@@ -44,15 +45,15 @@ app.use((req: Request, res: LoggingResponse, next: NextFunction) => {
     const duration = Date.now() - start;
     const timestamp = new Date().toISOString();
     const status = res.statusCode;
-    
+
     // Colorize status
     const statusIcon = status >= 500 ? '🔥' : status >= 400 ? '⚠️' : '✅';
-    
+
     let extraInfo = '';
     if (Object.keys(req.query).length > 0) {
       extraInfo += ` | Q: ${JSON.stringify(req.query)}`;
     }
-    
+
     // Log the single line
     const logLine = `[SERVER] ${timestamp} | ${statusIcon} ${status} | ${duration.toString().padStart(4)}ms | ${req.method.padEnd(6)} ${req.path}${extraInfo}`;
     console.log(logLine);
@@ -82,6 +83,7 @@ app.use('/', tasksRoutes);
 app.use('/', diaryRoutes);
 app.use('/', nextRoutes);
 app.use('/', listsRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

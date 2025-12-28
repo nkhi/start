@@ -10,6 +10,7 @@ import { Navigation } from './components/shared/Navigation';
 import type { TabType } from './components/shared/Navigation';
 import { Daylight } from './components/daylight/Daylight';
 import { DaylightProvider } from './components/daylight/DaylightContext';
+import { CalendarEventsProvider } from './contexts/CalendarEventsContext';
 import { ApiErrorProvider, useApiError } from './components/shared/ApiErrorContext';
 import { ApiErrorToast } from './components/shared/ApiErrorToast';
 import { setGlobalErrorReporter, clearGlobalErrorReporter } from './api/errorReporter';
@@ -69,9 +70,11 @@ function AppContent() {
 function App() {
   return (
     <DaylightProvider>
-      <ApiErrorProvider>
-        <AppContent />
-      </ApiErrorProvider>
+      <CalendarEventsProvider>
+        <ApiErrorProvider>
+          <AppContent />
+        </ApiErrorProvider>
+      </CalendarEventsProvider>
     </DaylightProvider>
   );
 }

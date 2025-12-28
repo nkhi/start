@@ -9,6 +9,7 @@ export type {
   Note,
   ListItem,
   List,
+  CalendarEvent,
   TasksByDate,
   GroupedTasks,
   TaskCounts,

@@ -105,14 +105,31 @@ Google Keep-style cards for ideas on what to do next. Mosaic tile layout with va
 
    Setup a CockroachDB instance. Then run `server/db_utils/table_setup.sql` to create the necessary tables.
 
-5. **Configure Cap URL** (Optional)
+5. **Configure Google Calendar** (Optional)
+
+   To display Google Calendar events in the app:
+   
+   ```env
+   # Add to server/.env
+   GOOGLE_APPLICATION_CREDENTIALS=./google-calendar-key.json
+   GOOGLE_CALENDAR_ID=you-can-find-this-in-the-calendar-settings-usually-it-is-your-email-address
+   ```
+   
+   You'll need to:
+   - Create a Google Cloud project and enable the Calendar API
+   - Create a service account and download its JSON key to `server/`
+   - Share your calendar with the service account email
+   
+   See [Server Documentation](server/README.md#google-calendar-setup-optional) for detailed steps.
+
+6. **Configure Cap URL** (Optional)
 
    Create a `.env` file in the `client/` directory:
    ```
    VITE_CAP_URL=your_cap_dashboard
    ```
 
-6. **Start the app**
+7. **Start the app**
    ```bash
    ./go.sh
    ```
@@ -146,6 +163,7 @@ All data is stored in your own CockroachDB instance. Nothing is sent to external
 **Tools:**
 - [Phosphor Icons](https://phosphoricons.com/) - For beautiful, consistent icons
 - [Loom SDK](https://www.loom.com/sdk) - For seamless video recording
+- [Google Calendar API](https://developers.google.com/calendar/overview) - For calendar integration
 
 **Open Source:**
 - [Memos](https://github.com/usememos/memos) - For the embedded note-taking experience
