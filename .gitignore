@@ -20,3 +20,6 @@ client/.env.local
 # Docker data (managed by Docker volumes, but just in case)
 headscale/*.key
 *.sqlite
+
+llmchat/
+looms/

@@ -94,6 +94,21 @@ export interface List {
   order?: string | null;
 }
 
+export interface LandmarkItem {
+  id: string;
+  category: string;
+  text: string;
+  date?: string | null;  // ISO date string, optional
+  position?: number | null;  // Only used for 'orient' category
+  createdAt: string | null;
+}
+
+export interface LandmarksByCategory {
+  orient: LandmarkItem[];
+  forward: LandmarkItem[];
+  big_things: LandmarkItem[];
+}
+
 export interface CalendarEvent {
   id: string;
   summary: string;
@@ -264,6 +279,23 @@ export interface UpdateListRequest {
   color?: string;
   order?: string;
   items?: ListItem[];
+}
+
+export interface CreateLandmarkRequest {
+  id: string;
+  category: string;
+  text: string;
+  date?: string;  // Optional ISO date string
+}
+
+export interface UpdateLandmarkRequest {
+  text?: string;
+  date?: string | null;
+}
+
+export interface ReorderLandmarksRequest {
+  category: string;
+  itemOrder: string[];  // Array of IDs in new order
 }
 
 export interface CreateMemoryRequest {

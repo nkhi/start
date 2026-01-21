@@ -4,11 +4,12 @@ import {
     HeartbeatIcon,
     LightbulbIcon,
     ListDashes,
+    CoffeeBeanIcon,
     TreeIcon,
     ImageIcon,
     VideoCameraIcon,
     ButterflyIcon,
-    CalendarIcon
+    CalendarIcon,
 } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../../../config';
 import type { NavItem, ExternalLink, TabType } from './types';
@@ -17,6 +18,12 @@ export const NAV_TABS: NavItem[] = [
     {
         id: 'habits',
         icon: CalendarCheck,
+        showInWorkMode: false,
+        useDuotone: true
+    },
+    {
+        id: 'landmarks',
+        icon: CoffeeBeanIcon,
         showInWorkMode: false,
         useDuotone: true
     },

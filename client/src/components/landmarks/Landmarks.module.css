@@ -1,0 +1,419 @@
+.landmarksContainer {
+  height: 100%;
+  padding: 32px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  grid-template-areas:
+    "orient forward"
+    "big_things forward";
+  gap: 32px;
+  overflow-y: auto;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  border-radius: 8px;
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.column:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Blue theme for Orient */
+.column_orient {
+  grid-area: orient;
+  background: rgba(30, 58, 95, 0.25);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.column_orient:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+/* Gold theme for Forward */
+.column_forward {
+  grid-area: forward;
+  background: rgba(92, 70, 30, 0.25);
+  border: 1px solid rgba(217, 167, 60, 0.35);
+}
+
+.column_forward:hover {
+  border-color: rgba(217, 167, 60, 0.5);
+}
+
+/* Green theme for Big Things */
+.column_big_things {
+  grid-area: big_things;
+  background: rgba(20, 83, 45, 0.25);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.column_big_things:hover {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.columnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.columnTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.headerButtons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ghostBtn {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.columnHeader:hover .ghostBtn {
+  opacity: 1;
+}
+
+.ghostBtn:hover {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ghostBtn.active {
+  opacity: 1;
+  color: rgba(167, 139, 250, 0.9);
+  background: rgba(167, 139, 250, 0.15);
+}
+
+.addBtn {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.columnHeader:hover .addBtn {
+  opacity: 1;
+}
+
+.addBtn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.itemsList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 4px 0;
+}
+
+.draggableItem {
+  position: relative;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.draggableItem:active {
+  cursor: grabbing;
+}
+
+.draggingItem {
+  opacity: 0.5;
+  z-index: 1000;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.itemToday {
+  border: 2px solid rgba(217, 167, 60, 0.7) !important;
+  box-shadow: 0 0 8px rgba(217, 167, 60, 0.3);
+  background: rgba(217, 167, 60, 0.08) !important;
+}
+
+.itemText {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #E0E0E0;
+  font-size: 15px;
+  line-height: 1.5;
+  outline: none;
+  font-family: inherit;
+  resize: none;
+  overflow: hidden;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.dateInput {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #A0A0A0;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.dateInput:hover,
+.dateInput:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #C0C0C0;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
+}
+
+.deleteBtn {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.item:hover .deleteBtn {
+  opacity: 1;
+}
+
+.deleteBtn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.addItemContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.addItemInput {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #E0E0E0;
+  font-size: 14px;
+  outline: none;
+  padding: 8px;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.addItemInput:hover,
+.addItemInput:focus {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.addItemInput::placeholder {
+  color: #666;
+}
+
+.addDateInput {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #888;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.addDateInput:hover,
+.addDateInput:focus {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #A0A0A0;
+}
+
+.addDateInput::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
+  cursor: pointer;
+}
+
+.dragOverlay {
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  transform: rotate(1deg) scale(1.02);
+  cursor: grabbing;
+}
+
+.dragOverlay .item {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.dragOverlay .itemText {
+  color: #FFFFFF;
+}
+
+.dateBadge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 4px;
+  color: #60A5FA;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Bullet list styles for orient column */
+.bulletList {
+  gap: 4px;
+}
+
+.bulletItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  transition: background 0.15s ease;
+  border-radius: 4px;
+}
+
+.bulletItem:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.bullet {
+  color: rgba(59, 130, 246, 0.7);
+  font-size: 18px;
+  line-height: 1.4;
+  flex-shrink: 0;
+  padding-left: 4px;
+}
+
+.column_big_things .bullet {
+  color: rgba(34, 197, 94, 0.7);
+}
+
+.column_big_things .bulletItem:hover {
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.bulletText {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #E0E0E0;
+  font-size: 15px;
+  line-height: 1.4;
+  outline: none;
+  font-family: inherit;
+  resize: none;
+  overflow: hidden;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  padding: 0;
+}
+
+.bulletDeleteBtn {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.bulletItem:hover .bulletDeleteBtn {
+  opacity: 1;
+}
+
+.bulletDeleteBtn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .landmarksContainer {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "orient"
+      "big_things"
+      "forward";
+    gap: 32px;
+    padding: 24px;
+  }
+}

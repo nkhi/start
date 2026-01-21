@@ -105,3 +105,12 @@ export interface DbMemory {
   date: Date;
   created_at: Date | null;
 }
+
+export interface DbLandmark {
+  id: string;
+  category: string;
+  text: string;
+  date: Date | null;
+  position: number | null;
+  created_at: Date | null;
+}

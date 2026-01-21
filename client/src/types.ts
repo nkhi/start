@@ -9,6 +9,8 @@ export type {
   Note,
   ListItem,
   List,
+  LandmarkItem,
+  LandmarksByCategory,
   CalendarEvent,
   Memory,
   CreateMemoryRequest,

@@ -32,6 +32,9 @@ export const queryKeys = {
     lists: {
         all: ['lists'] as const,
     },
+    landmarks: {
+        all: ['landmarks'] as const,
+    },
     calendar: {
         all: ['calendar'] as const,
         events: (date: string) => [...queryKeys.calendar.all, 'events', date] as const,
