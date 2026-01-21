@@ -17,6 +17,7 @@
 #   ./go.sh --with-cap       # Also start Cap video recording services
 #   ./go.sh --with-immich    # Also start Immich services from ~/Desktop/immich/
 #   ./go.sh --with-headscale --with-cap --with-immich # Start everything
+#   ./go.sh --restart-server # Restart only the backend server (keep Docker containers running)
 #
 # To stop:
 #   - Ctrl+C stops the servers (Docker containers keep running)
@@ -32,18 +33,77 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# PID file for tracking the server process
+PID_FILE="/tmp/start-server.pid"
+
 # Parse arguments
 WITH_HEADSCALE=false
 WITH_CAP=false
 WITH_IMMICH=false
-if [[ "$1" == "--with-headscale" ]] || [[ "$2" == "--with-headscale" ]] || [[ "$3" == "--with-headscale" ]]; then
-  WITH_HEADSCALE=true
+RESTART_SERVER=false
+
+for arg in "$@"; do
+  case $arg in
+    --with-headscale)
+      WITH_HEADSCALE=true
+      ;;
+    --with-cap)
+      WITH_CAP=true
+      ;;
+    --with-immich)
+      WITH_IMMICH=true
+      ;;
+    --restart-server)
+      RESTART_SERVER=true
+      ;;
+  esac
+done
+
+# Validate flag combinations
+if [ "$RESTART_SERVER" = true ] && { [ "$WITH_CAP" = true ] || [ "$WITH_IMMICH" = true ] || [ "$WITH_HEADSCALE" = true ]; }; then
+  echo -e "${RED}[ERROR]${NC} Cannot use --restart-server with any --with-* flags"
+  echo -e "${RED}[ERROR]${NC} The --restart-server flag only restarts the backend server."
+  echo -e "${RED}[ERROR]${NC} Use it by itself: ./go.sh --restart-server"
+  exit 1
 fi
-if [[ "$1" == "--with-cap" ]] || [[ "$2" == "--with-cap" ]] || [[ "$3" == "--with-cap" ]]; then
-  WITH_CAP=true
-fi
-if [[ "$1" == "--with-immich" ]] || [[ "$2" == "--with-immich" ]] || [[ "$3" == "--with-immich" ]]; then
-  WITH_IMMICH=true
+
+# Handle server restart if requested
+if [ "$RESTART_SERVER" = true ]; then
+  echo -e "${YELLOW}[RESTART]${NC} Restarting backend server only..."
+  
+  # Check if PID file exists
+  if [ -f "$PID_FILE" ]; then
+    OLD_PID=$(cat "$PID_FILE")
+    if ps -p $OLD_PID > /dev/null 2>&1; then
+      echo -e "${YELLOW}[RESTART]${NC} Stopping old server (PID: $OLD_PID)..."
+      kill $OLD_PID 2>/dev/null
+      # Also kill any child processes
+      pkill -P $OLD_PID 2>/dev/null
+      sleep 1
+      echo -e "${GREEN}[RESTART]${NC} Old server stopped."
+    else
+      echo -e "${YELLOW}[RESTART]${NC} No running server found (stale PID file)."
+    fi
+  else
+    echo -e "${YELLOW}[RESTART]${NC} No PID file found. Server may not be running."
+  fi
+  
+  # Start new server
+  echo -e "${GREEN}[RESTART]${NC} Starting new server..."
+  cd server
+  (
+    while true; do
+      echo -e "${GREEN}[SERVER]${NC} 🚀 Starting Bun server..."
+      bun run index.ts
+      echo -e "${YELLOW}[SERVER]${NC} 💥 Server crashed or stopped. Restarting in 1 second..."
+      sleep 1
+    done
+  ) &
+  NEW_PID=$!
+  echo $NEW_PID > "$PID_FILE"
+  echo -e "${GREEN}[RESTART]${NC} Server restarted with PID: $NEW_PID"
+  echo -e "${GREEN}[RESTART]${NC} Server is now running. Use './go.sh --restart-server' again to restart."
+  exit 0
 fi
 
 # =============================================================================
@@ -56,6 +116,12 @@ cleanup() {
     kill $SERVER_PID 2>/dev/null
     pkill -P $SERVER_PID 2>/dev/null
   fi
+  
+  # Clean up PID file
+  if [ -f "$PID_FILE" ]; then
+    rm "$PID_FILE"
+  fi
+  
   echo -e "${YELLOW}[SHUTDOWN]${NC} Stopping Docker containers..."
 
   # Stop all containers including those in profiles
@@ -150,6 +216,9 @@ start_backend() {
     done
   ) &
   SERVER_PID=$!
+  
+  # Save PID to file for --restart-server flag
+  echo $SERVER_PID > "$PID_FILE"
 }
 
 start_frontend() {
