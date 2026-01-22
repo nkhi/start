@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Plus, Trash, Ghost } from '@phosphor-icons/react';
 import { getLandmarks, createLandmark, updateLandmark as apiUpdateLandmark, deleteLandmark, reorderLandmarks } from '../../api/landmarks';
 import type { LandmarksByCategory, LandmarkItem } from '../../types';
@@ -42,6 +42,85 @@ function SortableLandmarkItem({ item, children }: { item: LandmarkItem; children
     );
 }
 
+// Forward item card with auto-height textarea
+function ForwardItemCard({
+    item,
+    displayValue,
+    onUpdate,
+    onDelete,
+    onDateUpdate
+}: {
+    item: LandmarkItem;
+    displayValue: string;
+    onUpdate: (text: string) => void;
+    onDelete: () => void;
+    onDateUpdate: (date: string | null) => void;
+}) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const adjustHeight = useCallback(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+    }, []);
+
+    // Adjust height whenever displayValue changes
+    useEffect(() => {
+        adjustHeight();
+    }, [displayValue, adjustHeight]);
+
+    // Adjust height when textarea width changes (viewport resize, etc.)
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const resizeObserver = new ResizeObserver(() => {
+            adjustHeight();
+        });
+
+        resizeObserver.observe(textarea);
+
+        return () => {
+            resizeObserver.disconnect();
+        };
+    }, [adjustHeight]);
+
+    return (
+        <div className={`${styles.item} ${getDateStatus(item.date) === 'today' ? styles.itemToday : ''}`}>
+            <textarea
+                ref={textareaRef}
+                className={styles.itemText}
+                value={displayValue}
+                onChange={(e) => onUpdate(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                rows={1}
+                onInput={adjustHeight}
+            />
+            <button
+                className={styles.deleteBtn}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+            >
+                <Trash size={14} />
+            </button>
+            <input
+                type="date"
+                className={styles.dateInput}
+                value={item.date || ''}
+                onChange={(e) => onDateUpdate(e.target.value || null)}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+            />
+        </div>
+    );
+}
+
 // Helper to determine if a date is in the past, today, or future
 const getDateStatus = (dateStr: string | null | undefined): 'past' | 'today' | 'future' => {
     if (!dateStr) return 'future'; // No date = treat as future
@@ -53,6 +132,24 @@ const getDateStatus = (dateStr: string | null | undefined): 'past' | 'today' | '
     if (itemDate < today) return 'past';
     if (itemDate.getTime() === today.getTime()) return 'today';
     return 'future';
+};
+
+// Helper to get "X days" text for a date
+const getDaysUntilText = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
+    const itemDate = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    itemDate.setHours(0, 0, 0, 0);
+
+    const diffTime = itemDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays === -1) return 'Yesterday';
+    if (diffDays > 0) return `${diffDays} days`;
+    return `${Math.abs(diffDays)} days ago`;
 };
 
 export const Landmarks: React.FC = () => {
@@ -293,28 +390,12 @@ export const Landmarks: React.FC = () => {
                         {visibleItems.map(item => (
                             <SortableLandmarkItem key={item.id} item={item}>
                                 {category !== 'forward' ? (
-                                    // Bullet point style for orient
+                                    // Badge/tile style for orient and big_things
+                                    // TODO: Inline editing disabled for badge layout - API layer still supports updateLandmark
                                     <div className={styles.bulletItem}>
-                                        <span className={styles.bullet}>•</span>
-                                        <textarea
-                                            ref={(el) => {
-                                                if (el) {
-                                                    el.style.height = 'auto';
-                                                    el.style.height = el.scrollHeight + 'px';
-                                                }
-                                            }}
-                                            className={styles.bulletText}
-                                            value={item.text}
-                                            onChange={(e) => handleUpdateItem(item.id, category, e.target.value)}
-                                            onClick={(e) => e.stopPropagation()}
-                                            onPointerDown={(e) => e.stopPropagation()}
-                                            rows={1}
-                                            onInput={(e) => {
-                                                const target = e.target as HTMLTextAreaElement;
-                                                target.style.height = 'auto';
-                                                target.style.height = target.scrollHeight + 'px';
-                                            }}
-                                        />
+                                        <span className={styles.bulletText}>
+                                            {item.text}
+                                        </span>
                                         <button
                                             className={styles.bulletDeleteBtn}
                                             onClick={(e) => {
@@ -323,50 +404,18 @@ export const Landmarks: React.FC = () => {
                                             }}
                                             onPointerDown={(e) => e.stopPropagation()}
                                         >
-                                            <Trash size={14} />
+                                            ×
                                         </button>
                                     </div>
                                 ) : (
                                     // Card style for forward
-                                    <div className={`${styles.item} ${getDateStatus(item.date) === 'today' ? styles.itemToday : ''}`}>
-                                        <textarea
-                                            ref={(el) => {
-                                                if (el) {
-                                                    el.style.height = 'auto';
-                                                    el.style.height = el.scrollHeight + 'px';
-                                                }
-                                            }}
-                                            className={styles.itemText}
-                                            value={item.text}
-                                            onChange={(e) => handleUpdateItem(item.id, category, e.target.value)}
-                                            onClick={(e) => e.stopPropagation()}
-                                            onPointerDown={(e) => e.stopPropagation()}
-                                            rows={1}
-                                            onInput={(e) => {
-                                                const target = e.target as HTMLTextAreaElement;
-                                                target.style.height = 'auto';
-                                                target.style.height = target.scrollHeight + 'px';
-                                            }}
-                                        />
-                                        <button
-                                            className={styles.deleteBtn}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteItem(item.id, category);
-                                            }}
-                                            onPointerDown={(e) => e.stopPropagation()}
-                                        >
-                                            <Trash size={14} />
-                                        </button>
-                                        <input
-                                            type="date"
-                                            className={styles.dateInput}
-                                            value={item.date || ''}
-                                            onChange={(e) => handleUpdateDate(item.id, e.target.value || null)}
-                                            onClick={(e) => e.stopPropagation()}
-                                            onPointerDown={(e) => e.stopPropagation()}
-                                        />
-                                    </div>
+                                    <ForwardItemCard
+                                        item={item}
+                                        displayValue={item.date ? `${getDaysUntilText(item.date)} · ${item.text}` : item.text}
+                                        onUpdate={(text) => handleUpdateItem(item.id, category, text)}
+                                        onDelete={() => handleDeleteItem(item.id, category)}
+                                        onDateUpdate={(date) => handleUpdateDate(item.id, date)}
+                                    />
                                 )}
                             </SortableLandmarkItem>
                         ))}

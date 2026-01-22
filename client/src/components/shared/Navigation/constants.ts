@@ -10,6 +10,8 @@ import {
     VideoCameraIcon,
     ButterflyIcon,
     CalendarIcon,
+    LadderIcon,
+    LadderSimpleIcon,
 } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../../../config';
 import type { NavItem, ExternalLink, TabType } from './types';
@@ -23,7 +25,7 @@ export const NAV_TABS: NavItem[] = [
     },
     {
         id: 'landmarks',
-        icon: CoffeeBeanIcon,
+        icon: LadderSimpleIcon,
         showInWorkMode: false,
         useDuotone: true
     },
