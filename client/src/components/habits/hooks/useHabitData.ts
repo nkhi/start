@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getHabits, getEntries, saveEntry } from '../../../api/habits';
+import { getHabits, getEntries, updateEntryState } from '../../../api/habits';
 import { DateUtility, generateId } from '../../../utils';
 import type { Habit, HabitEntry } from '../../../types';
 
@@ -79,7 +79,6 @@ export function useHabitData({ startDate, onDeadlineToast }: UseHabitDataProps) 
     // Must find habit from current state or pass it in. 
     // We can rely on 'habits' state here.
     const habit = habits.find(h => h.id === habitId);
-    const time = habit?.defaultTime || 'neither';
 
     if (habit && nextState === 1 && isDeadlinePassed(habit, date)) {
       nextState = 2; // Skip to X
@@ -89,23 +88,32 @@ export function useHabitData({ startDate, onDeadlineToast }: UseHabitDataProps) 
     const entryId = current?.entryId || generateId();
     const timestamp = new Date().toISOString();
 
-    const newEntry: HabitEntry = {
+    // Preserve existing comment in local state, only update state/timestamp
+    const updatedEntry: HabitEntry = {
+      ...current,
       entryId,
       date: dateStr,
       habitId,
       state: nextState,
-      time,
-      timestamp
+      timestamp,
+      comment: current?.comment ?? null  // Preserve existing comment
     };
 
     const newEntries = new Map(entries);
-    newEntries.set(key, newEntry);
+    newEntries.set(key, updatedEntry);
     setEntries(newEntries);
 
     try {
-      await saveEntry(newEntry);
+      // PUT only updates state-related fields, comment is untouched on backend
+      await updateEntryState({
+        entryId,
+        date: dateStr,
+        habitId,
+        state: nextState,
+        timestamp
+      });
     } catch (error) {
-      console.error('Failed to save entry:', error);
+      console.error('Failed to update entry state:', error);
       // Revert on failure
       setEntries(entries);
     }

@@ -17,7 +17,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { updateEntryComment, saveEntry } from '../api/habits';
+import { updateEntryComment, updateEntryState } from '../api/habits';
 import { DateUtility, generateId } from '../utils';
 import type { Habit, HabitEntry } from '../types';
 import { useHoldProgress } from './useHoldProgress';
@@ -164,15 +164,14 @@ export function useEntryComment({
         const existingEntry = entries.get(key);
 
         if (!existingEntry) {
-            // Create new entry with comment
-            const habit = habits.find(h => h.id === habitId);
+            // Create new entry with comment: first create entry, then add comment
+            const timestamp = new Date().toISOString();
             const newEntry: HabitEntry = {
                 entryId,
                 date: dateStr,
                 habitId,
                 state: 0,
-                time: habit?.defaultTime || 'neither',
-                timestamp: new Date().toISOString(),
+                timestamp,
                 comment: comment || null
             };
 
@@ -183,9 +182,20 @@ export function useEntryComment({
             });
 
             try {
-                await saveEntry(newEntry);
+                // First create the entry with state 0
+                await updateEntryState({
+                    entryId,
+                    date: dateStr,
+                    habitId,
+                    state: 0,
+                    timestamp
+                });
+                // Then set the comment
+                if (comment) {
+                    await updateEntryComment(entryId, comment);
+                }
             } catch (error) {
-                console.error('Failed to save entry:', error);
+                console.error('Failed to create entry with comment:', error);
             }
         } else {
             // Update existing entry

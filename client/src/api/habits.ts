@@ -33,13 +33,22 @@ export async function getEntries(from: string, to: string): Promise<HabitEntry[]
   return response.json();
 }
 
-export async function saveEntry(entry: Partial<HabitEntry>): Promise<void> {
-  const response = await fetchWithErrorReporting(`${API_BASE_URL}/habit-entry`, {
-    method: 'POST',
+export interface UpdateEntryStateParams {
+  entryId: string;
+  date: string;
+  habitId: string;
+  state: number;
+  timestamp: string;
+}
+
+export async function updateEntryState(params: UpdateEntryStateParams): Promise<void> {
+  const { entryId, ...body } = params;
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/habit-entry/${entryId}`, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(entry)
+    body: JSON.stringify(body)
   });
-  if (!response.ok) throw new Error('Failed to save entry');
+  if (!response.ok) throw new Error('Failed to update entry state');
 }
 
 export async function updateEntryComment(entryId: string, comment: string | null): Promise<void> {
@@ -81,10 +90,10 @@ export function useHabitEntries(from: string, to: string) {
   });
 }
 
-export function useSaveEntry() {
+export function useUpdateEntryState() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: saveEntry,
+    mutationFn: updateEntryState,
     onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.habits.all }),
   });
 }

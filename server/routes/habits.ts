@@ -60,18 +60,21 @@ router.get('/habit-entries', async (req: Request, res: Response) => {
   }
 });
 
-// Upsert a habit entry
-router.post('/habit-entry', async (req: Request<object, object, CreateHabitEntryRequest>, res: Response) => {
-  const { entryId, date, habitId, state, timestamp } = req.body;
-  if (!entryId || !date || !habitId)
+// Upsert a habit entry state (PUT for idempotent create-or-update)
+router.put('/habit-entry/:entryId', async (req: Request, res: Response) => {
+  const { entryId } = req.params;
+  const { date, habitId, state, timestamp } = req.body;
+
+  if (!entryId || !date || !habitId) {
     return res.status(400).json({ error: 'Missing key fields' });
+  }
 
   try {
     await db.query(`
       INSERT INTO entries (entry_id, date, habit_id, state, timestamp)
       VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (entry_id) 
-      DO UPDATE SET state = EXCLUDED.state, timestamp = EXCLUDED.timestamp, comment = entries.comment
+      DO UPDATE SET state = EXCLUDED.state, timestamp = EXCLUDED.timestamp
     `, [entryId, date, habitId, state, timestamp]);
 
     res.json({ ok: true });
@@ -130,12 +133,12 @@ router.patch('/habits/:id/reorder', async (req: Request, res: Response) => {
           COALESCE(MAX("order"), 0) as max_order 
         FROM habits WHERE active = true
       `, [id]);
-      
+
       if (result.rows.length === 0) {
         await db.query('ROLLBACK');
         return res.status(404).json({ error: 'Habit not found' });
       }
-      
+
       oldOrder = result.rows[0].old_order;
       newOrder = result.rows[0].max_order + 1;
     } else {
@@ -143,10 +146,10 @@ router.patch('/habits/:id/reorder', async (req: Request, res: Response) => {
       const result = await db.query<{ id: string; order: number | null }>(`
         SELECT id, "order" FROM habits WHERE id = ANY($1)
       `, [[id, targetHabitId]]);
-      
+
       const movingHabit = result.rows.find(r => r.id === id);
       const targetHabit = result.rows.find(r => r.id === targetHabitId);
-      
+
       if (!movingHabit) {
         await db.query('ROLLBACK');
         return res.status(404).json({ error: 'Habit not found' });
@@ -159,7 +162,7 @@ router.patch('/habits/:id/reorder', async (req: Request, res: Response) => {
         await db.query('ROLLBACK');
         return res.status(400).json({ error: 'Target habit has no order' });
       }
-      
+
       oldOrder = movingHabit.order;
       newOrder = targetHabit.order;
     }
