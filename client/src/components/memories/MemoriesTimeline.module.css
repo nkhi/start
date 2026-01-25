@@ -75,13 +75,13 @@
 }
 
 /* Right-side positioning */
-.memoryItem.right .card {
+.memoryItem.right .cardWrapper {
     grid-column: 3;
     margin-left: 20px;
 }
 
 /* Left-side positioning */
-.memoryItem.left .card {
+.memoryItem.left .cardWrapper {
     grid-column: 1;
     margin-right: 20px;
     text-align: right;
@@ -92,66 +92,11 @@
     left: 16px;
 }
 
-/* Card header containing date */
-.cardHeader {
-    display: flex;
-    justify-content: flex-start;
-    /* Default: left-aligned for right-side cards */
-    align-items: center;
-    margin-bottom: 16px;
-}
+/* Header alignment for left side needs to be handled by passing prop or specific CSS targeting inner card */
+/* We can target the cardHeader inside if we want specific overrides, 
+   but ideally the card manages its own alignment based on props. 
+   For now, we will handle alignment via props in the component. */
 
-/* Left-side cards: align date to the right */
-.memoryItem.left .cardHeader {
-    justify-content: flex-end;
-}
-
-.cardDate {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Horizontal divider line */
-.cardDivider {
-    border: none;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 0 0 20px 0;
-    width: 100%;
-}
-
-/* The memory card itself */
-.card {
-    padding: 32px;
-    border-radius: 16px;
-    position: relative;
-    box-shadow:
-        0 4px 24px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(255, 255, 255, 0.05);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    min-width: 320px;
-}
-
-.card:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow:
-        0 8px 40px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-
-
-/* Memory text */
-.memoryText {
-    font-size: 1.25rem;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.95);
-    margin: 0;
-    font-weight: 400;
-}
 
 /* Top fade overlay */
 .fadeOverlayTop {
@@ -319,4 +264,7 @@
     .title {
         font-size: 1.75rem;
     }
+}
+.cardWrapper {
+    display: block;
 }

@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect } from 'react';
 import { Tray } from '@phosphor-icons/react';
 import { MemoryPanel } from './MemoryPanel';
+import { useLongPress } from './useLongPress';
 
 interface MemoryButtonProps {
     isPanelOpen: boolean;
@@ -9,55 +9,25 @@ interface MemoryButtonProps {
     className?: string;
 }
 
-const HOLD_DURATION = 500; // ms to trigger hold action
-
 export function MemoryButton({ isPanelOpen, onToggle, onTimelineOpen, className }: MemoryButtonProps) {
-    const holdTimer = useRef<number | null>(null);
-    const [isHolding, setIsHolding] = useState(false);
-    const didHold = useRef(false);
+    const { isHolding, handlers } = useLongPress({
+        onLongPress: () => {
+            if (onTimelineOpen) onTimelineOpen();
+        },
+        onClick: onToggle,
+        duration: 500
+    });
 
-    const handlePointerDown = () => {
-        if (!onTimelineOpen) return;
-
-        didHold.current = false;
-        holdTimer.current = window.setTimeout(() => {
-            setIsHolding(true);
-            didHold.current = true;
-            onTimelineOpen();
-        }, HOLD_DURATION);
-    };
-
-    const handlePointerUp = () => {
-        if (holdTimer.current) {
-            clearTimeout(holdTimer.current);
-            holdTimer.current = null;
-        }
-        setIsHolding(false);
-    };
-
-    const handleClick = () => {
-        // Only toggle panel if we didn't just hold
-        if (!didHold.current) {
-            onToggle();
-        }
-        didHold.current = false;
-    };
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            if (holdTimer.current) clearTimeout(holdTimer.current);
-        };
-    }, []);
+    // Only attach handlers if onTimelineOpen is present, otherwise just click
+    const buttonHandlers = onTimelineOpen
+        ? handlers
+        : { onClick: onToggle };
 
     return (
         <>
             <button
                 className={className}
-                onClick={handleClick}
-                onPointerDown={handlePointerDown}
-                onPointerUp={handlePointerUp}
-                onPointerLeave={handlePointerUp}
+                {...buttonHandlers}
                 title={onTimelineOpen ? "Tap: Add memory | Hold: View timeline" : "Good Moments"}
                 style={{
                     transition: 'transform 0.2s ease',

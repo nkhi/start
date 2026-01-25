@@ -1,0 +1,58 @@
+/* The memory card itself */
+.card {
+    padding: 32px;
+    border-radius: 16px;
+    position: relative;
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    min-width: 320px;
+    /* Default background if not provided */
+    background-color: #1a1a1a;
+}
+
+.card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Card header containing date */
+.cardHeader {
+    display: flex;
+    justify-content: flex-start;
+    /* Default align */
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.cardDate {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Horizontal divider line */
+.cardDivider {
+    border: none;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 0 20px 0;
+    width: 100%;
+}
+
+/* Memory text */
+.memoryText {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.95);
+    margin: 0;
+    font-weight: 400;
+}
+.cardHeaderRight {
+    justify-content: flex-end;
+}

@@ -7,6 +7,7 @@ import { NookButton } from '../../nook/NookButton';
 import { MemoryButton } from '../../memories/MemoryButton';
 import { useNavHotkeys } from '../../../hooks/useNavHotkeys';
 import { useCalendarEventsContext } from '../../../contexts/CalendarEventsContext';
+import { useApiError } from '../ApiErrorContext';
 
 import { NAV_TABS, EXTERNAL_LINKS } from './constants';
 import { HoldButton } from './HoldButton';
@@ -25,6 +26,7 @@ export function Navigation({ activeTab, lastTab, onTabChange, workMode = false }
     useNavHotkeys({ onTabChange, workMode });
     const [isMemoryPanelOpen, setIsMemoryPanelOpen] = React.useState(false);
     const calendarContext = useCalendarEventsContext();
+    const { addError } = useApiError();
 
     // Prefetch calendar events on mount (±7 days)
     React.useEffect(() => {
@@ -124,8 +126,19 @@ export function Navigation({ activeTab, lastTab, onTabChange, workMode = false }
                         isPanelOpen={isMemoryPanelOpen}
                         onToggle={() => setIsMemoryPanelOpen(!isMemoryPanelOpen)}
                         onTimelineOpen={() => {
-                            setIsMemoryPanelOpen(false);
-                            onTabChange('memories');
+                            const today = new Date();
+                            // Month is 0-indexed (11 is December).
+                            // Last 4 days are 28, 29, 30, 31.
+                            const isEndOfYear =
+                                today.getMonth() === 11 &&
+                                today.getDate() >= 28;
+
+                            if (isEndOfYear) {
+                                setIsMemoryPanelOpen(false);
+                                onTabChange('memories');
+                            } else {
+                                addError(425, 'memories', "It is not time to look back yet.");
+                            }
                         }}
                         className={`${styles.tabBtn} ${isMemoryPanelOpen ? styles.active : ''}`}
                     />

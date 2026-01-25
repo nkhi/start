@@ -1,16 +1,15 @@
 import { useRef, useEffect, useState } from 'react';
 import { Tray, ArrowRight } from '@phosphor-icons/react';
 import { createMemory } from '../../api/memories';
+import { useMemoryDraft } from './useMemoryDraft';
 import styles from './MemoryPanel.module.css';
 
 interface MemoryPanelProps {
     onClose: () => void;
 }
 
-const DRAFT_KEY = 'goodMoments_draft';
-
 export function MemoryPanel({ onClose }: MemoryPanelProps) {
-    const [text, setText] = useState('');
+    const { text, setText, clearDraft } = useMemoryDraft();
     const [isSaving, setIsSaving] = useState(false);
     const [selectedDate, setSelectedDate] = useState(() => {
         // Default to today
@@ -18,23 +17,6 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
     });
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
-
-    // Load draft from localStorage on mount
-    useEffect(() => {
-        const draft = localStorage.getItem(DRAFT_KEY);
-        if (draft) {
-            setText(draft);
-        }
-    }, []);
-
-    // Save draft to localStorage whenever text changes
-    useEffect(() => {
-        if (text) {
-            localStorage.setItem(DRAFT_KEY, text);
-        } else {
-            localStorage.removeItem(DRAFT_KEY);
-        }
-    }, [text]);
 
     // Auto-focus textarea on mount
     useEffect(() => {
@@ -95,8 +77,7 @@ export function MemoryPanel({ onClose }: MemoryPanelProps) {
                 date: selectedDate,
                 createdAt: new Date().toISOString()
             });
-            setText('');
-            localStorage.removeItem(DRAFT_KEY);
+            clearDraft();
             onClose();
         } catch (error) {
             console.error('Failed to save memory:', error);

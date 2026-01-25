@@ -5,11 +5,12 @@ export interface ApiError {
     statusCode: number;
     route: string;
     timestamp: number;
+    message?: string;
 }
 
 interface ApiErrorContextType {
     errors: ApiError[];
-    addError: (statusCode: number, route: string) => void;
+    addError: (statusCode: number, route: string, message?: string) => void;
     dismissError: (id: string) => void;
     clearAllErrors: () => void;
 }
@@ -21,13 +22,14 @@ const AUTO_DISMISS_MS = 5000;
 export function ApiErrorProvider({ children }: { children: ReactNode }) {
     const [errors, setErrors] = useState<ApiError[]>([]);
 
-    const addError = useCallback((statusCode: number, route: string) => {
+    const addError = useCallback((statusCode: number, route: string, message?: string) => {
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
         const newError: ApiError = {
             id,
             statusCode,
             route,
             timestamp: Date.now(),
+            message,
         };
 
         setErrors((prev) => [...prev, newError]);
