@@ -123,6 +123,10 @@ export function Navigation({ activeTab, lastTab, onTabChange, workMode = false }
                     <MemoryButton
                         isPanelOpen={isMemoryPanelOpen}
                         onToggle={() => setIsMemoryPanelOpen(!isMemoryPanelOpen)}
+                        onTimelineOpen={() => {
+                            setIsMemoryPanelOpen(false);
+                            onTabChange('memories');
+                        }}
                         className={`${styles.tabBtn} ${isMemoryPanelOpen ? styles.active : ''}`}
                     />
                 )}

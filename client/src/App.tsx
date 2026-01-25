@@ -17,6 +17,7 @@ import { ApiErrorToast } from './components/shared/ApiErrorToast';
 import { setGlobalErrorReporter, clearGlobalErrorReporter } from './api/errorReporter';
 import { Immich } from './components/immich/Immich';
 import { Cap } from './components/cap/Cap';
+import { MemoriesTimeline } from './components/memories/MemoriesTimeline';
 
 // Detect work mode from URL query params (?mode=work)
 const urlParams = new URLSearchParams(window.location.search);
@@ -39,22 +40,33 @@ function AppContent() {
   const [lastTab, setLastTab] = useState<TabType>(WORK_MODE ? 'todos' : 'habits');
 
   const handleTabChange = (newTab: TabType) => {
-    if (newTab === 'daylight') {
+    // Track last tab for immersive views (daylight, memories)
+    if (newTab === 'daylight' || newTab === 'memories') {
       setLastTab(activeTab);
     }
     setActiveTab(newTab);
   };
 
+  // Handler to exit memories back to last tab
+  const handleMemoriesExit = () => {
+    setActiveTab(lastTab);
+  };
+
+  // Hide navigation for memories (full immersive experience)
+  const showNavigation = activeTab !== 'memories';
+
   return (
     <>
       <ErrorReporterSetup />
       <div id="app">
-        <Navigation
-          activeTab={activeTab}
-          lastTab={lastTab}
-          onTabChange={handleTabChange}
-          workMode={WORK_MODE}
-        />
+        {showNavigation && (
+          <Navigation
+            activeTab={activeTab}
+            lastTab={lastTab}
+            onTabChange={handleTabChange}
+            workMode={WORK_MODE}
+          />
+        )}
         <main id="habit-container" className={activeTab}>
           {activeTab === 'todos' && <Todos workMode={WORK_MODE} />}
           {activeTab === 'daylight' && <Daylight workMode={WORK_MODE} />}
@@ -66,6 +78,7 @@ function AppContent() {
           {!WORK_MODE && activeTab === 'landmarks' && <Landmarks />}
           {!WORK_MODE && activeTab === 'immich' && <Immich />}
           {!WORK_MODE && activeTab === 'cap' && <Cap />}
+          {!WORK_MODE && activeTab === 'memories' && <MemoriesTimeline onExit={handleMemoriesExit} />}
         </main>
       </div>
       <ApiErrorToast />

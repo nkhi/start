@@ -1,0 +1,322 @@
+/* Container for the entire timeline experience */
+.timelineContainer {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #000000;
+
+    /* Hide scrollbar */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge */
+}
+
+.timelineContainer::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari/Opera */
+}
+
+/* Scrollable content area */
+.timelineContent {
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 15vh 24px 0 24px;
+}
+
+/* The central vertical line */
+.timelineSpine {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.15) 5%,
+            rgba(255, 255, 255, 0.15) 95%,
+            rgba(255, 255, 255, 0) 100%);
+    transform: translateX(-50%);
+}
+
+/* Individual memory item container */
+.memoryItem {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr;
+    align-items: center;
+    min-height: 60vh;
+    position: relative;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+/* Visible state - applied via Intersection Observer */
+.memoryItem.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Dot on the timeline */
+.timelineDot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    z-index: 2;
+}
+
+/* Right-side positioning */
+.memoryItem.right .card {
+    grid-column: 3;
+    margin-left: 20px;
+}
+
+/* Left-side positioning */
+.memoryItem.left .card {
+    grid-column: 1;
+    margin-right: 20px;
+    text-align: right;
+}
+
+.memoryItem.left .dateBadge {
+    right: auto;
+    left: 16px;
+}
+
+/* Card header containing date */
+.cardHeader {
+    display: flex;
+    justify-content: flex-start;
+    /* Default: left-aligned for right-side cards */
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+/* Left-side cards: align date to the right */
+.memoryItem.left .cardHeader {
+    justify-content: flex-end;
+}
+
+.cardDate {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Horizontal divider line */
+.cardDivider {
+    border: none;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 0 20px 0;
+    width: 100%;
+}
+
+/* The memory card itself */
+.card {
+    padding: 32px;
+    border-radius: 16px;
+    position: relative;
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    min-width: 320px;
+}
+
+.card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+
+
+/* Memory text */
+.memoryText {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.95);
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Top fade overlay */
+.fadeOverlayTop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 15vh;
+    background: linear-gradient(180deg,
+            rgba(0, 0, 0, 1) 0%,
+            rgba(0, 0, 0, 0.8) 40%,
+            rgba(0, 0, 0, 0) 100%);
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Bottom fade overlay - creates the teaser effect */
+.fadeOverlayBottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30vh;
+    background: linear-gradient(0deg,
+            rgba(0, 0, 0, 1) 0%,
+            rgba(0, 0, 0, 0.9) 30%,
+            rgba(0, 0, 0, 0) 100%);
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Header section */
+.header {
+    text-align: center;
+    margin-bottom: 10vh;
+}
+
+.title {
+    font-size: 3rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 8px 0;
+    letter-spacing: 2px;
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Loading state */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1rem;
+}
+
+/* Empty state */
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    padding: 24px;
+}
+
+.emptyIcon {
+    font-size: 4rem;
+    margin-bottom: 24px;
+    opacity: 0.3;
+}
+
+.emptyText {
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+/* Footer section - mirrors header, positioned outside timeline spine */
+.footer {
+    position: relative;
+    height: 100vh;
+    /* Full viewport since nav is hidden */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-top: 20vh;
+    /* Push down from last card to hide spine */
+    background: #000000;
+    /* Solid background to hide the spine behind it */
+    z-index: 5;
+    /* Above the spine */
+}
+
+.footerTitle {
+    font-size: 2.25rem;
+    line-height: 1.4;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.95);
+    margin: 0 0 24px 0;
+    letter-spacing: 0.5px;
+    max-width: 800px;
+    padding: 0 20px;
+}
+
+.footerSubtitle {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0.5px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .timelineContent {
+        padding: 10vh 16px 40vh 16px;
+    }
+
+    .memoryItem {
+        display: block;
+        min-height: 50vh;
+        padding-left: 30px;
+    }
+
+    .timelineSpine {
+        left: 15px;
+    }
+
+    .timelineDot {
+        left: 15px;
+        width: 10px;
+        height: 10px;
+    }
+
+    .memoryItem.right .card,
+    .memoryItem.left .card {
+        margin: 0;
+        text-align: left;
+    }
+
+    .memoryItem.left .dateBadge {
+        right: 16px;
+        left: auto;
+    }
+
+    .card {
+        padding: 20px 18px;
+    }
+
+    .memoryText {
+        font-size: 1.1rem;
+    }
+
+    .title {
+        font-size: 1.75rem;
+    }
+}

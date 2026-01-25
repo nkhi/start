@@ -84,6 +84,15 @@ export const NAV_TABS: NavItem[] = [
         theme: {
             background: '#111111'
         }
+    },
+    {
+        id: 'memories',
+        icon: TreeIcon, // Placeholder - not shown in nav, but needed for theme
+        showInWorkMode: false,
+        useDuotone: true,
+        theme: {
+            background: '#000000'
+        }
     }
 ];
 
