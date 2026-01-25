@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import * as db from '../db.ts';
+import { logToFile } from '../logger.ts';
 import type { DbLandmark } from '../db-types.ts';
 import type { LandmarkItem, LandmarksByCategory, CreateLandmarkRequest, UpdateLandmarkRequest, ReorderLandmarksRequest } from '../../shared/types.ts';
 
@@ -41,6 +42,9 @@ router.get('/landmarks', async (_req: Request, res: Response) => {
         res.json(grouped);
     } catch (e) {
         const error = e as Error;
+        const errorMsg = `[LANDMARKS] Error fetching landmarks: ${error.message}`;
+        console.log(errorMsg);
+        logToFile(errorMsg);
         res.status(500).json({ error: error.message });
     }
 });
@@ -84,7 +88,50 @@ router.post('/landmarks', async (req: Request<object, object, CreateLandmarkRequ
         res.json(landmark);
     } catch (e) {
         const error = e as Error;
+        const errorMsg = `[LANDMARKS] Error creating landmark: ${error.message}`;
+        console.log(errorMsg);
+        logToFile(errorMsg);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================================
+// IMPORTANT: Static routes like /landmarks/reorder MUST be defined BEFORE 
+// parameterized routes like /landmarks/:id, otherwise Express will match 
+// "reorder" as an :id parameter!
+// ============================================================================
+
+// Reorder landmarks within a category
+router.patch('/landmarks/reorder', async (req: Request<object, object, ReorderLandmarksRequest>, res: Response) => {
+    const { category, itemOrder } = req.body;
+
+    if (!category || !itemOrder || !Array.isArray(itemOrder)) {
+        return res.status(400).json({ error: 'category and itemOrder array are required' });
+    }
+
+    const client = await db.pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Update position for each item based on its index in the itemOrder array
+        for (let i = 0; i < itemOrder.length; i++) {
+            await client.query(
+                'UPDATE landmarks SET position = $1 WHERE id = $2 AND category = $3',
+                [i, itemOrder[i], category]
+            );
+        }
+
+        await client.query('COMMIT');
+        res.json({ ok: true, category, itemOrder });
+    } catch (e) {
+        await client.query('ROLLBACK');
+        const error = e as Error;
+        const errorMsg = `[LANDMARKS] Error reordering landmarks: ${error.message}`;
+        console.log(errorMsg);
+        logToFile(errorMsg);
+        res.status(500).json({ error: error.message });
+    } finally {
+        client.release();
     }
 });
 
@@ -132,6 +179,9 @@ router.patch('/landmarks/:id', async (req: Request<{ id: string }, object, Updat
         res.json(landmark);
     } catch (e) {
         const error = e as Error;
+        const errorMsg = `[LANDMARKS] Error updating landmark ${id}: ${error.message}`;
+        console.log(errorMsg);
+        logToFile(errorMsg);
         res.status(500).json({ error: error.message });
     }
 });
@@ -141,42 +191,17 @@ router.delete('/landmarks/:id', async (req: Request<{ id: string }>, res: Respon
     const { id } = req.params;
 
     try {
-        await db.query('DELETE FROM landmarks WHERE id = $1', [id]);
+        const result = await db.query('DELETE FROM landmarks WHERE id = $1 RETURNING id', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: `Landmark with ID ${id} not found` });
+        }
         res.json({ ok: true });
     } catch (e) {
         const error = e as Error;
+        const errorMsg = `[LANDMARKS] Error deleting landmark ${id}: ${error.message}`;
+        console.log(errorMsg);
+        logToFile(errorMsg);
         res.status(500).json({ error: error.message });
-    }
-});
-
-// Reorder landmarks within a category
-router.patch('/landmarks/reorder', async (req: Request<object, object, ReorderLandmarksRequest>, res: Response) => {
-    const { category, itemOrder } = req.body;
-
-    if (!category || !itemOrder || !Array.isArray(itemOrder)) {
-        return res.status(400).json({ error: 'category and itemOrder array are required' });
-    }
-
-    const client = await db.pool.connect();
-    try {
-        await client.query('BEGIN');
-
-        // Update position for each item based on its index in the itemOrder array
-        for (let i = 0; i < itemOrder.length; i++) {
-            await client.query(
-                'UPDATE landmarks SET position = $1 WHERE id = $2 AND category = $3',
-                [i, itemOrder[i], category]
-            );
-        }
-
-        await client.query('COMMIT');
-        res.json({ ok: true, category, itemOrder });
-    } catch (e) {
-        await client.query('ROLLBACK');
-        const error = e as Error;
-        res.status(500).json({ error: error.message });
-    } finally {
-        client.release();
     }
 });
 

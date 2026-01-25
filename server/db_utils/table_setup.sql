@@ -113,6 +113,7 @@ CREATE TABLE "public"."diary_entries" (
     "question_id" text NOT NULL,
     "answer" text,
     "created_at" timestamptz,
+    "created_at" timestamptz,
     PRIMARY KEY ("id")
 );
 
@@ -142,3 +143,18 @@ CREATE TABLE "public"."memories" (
     PRIMARY KEY ("id")
 );
 
+DROP TABLE IF EXISTS "public"."landmarks";
+-- Table Definition
+CREATE TABLE "public"."landmarks" (
+    "id" text NOT NULL,
+    "category" text NOT NULL,
+    "text" text NOT NULL,
+    "date" date,
+    "position" int4,
+    "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("id")
+);
+
+-- Indices
+CREATE INDEX idx_landmarks_category ON public.landmarks USING btree (category);
+CREATE INDEX idx_landmarks_position ON public.landmarks USING btree (category, "position");

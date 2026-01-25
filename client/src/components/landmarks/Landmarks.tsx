@@ -1,13 +1,18 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Plus, Trash, Ghost } from '@phosphor-icons/react';
-import { getLandmarks, createLandmark, updateLandmark as apiUpdateLandmark, deleteLandmark, reorderLandmarks } from '../../api/landmarks';
-import type { LandmarksByCategory, LandmarkItem } from '../../types';
-import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, pointerWithin, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
+import React, { type CSSProperties } from 'react';
+import { Ghost, Plus } from '@phosphor-icons/react';
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, pointerWithin } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import styles from './Landmarks.module.css';
 
-// Sortable wrapper for landmark items
+import type { LandmarkItem } from '../../types';
+import styles from './Landmarks.module.css';
+import { getDateStatus, getDaysUntilText } from './utils';
+import { useLandmarksData } from './useLandmarksData';
+import { ForwardItemCard } from './ForwardItemCard';
+import { LandmarkBadge } from './LandmarkBadge';
+
+// --- Shared Internal Components ---
+
 function SortableLandmarkItem({ item, children }: { item: LandmarkItem; children: React.ReactNode }) {
     const {
         attributes,
@@ -21,7 +26,7 @@ function SortableLandmarkItem({ item, children }: { item: LandmarkItem; children
         data: { type: 'landmarkItem', item }
     });
 
-    const style: React.CSSProperties = {
+    const style: CSSProperties = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
@@ -42,123 +47,234 @@ function SortableLandmarkItem({ item, children }: { item: LandmarkItem; children
     );
 }
 
-// Forward item card with auto-height textarea
-function ForwardItemCard({
-    item,
-    displayValue,
-    onUpdate,
-    onDelete,
-    onDateUpdate
-}: {
-    item: LandmarkItem;
-    displayValue: string;
-    onUpdate: (text: string) => void;
-    onDelete: () => void;
-    onDateUpdate: (date: string | null) => void;
-}) {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+// --- Card Components ---
 
-    const adjustHeight = useCallback(() => {
-        const textarea = textareaRef.current;
-        if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        }
-    }, []);
-
-    // Adjust height whenever displayValue changes
-    useEffect(() => {
-        adjustHeight();
-    }, [displayValue, adjustHeight]);
-
-    // Adjust height when textarea width changes (viewport resize, etc.)
-    useEffect(() => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-
-        const resizeObserver = new ResizeObserver(() => {
-            adjustHeight();
-        });
-
-        resizeObserver.observe(textarea);
-
-        return () => {
-            resizeObserver.disconnect();
-        };
-    }, [adjustHeight]);
-
-    return (
-        <div className={`${styles.item} ${getDateStatus(item.date) === 'today' ? styles.itemToday : ''}`}>
-            <textarea
-                ref={textareaRef}
-                className={styles.itemText}
-                value={displayValue}
-                onChange={(e) => onUpdate(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-                rows={1}
-                onInput={adjustHeight}
-            />
-            <button
-                className={styles.deleteBtn}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-            >
-                <Trash size={14} />
-            </button>
-            <input
-                type="date"
-                className={styles.dateInput}
-                value={item.date || ''}
-                onChange={(e) => onDateUpdate(e.target.value || null)}
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-            />
-        </div>
-    );
+interface CardProps {
+    items: LandmarkItem[];
+    showAddInput: boolean;
+    newItemText: string;
+    onToggleAddInput: () => void;
+    onSetNewItemText: (text: string) => void;
+    onAddItem: () => void;
+    onCloseAddInput: () => void;
+    onDelete: (id: string) => void;
 }
 
-// Helper to determine if a date is in the past, today, or future
-const getDateStatus = (dateStr: string | null | undefined): 'past' | 'today' | 'future' => {
-    if (!dateStr) return 'future'; // No date = treat as future
-    const itemDate = new Date(dateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    itemDate.setHours(0, 0, 0, 0);
+const OrientAroundCard: React.FC<CardProps> = ({
+    items,
+    showAddInput,
+    newItemText,
+    onToggleAddInput,
+    onSetNewItemText,
+    onAddItem,
+    onCloseAddInput,
+    onDelete
+}) => {
+    return (
+        <div className={`${styles.column} ${styles.column_orient}`}>
+            <div className={styles.columnHeader}>
+                <h2 className={styles.columnTitle}>Orient Around</h2>
+                <div className={styles.headerButtons}>
+                    <button className={styles.addBtn} onClick={onToggleAddInput}>
+                        <Plus size={18} weight="bold" />
+                    </button>
+                </div>
+            </div>
 
-    if (itemDate < today) return 'past';
-    if (itemDate.getTime() === today.getTime()) return 'today';
-    return 'future';
+            <SortableContext
+                items={items.map(i => `item-${i.id}`)}
+                strategy={verticalListSortingStrategy}
+            >
+                <div className={`${styles.itemsList} ${styles.bulletList}`}>
+                    {items.map(item => (
+                        <SortableLandmarkItem key={item.id} item={item}>
+                            <LandmarkBadge
+                                item={item}
+                                onDelete={() => onDelete(item.id)}
+                            />
+                        </SortableLandmarkItem>
+                    ))}
+                </div>
+            </SortableContext>
+
+            {showAddInput && (
+                <div className={styles.addItemContainer}>
+                    <input
+                        className={styles.addItemInput}
+                        placeholder="Add new item..."
+                        value={newItemText}
+                        onChange={(e) => onSetNewItemText(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') onAddItem();
+                            if (e.key === 'Escape') onCloseAddInput();
+                        }}
+                        autoFocus
+                    />
+                </div>
+            )}
+        </div>
+    );
 };
 
-// Helper to get "X days" text for a date
-const getDaysUntilText = (dateStr: string | null | undefined): string => {
-    if (!dateStr) return '';
-    const itemDate = new Date(dateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    itemDate.setHours(0, 0, 0, 0);
+const BigThingsCard: React.FC<CardProps> = ({
+    items,
+    showAddInput,
+    newItemText,
+    onToggleAddInput,
+    onSetNewItemText,
+    onAddItem,
+    onCloseAddInput,
+    onDelete
+}) => {
+    return (
+        <div className={`${styles.column} ${styles.column_big_things}`}>
+            <div className={styles.columnHeader}>
+                <h2 className={styles.columnTitle}>Big Things</h2>
+                <div className={styles.headerButtons}>
+                    <button className={styles.addBtn} onClick={onToggleAddInput}>
+                        <Plus size={18} weight="bold" />
+                    </button>
+                </div>
+            </div>
 
-    const diffTime = itemDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            <SortableContext
+                items={items.map(i => `item-${i.id}`)}
+                strategy={verticalListSortingStrategy}
+            >
+                <div className={`${styles.itemsList} ${styles.bulletList}`}>
+                    {items.map(item => (
+                        <SortableLandmarkItem key={item.id} item={item}>
+                            <LandmarkBadge
+                                item={item}
+                                onDelete={() => onDelete(item.id)}
+                            />
+                        </SortableLandmarkItem>
+                    ))}
+                </div>
+            </SortableContext>
 
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Tomorrow';
-    if (diffDays === -1) return 'Yesterday';
-    if (diffDays > 0) return `${diffDays} days`;
-    return `${Math.abs(diffDays)} days ago`;
+            {showAddInput && (
+                <div className={styles.addItemContainer}>
+                    <input
+                        className={styles.addItemInput}
+                        placeholder="Add new item..."
+                        value={newItemText}
+                        onChange={(e) => onSetNewItemText(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') onAddItem();
+                            if (e.key === 'Escape') onCloseAddInput();
+                        }}
+                        autoFocus
+                    />
+                </div>
+            )}
+        </div>
+    );
 };
+
+interface LookingForwardToCardProps extends CardProps {
+    newItemDate: string;
+    showPastEvents: boolean;
+    onSetNewItemDate: (date: string) => void;
+    onTogglePastEvents: () => void;
+    onUpdateItem: (id: string, updates: { text?: string; date?: string | null }) => void;
+}
+
+const LookingForwardToCard: React.FC<LookingForwardToCardProps> = ({
+    items,
+    showAddInput,
+    newItemText,
+    newItemDate,
+    showPastEvents,
+    onToggleAddInput,
+    onSetNewItemText,
+    onSetNewItemDate,
+    onTogglePastEvents,
+    onAddItem,
+    onCloseAddInput,
+    onDelete,
+    onUpdateItem
+}) => {
+    return (
+        <div className={`${styles.column} ${styles.column_forward}`}>
+            <div className={styles.columnHeader}>
+                <h2 className={styles.columnTitle}>Looking Forward To</h2>
+                <div className={styles.headerButtons}>
+                    <button
+                        className={`${styles.ghostBtn} ${showPastEvents ? styles.active : ''}`}
+                        onClick={onTogglePastEvents}
+                        title={showPastEvents ? "Hide past events" : "Show past events"}
+                    >
+                        <Ghost size={18} weight="duotone" />
+                    </button>
+                    <button className={styles.addBtn} onClick={onToggleAddInput}>
+                        <Plus size={18} weight="bold" />
+                    </button>
+                </div>
+            </div>
+
+            <div className={styles.itemsList}>
+                {items.map(item => (
+                    <ForwardItemCard
+                        key={item.id}
+                        item={item}
+                        daysUntilText={getDaysUntilText(item.date)}
+                        isToday={getDateStatus(item.date) === 'today'}
+                        onTextChange={(text) => onUpdateItem(item.id, { text })}
+                        onDateChange={(date) => onUpdateItem(item.id, { date })}
+                        onDelete={() => onDelete(item.id)}
+                    />
+                ))}
+            </div>
+
+            {showAddInput && (
+                <div className={styles.addItemContainer}>
+                    <input
+                        className={styles.addItemInput}
+                        placeholder="Add new item..."
+                        value={newItemText}
+                        onChange={(e) => onSetNewItemText(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') onAddItem();
+                            if (e.key === 'Escape') onCloseAddInput();
+                        }}
+                        autoFocus
+                    />
+                    <input
+                        type="date"
+                        className={styles.addDateInput}
+                        value={newItemDate}
+                        onChange={(e) => onSetNewItemDate(e.target.value)}
+                        placeholder="Optional date"
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
+
+// --- Main Component ---
 
 export const Landmarks: React.FC = () => {
-    const [landmarks, setLandmarks] = useState<LandmarksByCategory>({ orient: [], forward: [], big_things: [] });
-    const [newItemText, setNewItemText] = useState<Record<string, string>>({ orient: '', forward: '', big_things: '' });
-    const [newItemDate, setNewItemDate] = useState<string>('');
-    const [activeItem, setActiveItem] = useState<LandmarkItem | null>(null);
-    const [showAddInput, setShowAddInput] = useState<Record<string, boolean>>({ orient: false, forward: false, big_things: false });
-    const [showPastEvents, setShowPastEvents] = useState<boolean>(false);
+    const {
+        activeItem,
+        showAddInput,
+        showPastEvents,
+        newItemText,
+        newItemDate,
+        handleDragStart,
+        handleDragEnd,
+        handleAddItem,
+        updateLandmark,
+        deleteLandmark,
+        setNewItemText,
+        setNewItemDate,
+        toggleAddInput,
+        setShowAddInput,
+        togglePastEvents,
+        getSortedItems,
+        getFilteredItems,
+    } = useLandmarksData();
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -168,287 +284,16 @@ export const Landmarks: React.FC = () => {
         })
     );
 
-    useEffect(() => {
-        fetchLandmarks();
-    }, []);
+    // Prepare data for each card
+    const orientItems = getSortedItems('orient');
+    const bigThingsItems = getSortedItems('big_things');
+    const forwardItems = getFilteredItems('forward', getSortedItems('forward'));
 
-    const fetchLandmarks = async () => {
-        try {
-            const data = await getLandmarks();
-            console.log('🔍 API Response:', data);
-            console.log('🔍 big_things from API:', data.big_things);
-            setLandmarks({
-                orient: data.orient || [],
-                forward: data.forward || [],
-                big_things: data.big_things || []
-            });
-        } catch (error) {
-            console.error('Error fetching landmarks:', error);
-        }
-    };
+    const handleNewItemText = (category: string) => (text: string) =>
+        setNewItemText(prev => ({ ...prev, [category]: text }));
 
-    const handleDragStart = useCallback((event: DragStartEvent) => {
-        const { active } = event;
-        const data = active.data.current;
-        if (data?.type === 'landmarkItem') {
-            setActiveItem(data.item);
-        }
-    }, []);
-
-    const handleDragEnd = useCallback(async (event: DragEndEvent) => {
-        const { active, over } = event;
-        setActiveItem(null);
-
-        if (!over || active.id === over.id) return;
-
-        const activeItemId = String(active.id).replace('item-', '');
-        const overItemId = String(over.id).replace('item-', '');
-        const activeItemData = active.data.current?.item as LandmarkItem;
-
-        if (!activeItemData) return;
-
-        const category = activeItemData.category;
-        const rawItems = landmarks[category as keyof LandmarksByCategory];
-        const items = Array.isArray(rawItems) ? rawItems : [];
-
-        const oldIndex = items.findIndex(i => i.id === activeItemId);
-        const newIndex = items.findIndex(i => i.id === overItemId);
-
-        if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
-
-        const newItems = [...items];
-        const [movedItem] = newItems.splice(oldIndex, 1);
-        newItems.splice(newIndex, 0, movedItem);
-
-        const newItemOrder = newItems.map(item => item.id);
-
-        // Optimistic update
-        setLandmarks(prev => ({
-            ...prev,
-            [category]: newItems.map((item, i) => ({ ...item, position: i }))
-        }));
-
-        try {
-            await reorderLandmarks({ category, itemOrder: newItemOrder });
-        } catch (error) {
-            console.error('Error reordering landmarks:', error);
-            fetchLandmarks();
-        }
-    }, [landmarks]);
-
-    const handleAddItem = async (category: keyof LandmarksByCategory) => {
-        const text = newItemText[category]?.trim();
-        if (!text) return;
-
-        const newItem = {
-            id: crypto.randomUUID(),
-            category,
-            text,
-            date: category === 'forward' && newItemDate ? newItemDate : undefined
-        };
-
-        try {
-            const savedItem = await createLandmark(newItem);
-            setLandmarks(prev => {
-                if (!prev) return { orient: [], forward: [], big_things: [] };
-                const prevCategoryItems = prev[category];
-                const safeItems = Array.isArray(prevCategoryItems) ? prevCategoryItems : [];
-                return {
-                    ...prev,
-                    [category]: [...safeItems, savedItem]
-                };
-            });
-            setNewItemText(prev => ({ ...prev, [category]: '' }));
-            setNewItemDate('');
-            setShowAddInput(prev => ({ ...prev, [category]: false }));
-        } catch (error) {
-            console.error('Error creating landmark:', error);
-        }
-    };
-
-    const handleUpdateItem = async (id: string, category: keyof LandmarksByCategory, text: string) => {
-        // Optimistic update
-        setLandmarks(prev => {
-            const prevItems = Array.isArray(prev[category]) ? prev[category] : [];
-            return {
-                ...prev,
-                [category]: prevItems.map(item =>
-                    item.id === id ? { ...item, text } : item
-                )
-            };
-        });
-
-        try {
-            await apiUpdateLandmark(id, { text });
-        } catch (error) {
-            console.error('Error updating landmark:', error);
-            fetchLandmarks();
-        }
-    };
-
-    const handleUpdateDate = async (id: string, date: string | null) => {
-        // Optimistic update
-        setLandmarks(prev => {
-            const prevItems = Array.isArray(prev.forward) ? prev.forward : [];
-            return {
-                ...prev,
-                forward: prevItems.map(item =>
-                    item.id === id ? { ...item, date } : item
-                )
-            };
-        });
-
-        try {
-            await apiUpdateLandmark(id, { date });
-        } catch (error) {
-            console.error('Error updating landmark date:', error);
-            fetchLandmarks();
-        }
-    };
-
-    const handleDeleteItem = async (id: string, category: keyof LandmarksByCategory) => {
-        if (!confirm('Are you sure you want to delete this landmark?')) return;
-
-        setLandmarks(prev => {
-            const prevItems = Array.isArray(prev[category]) ? prev[category] : [];
-            return {
-                ...prev,
-                [category]: prevItems.filter(item => item.id !== id)
-            };
-        });
-
-        try {
-            await deleteLandmark(id);
-        } catch (error) {
-            console.error('Error deleting landmark:', error);
-            fetchLandmarks();
-        }
-    };
-
-    const renderColumn = (category: keyof LandmarksByCategory, title: string) => {
-        const rawItems = landmarks[category];
-        const items = Array.isArray(rawItems) ? rawItems : [];
-        // For 'forward' category, sort by date (no date = top, then ascending by date)
-        // For 'orient' and 'big_things' category, sort by position
-        const sortedItems = [...items].sort((a, b) => {
-            if (category === 'forward') {
-                // No date items go to top, then sort by date ascending
-                if (!a.date && !b.date) return 0; // Keep original order for no-date items
-                if (!a.date) return -1;
-                if (!b.date) return 1;
-                // Sort by date ascending
-                return a.date.localeCompare(b.date);
-            }
-            // Orient/Big Things category: sort by position (with fallback to 0 for null positions)
-            return (a.position ?? 0) - (b.position ?? 0);
-        });
-
-        // For 'forward' category, filter by date status
-        // Ghost OFF: show today + future (hide past)
-        // Ghost ON: show ONLY past (hide today + future)
-        const visibleItems = category === 'forward'
-            ? sortedItems.filter(item => {
-                const status = getDateStatus(item.date);
-                if (showPastEvents) {
-                    // Ghost is ON: show only past events
-                    return status === 'past';
-                } else {
-                    // Ghost is OFF: show today + future
-                    return status !== 'past';
-                }
-            })
-            : sortedItems;
-
-        return (
-            <div className={`${styles.column} ${styles[`column_${category}`]}`}>
-                <div className={styles.columnHeader}>
-                    <h2 className={styles.columnTitle}>{title}</h2>
-                    <div className={styles.headerButtons}>
-                        {category === 'forward' && (
-                            <button
-                                className={`${styles.ghostBtn} ${showPastEvents ? styles.active : ''}`}
-                                onClick={() => setShowPastEvents(!showPastEvents)}
-                                title={showPastEvents ? "Hide past events" : "Show past events"}
-                            >
-                                <Ghost size={18} weight="duotone" />
-                            </button>
-                        )}
-                        <button
-                            className={styles.addBtn}
-                            onClick={() => setShowAddInput(prev => ({ ...prev, [category]: !prev[category] }))}
-                        >
-                            <Plus size={18} weight="bold" />
-                        </button>
-                    </div>
-                </div>
-
-                <SortableContext
-                    items={visibleItems.map(i => `item-${i.id}`)}
-                    strategy={verticalListSortingStrategy}
-                >
-                    <div className={`${styles.itemsList} ${category !== 'forward' ? styles.bulletList : ''}`}>
-                        {visibleItems.map(item => (
-                            <SortableLandmarkItem key={item.id} item={item}>
-                                {category !== 'forward' ? (
-                                    // Badge/tile style for orient and big_things
-                                    // TODO: Inline editing disabled for badge layout - API layer still supports updateLandmark
-                                    <div className={styles.bulletItem}>
-                                        <span className={styles.bulletText}>
-                                            {item.text}
-                                        </span>
-                                        <button
-                                            className={styles.bulletDeleteBtn}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteItem(item.id, category);
-                                            }}
-                                            onPointerDown={(e) => e.stopPropagation()}
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ) : (
-                                    // Card style for forward
-                                    <ForwardItemCard
-                                        item={item}
-                                        displayValue={item.date ? `${getDaysUntilText(item.date)} · ${item.text}` : item.text}
-                                        onUpdate={(text) => handleUpdateItem(item.id, category, text)}
-                                        onDelete={() => handleDeleteItem(item.id, category)}
-                                        onDateUpdate={(date) => handleUpdateDate(item.id, date)}
-                                    />
-                                )}
-                            </SortableLandmarkItem>
-                        ))}
-                    </div>
-                </SortableContext>
-
-                {showAddInput[category] && (
-                    <div className={styles.addItemContainer}>
-                        <input
-                            className={styles.addItemInput}
-                            placeholder="Add new item..."
-                            value={newItemText[category] || ''}
-                            onChange={(e) => setNewItemText(prev => ({ ...prev, [category]: e.target.value }))}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleAddItem(category);
-                                if (e.key === 'Escape') setShowAddInput(prev => ({ ...prev, [category]: false }));
-                            }}
-                            autoFocus
-                        />
-                        {category === 'forward' && (
-                            <input
-                                type="date"
-                                className={styles.addDateInput}
-                                value={newItemDate}
-                                onChange={(e) => setNewItemDate(e.target.value)}
-                                placeholder="Optional date"
-                            />
-                        )}
-                    </div>
-                )}
-            </div>
-        );
-    };
+    const handleCloseAdd = (category: string) => () =>
+        setShowAddInput(prev => ({ ...prev, [category]: false }));
 
     return (
         <DndContext
@@ -458,9 +303,43 @@ export const Landmarks: React.FC = () => {
             onDragEnd={handleDragEnd}
         >
             <div className={styles.landmarksContainer}>
-                {renderColumn('orient', 'Orient Around')}
-                {renderColumn('big_things', 'Big Things')}
-                {renderColumn('forward', 'Looking Forward To')}
+                <OrientAroundCard
+                    items={orientItems}
+                    showAddInput={!!showAddInput['orient']}
+                    newItemText={newItemText['orient'] || ''}
+                    onToggleAddInput={() => toggleAddInput('orient')}
+                    onSetNewItemText={handleNewItemText('orient')}
+                    onAddItem={() => handleAddItem('orient')}
+                    onCloseAddInput={handleCloseAdd('orient')}
+                    onDelete={deleteLandmark}
+                />
+
+                <BigThingsCard
+                    items={bigThingsItems}
+                    showAddInput={!!showAddInput['big_things']}
+                    newItemText={newItemText['big_things'] || ''}
+                    onToggleAddInput={() => toggleAddInput('big_things')}
+                    onSetNewItemText={handleNewItemText('big_things')}
+                    onAddItem={() => handleAddItem('big_things')}
+                    onCloseAddInput={handleCloseAdd('big_things')}
+                    onDelete={deleteLandmark}
+                />
+
+                <LookingForwardToCard
+                    items={forwardItems}
+                    showAddInput={!!showAddInput['forward']}
+                    newItemText={newItemText['forward'] || ''}
+                    newItemDate={newItemDate}
+                    showPastEvents={showPastEvents}
+                    onToggleAddInput={() => toggleAddInput('forward')}
+                    onSetNewItemText={handleNewItemText('forward')}
+                    onSetNewItemDate={setNewItemDate}
+                    onTogglePastEvents={togglePastEvents}
+                    onAddItem={() => handleAddItem('forward')}
+                    onCloseAddInput={handleCloseAdd('forward')}
+                    onDelete={deleteLandmark}
+                    onUpdateItem={(id, updates) => updateLandmark({ id, updates })}
+                />
             </div>
 
             <DragOverlay>

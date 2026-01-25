@@ -95,7 +95,7 @@ class CapService {
         try {
             console.log('[CAP] 🛑 Stopping Cap services...');
 
-            await execAsync('docker compose --profile cap down');
+            await execAsync('docker compose stop cap-web cap-mysql cap-minio');
 
             this.stopAutoShutdownMonitor();
 

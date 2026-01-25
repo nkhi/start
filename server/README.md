@@ -177,12 +177,23 @@ To initialize the database tables, run the SQL in [`db_utils/table_setup.sql`](d
 | `POST` | `/next` | Create an idea |
 | `PATCH` | `/next/:id` | Update idea (start, archive, edit) |
 
+
 ### Vlogs
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/vlogs/:weekStartDate` | Get vlog for a specific week |
 | `POST` | `/vlogs` | Create/update vlog |
+
+### Landmarks
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/landmarks` | Get all landmarks grouped by category |
+| `POST` | `/landmarks` | Create a landmark |
+| `PATCH` | `/landmarks/:id` | Update a landmark (text, date) |
+| `DELETE` | `/landmarks/:id` | Delete a landmark |
+| `PATCH` | `/landmarks/reorder` | Reorder landmarks within a category |
 
 ### Calendar
 
