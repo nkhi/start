@@ -240,7 +240,13 @@ export function Todos({ workMode = false }: TodosProps) {
     const successKey = `${dateStr}_${category}_success`;
     const failedKey = `${dateStr}_${category}_failed`;
 
+    // Isolated condition so it's easy to iterate on later
+    const shouldAutoExpandDone = viewMode === 'day' && activeTasks.length === 0 && completedTasks.length > 0;
+
     const isOpenExpanded = expandedAccordions[openKey] !== false;
+    const isSuccessExpanded = expandedAccordions[successKey] !== undefined
+      ? expandedAccordions[successKey]
+      : shouldAutoExpandDone;
 
     return (
       <div className={styles.accordionsContainer}>
@@ -308,19 +314,19 @@ export function Todos({ workMode = false }: TodosProps) {
 
         {/* Done accordion */}
         {completedTasks.length > 0 && (
-          <div className={`${styles.accordion} ${expandedAccordions[successKey] ? styles.expanded : ''}`}>
+          <div className={`${styles.accordion} ${isSuccessExpanded ? styles.expanded : ''}`}>
             <button
               className={`${styles.accordionHeader} ${styles.successAccordion}`}
-              onClick={() => toggleAccordion(successKey)}
+              onClick={() => setExpandedAccordions(prev => ({ ...prev, [successKey]: !isSuccessExpanded }))}
             >
               <CaretDown
                 size={14}
-                className={`${styles.accordionCaret} ${expandedAccordions[successKey] ? styles.expanded : ''}`}
+                className={`${styles.accordionCaret} ${isSuccessExpanded ? styles.expanded : ''}`}
               />
               <span className={styles.accordionCount}>{completedTasks.length}</span>
               <span>Done</span>
             </button>
-            {expandedAccordions[successKey] && (
+            {isSuccessExpanded && (
               <SortableTaskList
                 containerId={createContainerId(dateStr, category, 'completed')}
                 tasks={completedTasks}
