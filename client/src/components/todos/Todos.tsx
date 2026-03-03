@@ -13,7 +13,7 @@
  * - useTaskDragAndDrop: Drag and drop functionality
  * 
  * ## Features:
- * - Day and Week view modes
+ * - Day and Week view modes (Defaults to Week; persisted in localStorage 'todosViewMode')
  * - Work/Life category separation
  * - Task state accordions (open, done, cancelled)
  * - Cross-container drag-and-drop
@@ -65,9 +65,17 @@ export function Todos({ workMode = false }: TodosProps) {
   // ----------------------------------------
   // View Mode State
   // ----------------------------------------
-  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
+  const [viewMode, setViewMode] = useState<'day' | 'week'>(() => {
+    const saved = localStorage.getItem('todosViewMode');
+    return (saved === 'day' || saved === 'week') ? saved : 'week';
+  });
   const [weekCategory, setWeekCategory] = useState<TaskCategory>(workMode ? 'work' : 'life');
   const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({});
+
+  // Save view mode preference
+  useEffect(() => {
+    localStorage.setItem('todosViewMode', viewMode);
+  }, [viewMode]);
 
   // Sync category with work mode
   useEffect(() => {
