@@ -245,6 +245,10 @@ const LookingForwardToCard: React.FC<LookingForwardToCardProps> = ({
                         className={styles.addDateInput}
                         value={newItemDate}
                         onChange={(e) => onSetNewItemDate(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') onAddItem();
+                            if (e.key === 'Escape') onCloseAddInput();
+                        }}
                         placeholder="Optional date"
                     />
                 </div>

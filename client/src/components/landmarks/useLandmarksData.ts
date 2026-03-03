@@ -3,6 +3,7 @@ import type { DragStartEvent, DragEndEvent } from '@dnd-kit/core';
 import { useLandmarks, useCreateLandmark, useUpdateLandmark, useDeleteLandmark, useReorderLandmarks } from '../../api/landmarks';
 import type { LandmarkItem, LandmarksByCategory } from '../../types';
 import { getDateStatus } from './utils';
+import { generateId } from '../../utils';
 
 export function useLandmarksData() {
     // TanStack Query hooks
@@ -66,12 +67,12 @@ export function useLandmarksData() {
         reorderMutation.mutate({ category, itemOrder: newItemOrder });
     }, [landmarks, reorderMutation]);
 
-    const handleAddItem = async (category: keyof LandmarksByCategory) => {
+    const handleAddItem = useCallback(async (category: keyof LandmarksByCategory) => {
         const text = newItemText[category]?.trim();
         if (!text) return;
 
         await createMutation.mutateAsync({
-            id: crypto.randomUUID(),
+            id: generateId(),
             category,
             text,
             date: category === 'forward' && newItemDate ? newItemDate : undefined
@@ -80,7 +81,7 @@ export function useLandmarksData() {
         setNewItemText(prev => ({ ...prev, [category]: '' }));
         setNewItemDate('');
         setShowAddInput(prev => ({ ...prev, [category]: false }));
-    };
+    }, [newItemText, newItemDate, createMutation]);
 
     // Helpers for sorting and filtering
     const getSortedItems = useCallback((category: keyof LandmarksByCategory) => {
