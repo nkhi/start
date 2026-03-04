@@ -85,15 +85,15 @@ export const NAV_TABS: NavItem[] = [
             background: '#111111'
         }
     },
-    {
-        id: 'memories',
-        icon: TreeIcon, // Placeholder - not shown in nav, but needed for theme
-        showInWorkMode: false,
-        useDuotone: true,
-        theme: {
-            background: '#000000'
-        }
-    }
+    // {
+    //     id: 'memories',
+    //     icon: TreeIcon, // Placeholder - not shown in nav, but needed for theme
+    //     showInWorkMode: false,
+    //     useDuotone: true,
+    //     theme: {
+    //         background: '#000000'
+    //     }
+    // }
 ];
 
 export const EXTERNAL_LINKS: ExternalLink[] = [
