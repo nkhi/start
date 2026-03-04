@@ -65,17 +65,50 @@ export function Todos({ workMode = false }: TodosProps) {
   // ----------------------------------------
   // View Mode State
   // ----------------------------------------
-  const [viewMode, setViewMode] = useState<'day' | 'week'>(() => {
+  const [baseViewMode, setBaseViewMode] = useState<'day' | 'week'>(() => {
     const saved = localStorage.getItem('todosViewMode');
     return (saved === 'day' || saved === 'week') ? saved : 'week';
   });
+  const [previewMode, setPreviewMode] = useState<'day' | 'week' | null>(null);
+
+  const viewMode = previewMode || baseViewMode;
+
   const [weekCategory, setWeekCategory] = useState<TaskCategory>(workMode ? 'work' : 'life');
   const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({});
 
   // Save view mode preference
   useEffect(() => {
-    localStorage.setItem('todosViewMode', viewMode);
-  }, [viewMode]);
+    localStorage.setItem('todosViewMode', baseViewMode);
+  }, [baseViewMode]);
+
+  // Keyboard Navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input or textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const key = e.key.toLowerCase();
+      if (key === 'w' && !e.repeat) {
+        setPreviewMode(baseViewMode === 'day' ? 'week' : 'day');
+      } else if (key === 'q' && !e.repeat) {
+        setBaseViewMode(prev => prev === 'day' ? 'week' : 'day');
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'w') {
+        setPreviewMode(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [baseViewMode]);
 
   // Sync category with work mode
   useEffect(() => {
@@ -502,7 +535,7 @@ export function Todos({ workMode = false }: TodosProps) {
           onPrevWeek={weekNav.handlePrevWeek}
           onNextWeek={weekNav.handleNextWeek}
           onCurrentWeek={weekNav.handleCurrentWeek}
-          onClose={() => setViewMode('day')}
+          onClose={() => setBaseViewMode('day')}
           onGraveyardClick={() => graveyard.setIsOpen(!graveyard.isOpen)}
           isGraveyardOpen={graveyard.isOpen}
           customGridTemplate={getGridTemplate()}
@@ -514,7 +547,7 @@ export function Todos({ workMode = false }: TodosProps) {
           renderColumn={renderTodoColumn}
           className={styles.todosScrollContainer}
           columnClassName={styles.todoColumn}
-          onMoreClick={() => setViewMode('week')}
+          onMoreClick={() => setBaseViewMode('week')}
           moreOverride="Week"
           onGraveyardClick={() => graveyard.setIsOpen(!graveyard.isOpen)}
           isGraveyardOpen={graveyard.isOpen}
