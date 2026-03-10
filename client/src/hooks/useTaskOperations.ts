@@ -75,6 +75,10 @@ export interface UseTaskOperationsReturn {
     batchPuntAllTasks: (dateStr: string, taskIds: string[], category: TaskCategory) => Promise<void>;
     batchFailAllTasks: (dateStr: string, taskIds: string[]) => Promise<void>;
     batchGraveyardAllTasks: (dateStr: string, taskIds: string[]) => Promise<void>;
+
+    // Field updates
+    updateTaskText: (dateStr: string, taskId: string, newText: string) => void;
+    updateTaskDate: (dateStr: string, taskId: string, newDateStr: string) => Promise<void>;
 }
 
 export function useTaskOperations({ workMode }: UseTaskOperationsOptions): UseTaskOperationsReturn {
@@ -386,6 +390,74 @@ export function useTaskOperations({ workMode }: UseTaskOperationsOptions): UseTa
         }
     }, [tasks]);
 
+    /**
+     * Update task text.
+     * Debounces API save by 1 second.
+     */
+    const updateTaskText = useCallback((dateStr: string, taskId: string, newText: string) => {
+        const currentDayTasks = tasks[dateStr] || [];
+        const currentTask = currentDayTasks.find(t => t.id === taskId);
+        if (!currentTask) return;
+
+        setTasks(prev => ({
+            ...prev,
+            [dateStr]: (prev[dateStr] || []).map(t => t.id === taskId ? { ...t, text: newText } : t)
+        }));
+
+        const debounceKey = `${dateStr}_${taskId}_text`;
+        if (debounceTimers.current[debounceKey]) {
+            clearTimeout(debounceTimers.current[debounceKey]);
+        }
+
+        debounceTimers.current[debounceKey] = setTimeout(async () => {
+            try {
+                await updateTask(taskId, { text: newText });
+            } catch (error) {
+                console.error('Failed to update task text:', error);
+            }
+            delete debounceTimers.current[debounceKey];
+        }, 1000);
+    }, [tasks]);
+
+    /**
+     * Update task date.
+     */
+    const updateTaskDate = useCallback(async (dateStr: string, taskId: string, newDateStr: string) => {
+        if (dateStr === newDateStr) return; // No change
+
+        const currentDayTasks = tasks[dateStr] || [];
+        const taskToMove = currentDayTasks.find(t => t.id === taskId);
+        if (!taskToMove) return;
+
+        const newPuntDays = calculatePuntDays(taskToMove.createdAt, newDateStr, taskToMove.category as 'work' | 'life');
+
+        const movedTask: Task = {
+            ...taskToMove,
+            date: newDateStr,
+            puntDays: newPuntDays
+        };
+
+        // Optimistic update
+        setTasks(prev => {
+            const updated = { ...prev };
+            updated[dateStr] = (prev[dateStr] || []).filter(t => t.id !== taskId);
+            updated[newDateStr] = [...(prev[newDateStr] || []), movedTask];
+            return updated;
+        });
+
+        try {
+            await updateTask(taskId, { date: newDateStr });
+        } catch (error) {
+            console.error('Failed to update task date:', error);
+            // Rollback
+            setTasks(prev => ({
+                ...prev,
+                [dateStr]: [...(prev[dateStr] || []), taskToMove],
+                [newDateStr]: (prev[newDateStr] || []).filter(t => t.id !== taskId)
+            }));
+        }
+    }, [tasks]);
+
     // ----------------------------------------
     // Batch Operations
     // ----------------------------------------
@@ -510,5 +582,7 @@ export function useTaskOperations({ workMode }: UseTaskOperationsOptions): UseTa
         batchPuntAllTasks,
         batchFailAllTasks,
         batchGraveyardAllTasks,
+        updateTaskText,
+        updateTaskDate,
     };
 }

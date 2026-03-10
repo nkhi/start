@@ -38,6 +38,8 @@ import {
     ArrowBendDownRight,
     Trash,
     Ghost,
+    PencilSimple,
+    CalendarBlank
 } from '@phosphor-icons/react';
 import styles from './Todos.module.css';
 
@@ -47,6 +49,8 @@ interface TaskActionsOverlayProps {
     onDelete: () => void;
     onGraveyard: () => void;
     onCopy: () => void;
+    onEdit: () => void;
+    onChangeDate: (newDateStr: string) => void;
 }
 
 
@@ -55,12 +59,16 @@ export function TaskActionsOverlay({
     onPunt,
     onDelete,
     onGraveyard,
-    onCopy
+    onCopy,
+    onEdit,
+    onChangeDate
 }: TaskActionsOverlayProps) {
     const [showOverlay, setShowOverlay] = useState(false);
     const [isHoveringOverlay, setIsHoveringOverlay] = useState(false);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const dateInputRef = useRef<HTMLInputElement>(null);
     const [overlayPosition, setOverlayPosition] = useState<{ top: number; left?: number; right?: number }>({ top: 0, left: 0 });
 
     const clearTimers = useCallback(() => {
@@ -73,11 +81,11 @@ export function TaskActionsOverlay({
     const handleMouseLeave = useCallback(() => {
         clearTimers();
         hideTimerRef.current = setTimeout(() => {
-            if (!isHoveringOverlay) {
+            if (!isHoveringOverlay && !isDatePickerOpen) {
                 setShowOverlay(false);
             }
         }, 100);
-    }, [clearTimers, isHoveringOverlay]);
+    }, [clearTimers, isHoveringOverlay, isDatePickerOpen]);
 
     const handleOverlayEnter = useCallback(() => {
         setIsHoveringOverlay(true);
@@ -86,16 +94,52 @@ export function TaskActionsOverlay({
 
     const handleOverlayLeave = useCallback(() => {
         setIsHoveringOverlay(false);
-        setShowOverlay(false);
-    }, []);
+        if (!isDatePickerOpen) {
+            setShowOverlay(false);
+        }
+    }, [isDatePickerOpen]);
 
-    const handleAction = useCallback((e: React.MouseEvent, action: () => void) => {
+    const handleAction = useCallback((e: React.SyntheticEvent, action: () => void) => {
         e.stopPropagation();
         action();
         setShowOverlay(false);
         setIsHoveringOverlay(false);
         clearTimers();
     }, [clearTimers]);
+
+    const handleCalendarClick = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsDatePickerOpen(true);
+        if (dateInputRef.current) {
+            if (typeof dateInputRef.current.showPicker === 'function') {
+                setTimeout(() => {
+                    try {
+                        dateInputRef.current?.showPicker();
+                    } catch (err) {
+                        dateInputRef.current?.focus();
+                    }
+                }, 0);
+            } else {
+                dateInputRef.current.focus();
+            }
+        }
+    }, []);
+
+    const handleDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setIsDatePickerOpen(false);
+        if (e.target.value) {
+            handleAction(e, () => onChangeDate(e.target.value));
+        }
+    }, [handleAction, onChangeDate]);
+
+    const handleDateBlur = useCallback(() => {
+        setIsDatePickerOpen(false);
+        setShowOverlay(false);
+    }, []);
+
+    const stopPropagation = useCallback((e: React.SyntheticEvent) => {
+        e.stopPropagation();
+    }, []);
 
     useEffect(() => {
         return () => { clearTimers(); };
@@ -147,6 +191,33 @@ export function TaskActionsOverlay({
                     >
                         <ArrowUp type="duotone" size={14} />
                     </button>
+                    <button
+                        type="button"
+                        className={styles.actionOverlayBtn}
+                        onClick={(e) => handleAction(e, onEdit)}
+                        title="Edit Text"
+                    >
+                        <PencilSimple type="duotone" size={14} />
+                    </button>
+                    <div className={styles.datePickerWrapper}>
+                        <button
+                            type="button"
+                            className={styles.actionOverlayBtn}
+                            onClick={handleCalendarClick}
+                            title="Change Date"
+                        >
+                            <CalendarBlank type="duotone" size={14} />
+                        </button>
+                        <input
+                            ref={dateInputRef}
+                            type="date"
+                            className={styles.datePickerHiddenInput}
+                            onBlur={handleDateBlur}
+                            onChange={handleDateChange}
+                            onClick={stopPropagation}
+                            onKeyDown={stopPropagation}
+                        />
+                    </div>
                     <button
                         type="button"
                         className={styles.actionOverlayBtn}

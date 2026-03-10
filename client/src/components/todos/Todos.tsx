@@ -20,7 +20,7 @@
  * - Graveyard for archived tasks
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Check, X, CaretDown, ArrowRight, ArrowBendDownRight, Ghost } from '@phosphor-icons/react';
 import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
 import { WeekView } from './WeekView';
@@ -136,6 +136,28 @@ export function Todos({ workMode = false }: TodosProps) {
   }, [viewMode, weekNav.weekDates]);
 
   // ----------------------------------------
+  // Edit State
+  // ----------------------------------------
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editTaskText, setEditTaskText] = useState<string>('');
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingTaskId && editInputRef.current) {
+      editInputRef.current.focus();
+      const length = editInputRef.current.value.length;
+      editInputRef.current.setSelectionRange(length, length);
+    }
+  }, [editingTaskId]);
+
+  const handleEditTaskSubmit = useCallback((dateStr: string, taskId: string) => {
+    if (editTaskText.trim()) {
+      taskOps.updateTaskText(dateStr, taskId, editTaskText.trim());
+    }
+    setEditingTaskId(null);
+  }, [editTaskText, taskOps]);
+
+  // ----------------------------------------
   // Calendar Prefetching
   // ----------------------------------------
   const calendarContext = useCalendarEventsContext();
@@ -235,15 +257,43 @@ export function Todos({ workMode = false }: TodosProps) {
                 {taskState === 'failed' && <X size={12} weight="bold" />}
               </button>
             </StateOverlayWrapper>
-            <span className={styles.todoText}>{task.text}</span>
+            {editingTaskId === task.id ? (
+              <input
+                ref={editInputRef}
+                type="text"
+                className={styles.todoInputSmall}
+                style={{ flex: 1, margin: 0, height: 'auto', padding: '2px 4px' }}
+                value={editTaskText}
+                onChange={(e) => setEditTaskText(e.target.value)}
+                onBlur={() => handleEditTaskSubmit(dateStr, task.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleEditTaskSubmit(dateStr, task.id);
+                  } else if (e.key === 'Escape') {
+                    setEditingTaskId(null);
+                  }
+                }}
+              />
+            ) : (
+              <span className={styles.todoText}>{task.text}</span>
+            )}
           </div>
-          <TaskActionsOverlay
-            onMoveToTop={() => taskOps.moveTaskToTop(dateStr, task.id)}
-            onPunt={() => taskOps.puntTask(dateStr, task.id)}
-            onDelete={() => taskOps.deleteTask(dateStr, task.id)}
-            onGraveyard={() => graveyard.sendToGraveyard(dateStr, task.id)}
-            onCopy={() => navigator.clipboard.writeText(task.text)}
-          />
+          {editingTaskId !== task.id && (
+            <TaskActionsOverlay
+              onMoveToTop={() => taskOps.moveTaskToTop(dateStr, task.id)}
+              onPunt={() => taskOps.puntTask(dateStr, task.id)}
+              onDelete={() => taskOps.deleteTask(dateStr, task.id)}
+              onGraveyard={() => graveyard.sendToGraveyard(dateStr, task.id)}
+              onCopy={() => navigator.clipboard.writeText(task.text)}
+              onEdit={() => {
+                setEditTaskText(task.text);
+                setEditingTaskId(task.id);
+              }}
+              onChangeDate={(newDateStr) => {
+                taskOps.updateTaskDate(dateStr, task.id, newDateStr);
+              }}
+            />
+          )}
           {taskState === 'active' && puntDays > 0 && (
             <span
               className={styles.puntDaysBadge}
