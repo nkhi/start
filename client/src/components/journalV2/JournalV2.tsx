@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { getQuestions, getDiary, saveDiaryEntry } from '../../api/diary';
 import type { DiaryEntry, Question } from '../../types';
-import { generateId } from '../../utils';
+import { generateId, DateUtility } from '../../utils';
 import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
 import { QuestionStack } from './QuestionStack';
 import { CompletedStack } from './CompletedStack';
@@ -17,6 +17,18 @@ export function JournalV2() {
     const [diary, setDiary] = useState<Record<string, DiaryEntry[]>>({});
     const [questions, setQuestions] = useState<Question[]>([]);
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const renderedDates = useMemo(() => {
+        const allDates = DateUtility.getAllDatesFromStart(new Date('2025-11-09T00:00:00'));
+        const lastDate = allDates.length > 0 ? allDates[allDates.length - 1] : new Date();
+        const futureDatesList = [];
+        for (let i = 1; i <= 14; i++) {
+            const d = new Date(lastDate);
+            d.setDate(d.getDate() + i);
+            futureDatesList.push(d);
+        }
+        return [...allDates, ...futureDatesList];
+    }, []);
 
     useEffect(() => {
         loadData();
@@ -169,6 +181,7 @@ export function JournalV2() {
 
     return (
         <DayWeek
+            dates={renderedDates}
             renderColumn={renderDiaryColumn}
             className={styles.scrollContainer}
             columnClassName={styles.column}

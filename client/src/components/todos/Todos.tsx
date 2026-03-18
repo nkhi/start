@@ -22,8 +22,9 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Check, X, CaretDown, ArrowRight, ArrowBendDownRight, Ghost } from '@phosphor-icons/react';
-import { DayWeek, type DayWeekColumnData } from '../shared/DayWeek';
-import { WeekView } from './WeekView';
+import { DayWeek, type DayWeekColumnData, type DayWeekHandle } from '../shared/DayWeek';
+import { MultiWeekView } from './MultiWeekView';
+import { TodosNavigationMenu } from './TodosNavigationMenu';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { useTaskDragAndDrop, createContainerId } from '../../hooks/useTaskDragAndDrop';
 import { DraggableTask, TaskDragOverlay } from './DraggableTask';
@@ -34,8 +35,9 @@ import { DateUtility } from '../../utils';
 // hooks
 import { useTaskOperations } from '../../hooks/useTaskOperations';
 import { useGraveyard } from '../../hooks/useGraveyard';
-import { useWeekNavigation } from '../../hooks/useWeekNavigation';
+import { useViewNavigation } from '../../hooks/useViewNavigation';
 import { useCalendarEventsContext } from '../../contexts/CalendarEventsContext';
+
 
 // components
 import { StateOverlayWrapper } from './StateOverlayWrapper';
@@ -65,21 +67,29 @@ export function Todos({ workMode = false }: TodosProps) {
   // ----------------------------------------
   // View Mode State
   // ----------------------------------------
-  const [baseViewMode, setBaseViewMode] = useState<'day' | 'week'>(() => {
+  const [viewMode, setViewMode] = useState<'day' | 'two-day' | 'week'>(() => {
     const saved = localStorage.getItem('todosViewMode');
-    return (saved === 'day' || saved === 'week') ? saved : 'week';
+    if (saved === 'three-day') return 'two-day';
+    return (saved === 'day' || saved === 'two-day' || saved === 'week') ? saved : 'two-day';
   });
-  const [previewMode, setPreviewMode] = useState<'day' | 'week' | null>(null);
 
-  const viewMode = previewMode || baseViewMode;
+  const [focusedDateStr, setFocusedDateStr] = useState<string>('');
+  const dayWeekRef = useRef<DayWeekHandle>(null);
+
+  const isFocusedToday = focusedDateStr === DateUtility.formatDate(new Date());
+  const isFutureDate = focusedDateStr > DateUtility.formatDate(new Date());
+
+  const handleScrollToToday = useCallback(() => {
+    dayWeekRef.current?.scrollToToday();
+  }, []);
 
   const [weekCategory, setWeekCategory] = useState<TaskCategory>(workMode ? 'work' : 'life');
   const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({});
 
   // Save view mode preference
   useEffect(() => {
-    localStorage.setItem('todosViewMode', baseViewMode);
-  }, [baseViewMode]);
+    localStorage.setItem('todosViewMode', viewMode);
+  }, [viewMode]);
 
   // Keyboard Navigation
   useEffect(() => {
@@ -89,26 +99,18 @@ export function Todos({ workMode = false }: TodosProps) {
 
       const key = e.key.toLowerCase();
       if (key === 'w' && !e.repeat) {
-        setPreviewMode(baseViewMode === 'day' ? 'week' : 'day');
-      } else if (key === 'q' && !e.repeat) {
-        setBaseViewMode(prev => prev === 'day' ? 'week' : 'day');
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'w') {
-        setPreviewMode(null);
+        setViewMode(prev => prev === 'day' ? 'two-day' : prev === 'two-day' ? 'week' : 'day');
+      } else if (key === 'q' && !e.repeat && !workMode) {
+        setWeekCategory(prev => prev === 'life' ? 'work' : 'life');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [baseViewMode]);
+  }, []);
 
   // Sync category with work mode
   useEffect(() => {
@@ -119,8 +121,19 @@ export function Todos({ workMode = false }: TodosProps) {
   // Hooks
   // ----------------------------------------
 
+  const handleCycleViewMode = useCallback(() => {
+    setViewMode(prev => {
+      if (prev === 'day') return 'two-day';
+      if (prev === 'two-day') return 'week';
+      return 'day';
+    });
+  }, []);
+
   const taskOps = useTaskOperations({ workMode });
-  const weekNav = useWeekNavigation({ workMode });
+  const viewNav = useViewNavigation({
+    workMode,
+    viewMode: viewMode
+  });
 
   const graveyard = useGraveyard({
     workMode,
@@ -128,12 +141,12 @@ export function Todos({ workMode = false }: TodosProps) {
     setTasks: taskOps.setTasks,
   });
 
-  // Load week tasks when in week mode
+  // Load tasks when in paginated modes
   useEffect(() => {
-    if (viewMode === 'week' && weekNav.weekDates.length > 0) {
-      taskOps.loadWeekTasks(weekNav.weekDates[0], weekNav.weekDates[weekNav.weekDates.length - 1]);
+    if ((viewMode === 'week' || viewMode === 'two-day') && viewNav.dates.length > 0) {
+      taskOps.loadWeekTasks(viewNav.dates[0], viewNav.dates[viewNav.dates.length - 1]);
     }
-  }, [viewMode, weekNav.weekDates]);
+  }, [viewMode, viewNav.dates]);
 
   // ----------------------------------------
   // Edit State
@@ -175,15 +188,15 @@ export function Todos({ workMode = false }: TodosProps) {
     calendarContext.prefetchDateRange(startDate, endDate);
   }, [viewMode, calendarContext]);
 
-  // Week View: Prefetch the full visible week
+  // Week / Two-Day View: Prefetch the full visible date range
   useEffect(() => {
-    if (viewMode !== 'week' || !calendarContext || weekNav.weekDates.length === 0) return;
+    if ((viewMode !== 'week' && viewMode !== 'two-day') || !calendarContext || viewNav.dates.length === 0) return;
 
-    const startDate = weekNav.weekDates[0];
-    const endDate = weekNav.weekDates[weekNav.weekDates.length - 1];
+    const startDate = viewNav.dates[0];
+    const endDate = viewNav.dates[viewNav.dates.length - 1];
 
     calendarContext.prefetchDateRange(startDate, endDate);
-  }, [viewMode, weekNav.weekDates, calendarContext]);
+  }, [viewMode, viewNav.dates, calendarContext]);
 
   // ----------------------------------------
   // Drag and Drop
@@ -460,8 +473,8 @@ export function Todos({ workMode = false }: TodosProps) {
     const lifeTasks = dayTasks.filter(t => !t.category || t.category === 'life');
     const workTasks = dayTasks.filter(t => t.category === 'work');
 
-    const showLife = !workMode && (viewMode === 'day' || weekCategory === 'life');
-    const showWork = viewMode === 'day' || weekCategory === 'work';
+    const showLife = !workMode && (viewMode === 'day' || viewMode === 'two-day' || weekCategory === 'life');
+    const showWork = viewMode === 'day' || viewMode === 'two-day' || weekCategory === 'work';
 
     return (
       <>
@@ -478,7 +491,7 @@ export function Todos({ workMode = false }: TodosProps) {
         <div className={styles.todoContentRow}>
           {showLife && (
             <div className={styles.todoCategorySection}>
-              {viewMode === 'day' && (
+              {(viewMode === 'day' || viewMode === 'two-day') && (
                 <div className={styles.todoCategoryHeader}>
                   <span>Life</span>
                   <StatusBar {...getCountsForCategory(lifeTasks)} />
@@ -508,7 +521,7 @@ export function Todos({ workMode = false }: TodosProps) {
 
           {showWork && (
             <div className={styles.todoCategorySection}>
-              {viewMode === 'day' && (
+              {(viewMode === 'day' || viewMode === 'two-day') && (
                 <div className={styles.todoCategoryHeader}>
                   <span>Work</span>
                   <StatusBar {...getCountsForCategory(workTasks)} />
@@ -547,7 +560,7 @@ export function Todos({ workMode = false }: TodosProps) {
   const getGridTemplate = () => {
     const todayStr = DateUtility.formatDate(new Date());
 
-    const frValues = weekNav.weekDates.map(date => {
+    const frValues = viewNav.dates.map(date => {
       const dateStr = DateUtility.formatDate(date);
 
       if (dateStr >= todayStr) return '1fr';
@@ -578,32 +591,41 @@ export function Todos({ workMode = false }: TodosProps) {
       collisionDetection={closestCenter}
       {...handlers}
     >
-      {viewMode === 'week' ? (
-        <WeekView
+      {(viewMode === 'week' || viewMode === 'two-day') ? (
+        <MultiWeekView
           renderColumn={renderTodoColumn}
-          weekDates={weekNav.weekDates}
-          onPrevWeek={weekNav.handlePrevWeek}
-          onNextWeek={weekNav.handleNextWeek}
-          onCurrentWeek={weekNav.handleCurrentWeek}
-          onClose={() => setBaseViewMode('day')}
-          onGraveyardClick={() => graveyard.setIsOpen(!graveyard.isOpen)}
-          isGraveyardOpen={graveyard.isOpen}
+          dates={viewNav.dates}
           customGridTemplate={getGridTemplate()}
-          weekCategory={weekCategory}
-          onCategoryChange={!workMode ? setWeekCategory : undefined}
         />
       ) : (
         <DayWeek
+          ref={dayWeekRef}
+          dates={viewNav.dates}
           renderColumn={renderTodoColumn}
           className={styles.todosScrollContainer}
           columnClassName={styles.todoColumn}
-          onMoreClick={() => setBaseViewMode('week')}
-          moreOverride="Week"
-          onGraveyardClick={() => graveyard.setIsOpen(!graveyard.isOpen)}
-          isGraveyardOpen={graveyard.isOpen}
           workMode={workMode}
+          hideGlobalButtons={true}
+          onFocusedDateChange={setFocusedDateStr}
         />
       )}
+
+      {/* --- Global Canvas UI Overlay --- */}
+      <TodosNavigationMenu
+        viewMode={viewMode}
+        onCycleViewMode={handleCycleViewMode}
+        isGraveyardOpen={graveyard.isOpen}
+        onToggleGraveyard={() => graveyard.setIsOpen(!graveyard.isOpen)}
+        workMode={workMode}
+        weekCategory={weekCategory}
+        onToggleCategory={() => setWeekCategory(weekCategory === 'life' ? 'work' : 'life')}
+        onPrev={viewNav.handlePrev}
+        onCurrent={viewNav.handleCurrent}
+        onNext={viewNav.handleNext}
+        onScrollToToday={handleScrollToToday}
+        isFocusedToday={isFocusedToday}
+        isFutureDate={isFutureDate}
+      />
 
       <Graveyard
         isOpen={graveyard.isOpen}

@@ -1,0 +1,90 @@
+/* Week View */
+.weekViewContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  background: #110C09;
+}
+
+.weekColumns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+/* Hide scrollbar for cleaner look */
+.weekColumns::-webkit-scrollbar {
+  height: 8px;
+}
+
+.weekColumns::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.weekColumn {
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  height: 100%;
+  overflow-y: auto;
+  min-width: 0;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.weekColumn:last-child {
+  border-right: none;
+}
+
+.weekColumn:global(.today) {
+  background: rgba(255, 255, 255, 0.012);
+}
+
+/* Adapt Todo styles for Week View - using :global to target child components */
+.weekViewContainer :global(.todoContentRow) {
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.weekViewContainer :global(.todoColumnHeader) {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+  padding: 0 4px;
+}
+
+.weekViewContainer :global(.todoDate) {
+  font-size: 1rem;
+}
+
+.weekViewContainer :global(.todoDayName) {
+  font-size: 0.8rem;
+}
+
+.weekViewContainer :global(.todoCategoryHeader) {
+  text-align: center;
+}
+
+.weekViewContainer :global(.todoItem) {
+  padding: 0.5rem 0.25rem;
+  font-size: 0.85rem;
+}
+
+.weekViewContainer :global(.todoText) {
+  font-size: 0.85rem;
+}
+
+.weekViewContainer :global(.todoCheckBtn) {
+  width: 16px;
+  height: 16px;
+}
+
+.weekViewContainer :global(.todoActions) {
+  transform: scale(0.9);
+}

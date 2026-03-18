@@ -1,7 +1,11 @@
-import { useEffect, useLayoutEffect, useState, useRef, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useCallback, type ReactNode, forwardRef, useImperativeHandle, useState } from 'react';
 import { DateUtility } from '../../utils';
 import { ArrowCircleLeft, StrategyIcon, Ghost } from '@phosphor-icons/react';
 import styles from './DayWeek.module.css';
+
+export interface DayWeekHandle {
+  scrollToToday: () => void;
+}
 
 export interface DayWeekColumnData {
   date: Date;
@@ -19,14 +23,9 @@ interface DayWeekProps {
   renderColumn: (data: DayWeekColumnData) => ReactNode;
 
   /**
-   * Optional: Custom start date. Defaults to Nov 9, 2025.
+   * Dates array to strictly render.
    */
-  startDate?: Date;
-
-  /**
-   * Optional: Number of future days to show beyond today. Defaults to 14.
-   */
-  futureDays?: number;
+  dates: Date[];
 
   /**
    * Optional: Custom class name for the scroll container
@@ -62,6 +61,16 @@ interface DayWeekProps {
    * Optional: Work mode - filters out Saturday and Sunday when true.
    */
   workMode?: boolean;
+
+  /**
+   * Optional: Hides the floating Zoom Out and Graveyard buttons.
+   */
+  hideGlobalButtons?: boolean;
+
+  /**
+   * Optional: Callback when the user scrolls and the focused date changes
+   */
+  onFocusedDateChange?: (dateStr: string) => void;
 }
 
 /**
@@ -76,19 +85,19 @@ interface DayWeekProps {
  * 
  * Future enhancement: Will support zoom out to weekly view.
  */
-export function DayWeek({
+export const DayWeek = forwardRef<DayWeekHandle, DayWeekProps>(({
   renderColumn,
-  startDate = new Date('2025-11-09T00:00:00'),
-  futureDays = 14,
+  dates,
   className,
   columnClassName,
   onMoreClick,
   moreOverride,
   onGraveyardClick,
   isGraveyardOpen,
-  workMode = false
-}: DayWeekProps) {
-  const [dates, setDates] = useState<Date[]>([]);
+  workMode = false,
+  hideGlobalButtons = false,
+  onFocusedDateChange
+}, ref) => {
   const [focusedDateStr, setFocusedDateStr] = useState<string>('');
   const [isReady, setIsReady] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -98,10 +107,6 @@ export function DayWeek({
   const containerClass = className || styles.dayweekScrollContainer;
   const columnClass = columnClassName || styles.dayweekColumn;
 
-  useEffect(() => {
-    initializeDates();
-  }, [workMode]);
-
   // Set initial scroll position before paint to avoid visual jump
   useLayoutEffect(() => {
     if (dates.length > 0 && scrollContainerRef.current && !isReady) {
@@ -109,31 +114,6 @@ export function DayWeek({
       setIsReady(true);
     }
   }, [dates]);
-
-  function initializeDates() {
-    const allDates = DateUtility.getAllDatesFromStart(startDate);
-
-    // Add future days from "today" (or the last date in the range)
-    const lastDate = allDates.length > 0 ? allDates[allDates.length - 1] : new Date();
-    const futureDatesList = [];
-    for (let i = 1; i <= futureDays; i++) {
-      const d = new Date(lastDate);
-      d.setDate(d.getDate() + i);
-      futureDatesList.push(d);
-    }
-
-    let finalDates = [...allDates, ...futureDatesList];
-
-    // Filter out weekends in work mode
-    if (workMode) {
-      finalDates = finalDates.filter(d => {
-        const day = d.getDay();
-        return day !== 0 && day !== 6; // Exclude Sunday (0) and Saturday (6)
-      });
-    }
-
-    setDates(finalDates);
-  }
 
   // Set up intersection observer
   useEffect(() => {
@@ -148,6 +128,9 @@ export function DayWeek({
           const dateStr = entry.target.getAttribute('data-date');
           if (dateStr) {
             setFocusedDateStr(dateStr);
+            if (onFocusedDateChange) {
+              onFocusedDateChange(dateStr);
+            }
           }
         }
       });
@@ -167,7 +150,7 @@ export function DayWeek({
     return () => observerRef.current?.disconnect();
   }, [dates, columnClass]);
 
-  function scrollToToday(instant = false) {
+  const scrollToToday = useCallback((instant = false) => {
     if (scrollContainerRef.current) {
       let todayEl = scrollContainerRef.current.querySelector('.today');
 
@@ -194,7 +177,11 @@ export function DayWeek({
         });
       }
     }
-  }
+  }, [workMode]);
+
+  useImperativeHandle(ref, () => ({
+    scrollToToday: () => scrollToToday()
+  }));
 
   return (
     <div
@@ -219,20 +206,22 @@ export function DayWeek({
       })}
 
       {/* Floating "Zoom Out" button */}
-      <button
-        className={styles.zoomFloatingBtn}
-        onClick={() => onMoreClick ? onMoreClick() : scrollToToday()}
-        title="Zoom Out, See More"
-      >
-        <StrategyIcon
-          weight="fill"
-          size={20}
-        />
-        <span>{moreOverride ? moreOverride : 'More'}</span>
-      </button>
+      {!hideGlobalButtons && (
+        <button
+          className={styles.zoomFloatingBtn}
+          onClick={() => onMoreClick ? onMoreClick() : scrollToToday()}
+          title="Zoom Out, See More"
+        >
+          <StrategyIcon
+            weight="fill"
+            size={20}
+          />
+          <span>{moreOverride ? moreOverride : 'More'}</span>
+        </button>
+      )}
 
       {/* Floating "Graveyard" button (optional) */}
-      {onGraveyardClick && (
+      {!hideGlobalButtons && onGraveyardClick && (
         <button
           className={`${styles.graveyardFloatingBtn} ${isGraveyardOpen ? styles.active : ''}`}
           onClick={onGraveyardClick}
@@ -247,26 +236,21 @@ export function DayWeek({
       )}
 
       {/* Floating "Back to Today" button */}
-      {(() => {
+      {!hideGlobalButtons && (() => {
         const todayStr = DateUtility.formatDate(new Date());
-        const isToday = focusedDateStr === todayStr;
-        const isPast = focusedDateStr < todayStr;
-        const hasGraveyard = !!onGraveyardClick;
-
-        let rotationClass = '';
-        if (isToday) rotationClass = styles.pointUp;
-        else if (isPast) rotationClass = styles.pointRight;
+        const isFocusedToday = focusedDateStr === todayStr;
+        const isFutureDate = focusedDateStr > todayStr;
 
         return (
           <button
-            className={`${styles.todayFloatingBtn} ${isToday ? styles.isToday : ''} ${!hasGraveyard ? styles.noGraveyard : ''}`}
+            className={`${styles.todayFloatingBtn} ${isFocusedToday ? styles.isToday : ''} ${!onGraveyardClick ? styles.noGraveyard : ''}`}
             onClick={() => scrollToToday()}
-            title="Back to Today"
+            title="Scroll to Today"
           >
             <ArrowCircleLeft
-              weight="duotone"
+              weight="fill"
               size={20}
-              className={`${styles.todayIcon} ${rotationClass}`}
+              className={`${styles.todayIcon} ${!isFocusedToday ? (isFutureDate ? styles.pointRight : '') : styles.pointUp}`}
             />
             <span>Today</span>
           </button>
@@ -274,4 +258,4 @@ export function DayWeek({
       })()}
     </div>
   );
-}
+});

@@ -1,0 +1,251 @@
+.navMenuContainer {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+
+    /* Use clamped dimensions so auto-width expansion forces bounds */
+    min-width: 48px;
+    min-height: 48px;
+    max-width: 48px;
+    max-height: 48px;
+    padding: 0px;
+
+    overflow: hidden;
+    box-sizing: border-box;
+    cursor: pointer;
+
+    /* Provide a smooth easing curve for dimensions */
+    transition: max-width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+        max-height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+        padding 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+        background 0.3s ease;
+}
+
+.navMenuContainer.expanded {
+    max-width: 320px;
+    /* Expands bounds smoothly */
+    max-height: 160px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.9);
+    cursor: default;
+    align-items: stretch;
+    /* So children can fill width */
+}
+
+/* The visual list icon that sits centrally when collapsed */
+.triggerWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.7);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 48px;
+    height: 48px;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    /* Let container handle hover */
+}
+
+.navMenuContainer:hover .triggerWrapper {
+    color: white;
+}
+
+.expanded .triggerWrapper {
+    opacity: 0;
+    transition: none;
+}
+
+/* The flex column for the stacked rows */
+.menuContents {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    opacity: 0;
+    pointer-events: none;
+
+    /* Ensure container bounds shape firmly during expansion */
+    width: max-content;
+    min-width: 200px;
+
+    /* Hide it roughly from flow when collapsed so it doesn't dictate container width/height */
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+}
+
+.expanded .menuContents {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0.1s;
+    /* smooth fade in just after bg expands */
+}
+
+.navRow {
+    display: flex;
+    width: 100%;
+}
+
+.actionRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.navPillFull {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-sizing: border-box;
+}
+
+/* Individual Button Inner Styles */
+.menuBtn {
+    flex: 1;
+    /* evenly distribute across bottom row */
+    background: transparent;
+    border: 1px solid transparent;
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    height: 36px;
+    white-space: nowrap;
+    /* Prevent wrapping */
+    min-width: max-content;
+}
+
+.menuBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Active State for Graveyard */
+.graveActive {
+    background: rgba(46, 22, 103, 0.3);
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #DDD6FE;
+}
+
+/* Category Toggles */
+.workActive {
+    background: rgba(46, 22, 103, 0.3);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: #A78BFA;
+}
+
+.lifeActive {
+    background: rgba(6, 78, 59, 0.3);
+    border-color: rgba(52, 211, 153, 0.3);
+    color: #34D399;
+}
+
+.navArrowBtn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.navArrowBtn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.navArrowBtn svg {
+    transition: transform 0.2s ease;
+}
+
+.navArrowBtn:hover svg {
+    transform: scale(1.2);
+}
+
+.navLabelBtn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+    flex: 1;
+    /* Stretch to fill space between arrows */
+}
+
+.navLabelBtn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.navDotIcon {
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.2s ease;
+}
+
+.navLabelBtn:hover .navDotIcon {
+    color: white;
+    transform: scale(1.4);
+}
+
+/* Today Button Styles (Day view) */
+.todayFullBtn {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.todayFullBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.todayFullBtn.isToday {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.todayIcon {
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.todayIcon.pointRight {
+    transform: rotate(180deg);
+}
+
+.todayIcon.pointUp {
+    transform: rotate(90deg);
+}
