@@ -76,7 +76,7 @@ function AppContent() {
           {!WORK_MODE && activeTab === 'journal' && <Diary />}
           {!WORK_MODE && activeTab === 'next' && <Next />}
           {!WORK_MODE && activeTab === 'lists' && <Lists />}
-          {!WORK_MODE && activeTab === 'spending' && <Spending />}
+          {activeTab === 'spending' && <Spending workMode={WORK_MODE} />}
           {!WORK_MODE && activeTab === 'landmarks' && <Landmarks />}
           {!WORK_MODE && activeTab === 'immich' && <Immich />}
           {!WORK_MODE && activeTab === 'cap' && <Cap />}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { CaretLeft, CaretRight } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, Coin, Coins } from '@phosphor-icons/react';
 import {
   DndContext,
   DragOverlay,
@@ -25,13 +25,20 @@ import { useSpendingData } from './hooks/useSpendingData';
 import { DayColumn } from './DayColumn';
 import { SpendingChart } from './SpendingChart';
 import { SpendingTooltips } from './SpendingTooltips';
+import { SpendingSummary } from './SpendingSummary';
 
 import styles from './Spending.module.css';
 import transactionStyles from './TransactionItem.module.css';
 
-export function Spending() {
+interface SpendingProps {
+  workMode?: boolean;
+}
+
+export function Spending({ workMode = false }: SpendingProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [activeTransaction, setActiveTransaction] = useState<SpendingTransaction | null>(null);
+  const [sessionTransactions, setSessionTransactions] = useState<SpendingTransaction[]>([]);
+  const [isCumulative, setIsCumulative] = useState(true);
 
   const topPaneRef = useRef<HTMLDivElement>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
@@ -42,12 +49,12 @@ export function Spending() {
   const currentMonthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
   const displayMonthStr = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  const { data } = useSpendingMonth(currentMonthStr);
+  const { data } = useSpendingMonth(currentMonthStr, workMode);
   const createMutation = useCreateTransaction();
   const deleteMutation = useDeleteTransaction();
   const updateMutation = useUpdateTransaction();
 
-  const transactions = data?.transactions || [];
+  const transactions = [...(data?.transactions || []), ...sessionTransactions];
   const budgets = data?.budgets || [];
 
   const {
@@ -55,7 +62,10 @@ export function Spending() {
     dailyLimit,
     groupedTransactions,
     dayTotals,
-    dayTotalsByBudget
+    dayTotalsByBudget,
+    totalBudget,
+    totalSpent,
+    spentByBudget
   } = useSpendingData(currentDate, transactions, budgets);
 
   /**
@@ -112,13 +122,26 @@ export function Spending() {
   };
 
   const handleAddTransaction = (dateStr: string, name: string, amount: number, budgetId: string) => {
+    const newId = generateId();
     createMutation.mutate({
-      id: generateId(),
+      id: newId,
       date: dateStr,
       name,
       amount,
       budgetId
     });
+
+    if (workMode) {
+      setSessionTransactions(prev => [...prev, {
+        id: newId,
+        date: dateStr,
+        name,
+        amount,
+        budgetId,
+        note: null,
+        createdAt: new Date().toISOString()
+      }]);
+    }
   };
 
   const sensors = useSensors(
@@ -184,21 +207,42 @@ export function Spending() {
                   dailyLimit={dailyLimit}
                   budgets={budgets}
                   transactions={groupedTransactions[dateStr] || []}
-                  onEdit={(t, updates) => updateMutation.mutate({ id: t.id, updates })}
-                  onDelete={(id) => deleteMutation.mutate(id)}
+                  onEdit={workMode ? undefined : (t, updates) => updateMutation.mutate({ id: t.id, updates })}
+                  onDelete={workMode ? undefined : (id) => deleteMutation.mutate(id)}
                   onAdd={handleAddTransaction}
                 />
               );
             })}
           </div>
-
-          <div className={styles.monthNavContainer}>
-            <button className={styles.monthNavBtn} onClick={handlePrevMonth}><CaretLeft weight="bold" /></button>
-            <div className={styles.monthNavLabel} onClick={handleScrollToToday}>
-              {displayMonthStr}
+          <div className={styles.controlsWrapper}>
+            <div className={styles.monthNavContainer}>
+              <button className={styles.monthNavBtn} onClick={handlePrevMonth}><CaretLeft size={18} weight="bold" /></button>
+              <div className={styles.monthNavLabel} onClick={handleScrollToToday}>
+                {displayMonthStr}
+              </div>
+              <button className={styles.monthNavBtn} onClick={handleNextMonth}><CaretRight size={18} weight="bold" /></button>
             </div>
-            <button className={styles.monthNavBtn} onClick={handleNextMonth}><CaretRight weight="bold" /></button>
+
+            <div className={styles.chartToggleContainer}>
+              <button
+                className={styles.chartToggleBtn}
+                onClick={() => setIsCumulative(!isCumulative)}
+                title={isCumulative ? "Show Daily View" : "Show Cumulative View"}
+              >
+                {isCumulative ? <Coin size={18} weight="duotone" /> : <Coins size={18} weight="duotone" />}
+                <span className={styles.toggleLabel}>
+                  {isCumulative ? "Show Daily View" : "Show Cumulative View"}
+                </span>
+              </button>
+            </div>
           </div>
+
+          <SpendingSummary
+            totalBudget={totalBudget}
+            totalSpent={totalSpent}
+            spentByBudget={spentByBudget}
+            budgets={budgets}
+          />
         </div>
 
         <DragOverlay>
@@ -220,6 +264,7 @@ export function Spending() {
         dayTotalsByBudget={dayTotalsByBudget}
         dailyLimit={dailyLimit}
         budgets={budgets}
+        isCumulative={isCumulative}
         onHoverDate={(dateStr, position) => {
           setHoveredDate(dateStr);
           setTooltipPosition(position);

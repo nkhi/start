@@ -85,11 +85,26 @@ export function useSpendingData(
     };
   }, [daysInMonth, groupedTransactions]);
 
+  const totalBudget = useMemo(() => budgets.reduce((sum, b) => sum + b.amount, 0), [budgets]);
+  const totalSpent = useMemo(() => transactions.reduce((sum, t) => sum + t.amount, 0), [transactions]);
+  
+  const spentByBudget = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const t of transactions) {
+      const bId = t.budgetId || 'unassigned';
+      map[bId] = (map[bId] || 0) + t.amount;
+    }
+    return map;
+  }, [transactions]);
+
   return {
     daysInMonth,
     dailyLimit,
     groupedTransactions,
     dayTotals,
-    dayTotalsByBudget
+    dayTotalsByBudget,
+    totalBudget,
+    totalSpent,
+    spentByBudget
   };
 }

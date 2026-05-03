@@ -83,6 +83,42 @@ router.get('/spending', async (req: Request, res: Response) => {
   }
 });
 
+// Anonymous budgets for Work Mode (only IDs and generic names)
+router.get('/spending/budgets/anonymous', async (req: Request, res: Response) => {
+  const { month } = req.query as { month?: string };
+  if (!month) return res.status(400).json({ error: 'Missing month parameter' });
+
+  try {
+    const result = await db.query<DbSpendingBudget>(`
+      SELECT id FROM spending_budgets WHERE month = $1
+    `, [month]);
+
+    let budgetIds = result.rows.map(r => r.id);
+
+    // Auto-create default if none exist (consistency with main endpoint)
+    if (budgetIds.length === 0) {
+      const defaultId = crypto.randomUUID();
+      await db.query(`
+        INSERT INTO spending_budgets (id, month, name, amount)
+        VALUES ($1, $2, $3, $4)
+      `, [defaultId, month, 'Fun', 400.00]);
+      budgetIds.push(defaultId);
+    }
+
+    const anonymousBudgets = budgetIds.map((id, index) => ({
+      id,
+      name: `Budget ${index + 1}`,
+      month,
+      amount: 0,
+      createdAt: null
+    }));
+
+    res.json(anonymousBudgets);
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
 // Create transaction
 router.post('/spending', async (req: Request<object, object, CreateSpendingTransactionRequest>, res: Response) => {
   const { id, date, name, note, amount, budgetId } = req.body;

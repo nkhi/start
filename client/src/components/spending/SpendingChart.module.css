@@ -40,6 +40,47 @@
   border-radius: 4px 4px 0 0;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.05);
+  position: relative;
+  z-index: 2;
+}
+
+.barsContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.ghostBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ghostBar.hasTransactions {
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-top: 2px solid rgba(0, 0, 0, 0.8);
+  background: transparent;
+  z-index: 10;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.ghostBar.budgetGreen,
+.ghostBar.budgetYellow,
+.ghostBar.budgetRed {
+  border-color: rgba(0, 0, 0, 0.4);
+  border-top-color: rgba(0, 0, 0, 0.8);
 }
 
 .chartBarSegment {

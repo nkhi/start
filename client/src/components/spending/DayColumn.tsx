@@ -13,8 +13,8 @@ interface DayColumnProps {
   isToday: boolean;
   dailyLimit: number;
   budgets: SpendingBudget[];
-  onEdit: (t: SpendingTransaction, updates: Partial<SpendingTransaction>) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (t: SpendingTransaction, updates: Partial<SpendingTransaction>) => void;
+  onDelete?: (id: string) => void;
   onAdd: (dateStr: string, name: string, amount: number, budgetId: string) => void;
 }
 

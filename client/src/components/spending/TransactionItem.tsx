@@ -9,8 +9,8 @@ import styles from './TransactionItem.module.css';
 interface TransactionItemProps {
   t: SpendingTransaction;
   budgets: SpendingBudget[];
-  onEdit: (t: SpendingTransaction, updates: Partial<SpendingTransaction>) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (t: SpendingTransaction, updates: Partial<SpendingTransaction>) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function TransactionItem({ t, budgets, onEdit, onDelete }: TransactionItemProps) {
@@ -40,7 +40,7 @@ export function TransactionItem({ t, budgets, onEdit, onDelete }: TransactionIte
   const saveChanges = () => {
     setIsEditing(false);
     const newAmt = parseFloat(editAmount);
-    if (editName !== t.name || (editNote || null) !== t.note || editBudgetId !== t.budgetId || (!isNaN(newAmt) && newAmt !== t.amount)) {
+    if (onEdit && (editName !== t.name || (editNote || null) !== t.note || editBudgetId !== t.budgetId || (!isNaN(newAmt) && newAmt !== t.amount))) {
       onEdit(t, {
         name: editName,
         note: editNote || undefined,
@@ -122,6 +122,7 @@ export function TransactionItem({ t, budgets, onEdit, onDelete }: TransactionIte
       {...attributes}
       {...listeners}
       onClick={(e) => {
+        if (!onEdit) return;
         e.stopPropagation();
         setIsEditing(true);
       }}
@@ -132,16 +133,18 @@ export function TransactionItem({ t, budgets, onEdit, onDelete }: TransactionIte
           <div className={styles.itemAmount}>{formatCurrency(t.amount)}</div>
         </div>
         {t.note && <div className={styles.itemNote}>{t.note}</div>}
-        <button
-          className={styles.itemDeleteBtn}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(t.id);
-          }}
-          onPointerDown={e => e.stopPropagation()}
-        >
-          <Trash weight="bold" />
-        </button>
+        {onDelete && (
+          <button
+            className={styles.itemDeleteBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(t.id);
+            }}
+            onPointerDown={e => e.stopPropagation()}
+          >
+            <Trash weight="bold" />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -12,6 +12,12 @@ export async function getSpendingMonth(month: string): Promise<SpendingMonth> {
   return response.json();
 }
 
+export async function getAnonymousBudgets(month: string): Promise<SpendingBudget[]> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/spending/budgets/anonymous?month=${month}`);
+  if (!response.ok) throw new Error('Failed to fetch anonymous budgets');
+  return response.json();
+}
+
 export async function createSpendingTransaction(transaction: Partial<SpendingTransaction>): Promise<SpendingTransaction> {
   const response = await fetchWithErrorReporting(`${API_BASE_URL}/spending`, {
     method: 'POST',
@@ -41,10 +47,20 @@ export async function deleteSpendingTransaction(id: string): Promise<void> {
 
 // ============ TanStack Query Hooks ============
 
-export function useSpendingMonth(month: string) {
+export function useSpendingMonth(month: string, workMode: boolean = false) {
   return useQuery({
-    queryKey: queryKeys.spending.month(month),
-    queryFn: () => getSpendingMonth(month),
+    queryKey: queryKeys.spending.month(month, workMode),
+    queryFn: async () => {
+      if (workMode) {
+        const budgets = await getAnonymousBudgets(month);
+        return {
+          transactions: [],
+          budgets,
+          monthTotal: 0
+        };
+      }
+      return getSpendingMonth(month);
+    },
   });
 }
 

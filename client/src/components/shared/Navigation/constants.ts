@@ -61,7 +61,7 @@ export const NAV_TABS: NavItem[] = [
     {
         id: 'spending',
         icon: TipJarIcon,
-        showInWorkMode: false,
+        showInWorkMode: true,
         useDuotone: true,
         theme: {
             background: '#0A0A0A'

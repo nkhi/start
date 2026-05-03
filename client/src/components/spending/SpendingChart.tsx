@@ -8,6 +8,7 @@ interface SpendingChartProps {
   dayTotalsByBudget: Record<string, Record<string, number>>;
   dailyLimit: number;
   budgets: SpendingBudget[];
+  isCumulative: boolean;
   onHoverDate: (dateStr: string | null, position: { x: number; y: number } | null) => void;
 }
 
@@ -24,15 +25,49 @@ export function SpendingChart({
   dayTotalsByBudget,
   dailyLimit,
   budgets,
+  isCumulative,
   onHoverDate,
 }: SpendingChartProps) {
+  const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
+  
+  // Calculate data for each day
+  const chartData = daysInMonth.map((dateStr, index) => {
+    let spentValue = 0;
+    let targetValue = 0;
+    
+    if (isCumulative) {
+      // Cumulative spent until today
+      for (let i = 0; i <= index; i++) {
+        spentValue += dayTotals.totals[daysInMonth[i]] || 0;
+      }
+      targetValue = dailyLimit * (index + 1);
+    } else {
+      // Daily spent today
+      spentValue = dayTotals.totals[dateStr] || 0;
+      targetValue = dailyLimit;
+    }
+    
+    return {
+      dateStr,
+      spentValue,
+      targetValue,
+      dailyTotal: dayTotals.totals[dateStr] || 0
+    };
+  });
+
+  const maxVal = isCumulative 
+    ? Math.max(totalBudget, ...chartData.map(d => d.spentValue), 1)
+    : Math.max(dayTotals.max, dailyLimit, 1);
+
   return (
     <div className={styles.bottomPane}>
-      {daysInMonth.map(dateStr => {
-        const total = dayTotals.totals[dateStr];
-        // Minimum 2% height so empty days still show a tiny sliver
-        const heightPercent = dayTotals.max > 0 ? Math.max((total / dayTotals.max) * 100, 2) : 2;
-        const colorClass = getBudgetColorClass(total, dailyLimit);
+      {chartData.map((data, index) => {
+        const { dateStr, spentValue, targetValue, dailyTotal } = data;
+        
+        const spentHeight = (spentValue / maxVal) * 100;
+        const ghostHeight = (targetValue / maxVal) * 100;
+        
+        const colorClass = getBudgetColorClass(dailyTotal, dailyLimit);
 
         // Parse date for the label underneath
         const d = new Date(dateStr);
@@ -41,32 +76,48 @@ export function SpendingChart({
 
         return (
           <div key={dateStr} className={styles.chartBarWrapper}>
-            <div
-              className={`${styles.chartBarContainer} ${colorClass}`}
-              style={{ height: `${heightPercent}%` }}
-              onPointerEnter={(e) => {
-                onHoverDate(dateStr, { x: e.clientX, y: e.clientY });
-              }}
-              onPointerMove={(e) => {
-                onHoverDate(dateStr, { x: e.clientX, y: e.clientY });
-              }}
-              onPointerLeave={() => {
-                onHoverDate(null, null);
-              }}
-            >
-              {/* Render a segment for each budget that has spending today */}
-              {budgets.map(b => {
-                const bAmount = dayTotalsByBudget[dateStr]?.[b.id] || 0;
-                if (bAmount === 0 || total === 0) return null;
-                const segmentHeightPercent = (bAmount / total) * 100;
-                return (
-                  <div
-                    key={b.id}
-                    className={styles.chartBarSegment}
-                    style={{ height: `${segmentHeightPercent}%` }}
-                  />
-                );
-              })}
+            <div className={styles.barsContainer}>
+              {/* Ghost Placeholder (Target) */}
+              <div 
+                className={`${styles.ghostBar} ${colorClass} ${dailyTotal > 0 ? styles.hasTransactions : ''}`} 
+                style={{ height: `${ghostHeight}%` }}
+              />
+              
+              {/* Actual Spending */}
+              <div
+                className={`${styles.chartBarContainer} ${colorClass}`}
+                style={{ height: `${spentHeight}%` }}
+                onPointerEnter={(e) => {
+                  onHoverDate(dateStr, { x: e.clientX, y: e.clientY });
+                }}
+                onPointerMove={(e) => {
+                  onHoverDate(dateStr, { x: e.clientX, y: e.clientY });
+                }}
+                onPointerLeave={() => {
+                  onHoverDate(null, null);
+                }}
+              >
+                {budgets.map(b => {
+                  let bVal = 0;
+                  if (isCumulative) {
+                    for (let i = 0; i <= index; i++) {
+                      bVal += dayTotalsByBudget[daysInMonth[i]]?.[b.id] || 0;
+                    }
+                  } else {
+                    bVal = dayTotalsByBudget[dateStr]?.[b.id] || 0;
+                  }
+                  
+                  if (bVal === 0 || spentValue === 0) return null;
+                  const segmentHeightPercent = (bVal / spentValue) * 100;
+                  return (
+                    <div
+                      key={b.id}
+                      className={styles.chartBarSegment}
+                      style={{ height: `${segmentHeightPercent}%` }}
+                    />
+                  );
+                })}
+              </div>
             </div>
             <div className={styles.chartBarLabel}>{dayLabel}</div>
           </div>

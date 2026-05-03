@@ -50,6 +50,6 @@ export const queryKeys = {
     },
     spending: {
         all: ['spending'] as const,
-        month: (month: string) => [...queryKeys.spending.all, 'month', month] as const,
+        month: (month: string, workMode: boolean = false) => [...queryKeys.spending.all, 'month', month, { workMode }] as const,
     },
 };
