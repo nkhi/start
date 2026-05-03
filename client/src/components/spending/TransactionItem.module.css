@@ -1,0 +1,152 @@
+/* Transaction Item */
+.draggableTransactionWrapper {
+  touch-action: none;
+}
+
+.transactionItem {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: grab;
+}
+
+.transactionItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.transactionItem:active {
+  cursor: grabbing;
+}
+
+.itemMain {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.itemName {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemAmount {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.itemNote {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemDeleteBtn {
+  opacity: 0;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transactionItem:hover .itemDeleteBtn {
+  opacity: 1;
+}
+
+.itemDeleteBtn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Edit Mode */
+.editModeContainer {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  cursor: default;
+}
+
+.editInputsRow {
+  display: flex;
+  gap: 8px;
+}
+
+.editInputsRowStacked {
+  margin-top: 4px;
+}
+
+.editInput {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 0.95rem;
+  padding: 2px 0;
+  outline: none;
+  font-family: inherit;
+}
+.editInput:focus {
+  border-bottom-color: rgba(255, 255, 255, 0.5);
+}
+
+.editAmount {
+  width: 60px;
+  text-align: right;
+}
+
+.editNote {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+.editNoteInput {
+  flex: 1;
+}
+
+/* Select Inputs */
+.selectInput {
+  appearance: auto;
+  padding-right: 8px;
+}
+
+.budgetSelect {
+  width: auto;
+  flex: none;
+}
+
+/* Drag states */
+.draggingItem {
+  opacity: 0.5;
+  z-index: 1000;
+}
+
+.dragOverlay {
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  transform: rotate(2deg) scale(1.02);
+  cursor: grabbing;
+}

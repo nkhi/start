@@ -1,0 +1,44 @@
+/* Tooltip */
+.chartTooltip {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  z-index: 9999;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  margin-top: -12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.tooltipDate {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 4px;
+}
+
+.tooltipRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.tooltipLabel {
+  color: white;
+  font-size: 0.9rem;
+}
+
+.tooltipValue {
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+}

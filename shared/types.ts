@@ -306,12 +306,21 @@ export interface CreateMemoryRequest {
   createdAt?: string;
 }
 
+export interface SpendingBudget {
+  id: string;
+  month: string;
+  name: string;
+  amount: number;
+  createdAt: string | null;
+}
+
 export interface SpendingTransaction {
   id: string;
   date: string;
   name: string;
   note: string | null;
   amount: number;
+  budgetId: string | null;
   createdAt: string | null;
 }
 
@@ -321,6 +330,7 @@ export interface CreateSpendingTransactionRequest {
   name: string;
   note?: string;
   amount: number;
+  budgetId?: string;
 }
 
 export interface UpdateSpendingTransactionRequest {
@@ -328,10 +338,12 @@ export interface UpdateSpendingTransactionRequest {
   name?: string;
   note?: string;
   amount?: number;
+  budgetId?: string;
 }
 
 export interface SpendingMonth {
   transactions: SpendingTransaction[];
+  budgets: SpendingBudget[];
   monthTotal: number;
 }
 

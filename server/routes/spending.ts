@@ -1,11 +1,13 @@
 import express, { Request, Response } from 'express';
 import * as db from '../db.ts';
-import type { DbSpendingTransaction } from '../db-types.ts';
+import type { DbSpendingTransaction, DbSpendingBudget } from '../db-types.ts';
 import type { 
   SpendingTransaction, 
+  SpendingBudget,
   CreateSpendingTransactionRequest, 
   UpdateSpendingTransactionRequest 
 } from '../../shared/types.ts';
+import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -22,7 +24,7 @@ router.get('/spending', async (req: Request, res: Response) => {
     const result = await db.query<DbSpendingTransaction>(`
       SELECT * FROM spending_transactions 
       WHERE date >= $1::date AND date < ($1::date + interval '1 month')
-      ORDER BY date DESC, created_at DESC
+      ORDER BY date ASC, created_at ASC
     `, [startDate]);
 
     const transactions: SpendingTransaction[] = result.rows.map(t => ({
@@ -31,6 +33,7 @@ router.get('/spending', async (req: Request, res: Response) => {
       name: t.name,
       note: t.note,
       amount: parseFloat(t.amount),
+      budgetId: t.budget_id,
       createdAt: t.created_at?.toISOString() || null
     }));
 
@@ -42,7 +45,38 @@ router.get('/spending', async (req: Request, res: Response) => {
 
     const monthTotal = parseFloat(totalResult.rows[0].total);
 
-    res.json({ transactions, monthTotal });
+    // Fetch budgets for this month
+    const budgetResult = await db.query<DbSpendingBudget>(`
+      SELECT * FROM spending_budgets WHERE month = $1
+    `, [month]);
+
+    let budgets: SpendingBudget[] = budgetResult.rows.map(b => ({
+      id: b.id,
+      month: b.month,
+      name: b.name,
+      amount: parseFloat(b.amount),
+      createdAt: b.created_at?.toISOString() || null
+    }));
+
+    // Auto-create default budget if none exist
+    if (budgets.length === 0) {
+      const defaultId = crypto.randomUUID();
+      const defaultAmount = 400.00;
+      await db.query(`
+        INSERT INTO spending_budgets (id, month, name, amount)
+        VALUES ($1, $2, $3, $4)
+      `, [defaultId, month, 'Fun', defaultAmount]);
+
+      budgets.push({
+        id: defaultId,
+        month,
+        name: 'Fun',
+        amount: defaultAmount,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    res.json({ transactions, monthTotal, budgets });
   } catch (e) {
     const error = e as Error;
     res.status(500).json({ error: error.message });
@@ -51,7 +85,7 @@ router.get('/spending', async (req: Request, res: Response) => {
 
 // Create transaction
 router.post('/spending', async (req: Request<object, object, CreateSpendingTransactionRequest>, res: Response) => {
-  const { id, date, name, note, amount } = req.body;
+  const { id, date, name, note, amount, budgetId } = req.body;
   if (!id || !date || !name || amount === undefined) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -59,12 +93,12 @@ router.post('/spending', async (req: Request<object, object, CreateSpendingTrans
   try {
     const createdAt = new Date().toISOString();
     await db.query(`
-      INSERT INTO spending_transactions (id, date, name, note, amount, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6)
-    `, [id, date, name, note || null, amount, createdAt]);
+      INSERT INTO spending_transactions (id, date, name, note, amount, budget_id, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [id, date, name, note || null, amount, budgetId || null, createdAt]);
     
     const transaction: SpendingTransaction = {
-      id, date, name, note: note || null, amount, createdAt
+      id, date, name, note: note || null, amount, budgetId: budgetId || null, createdAt
     };
     res.json(transaction);
   } catch (e) {
@@ -98,6 +132,10 @@ router.patch('/spending/:id', async (req: Request<{ id: string }, object, Update
     fields.push(`date = $${idx++}`);
     values.push(updates.date);
   }
+  if (updates.budgetId !== undefined) {
+    fields.push(`budget_id = $${idx++}`);
+    values.push(updates.budgetId);
+  }
   
   if (fields.length === 0) {
     return res.json({ ok: true });
@@ -122,6 +160,7 @@ router.patch('/spending/:id', async (req: Request<{ id: string }, object, Update
       name: t.name,
       note: t.note,
       amount: parseFloat(t.amount),
+      budgetId: t.budget_id,
       createdAt: t.created_at?.toISOString() || null
     };
     

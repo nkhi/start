@@ -116,11 +116,20 @@ export interface DbLandmark {
   created_at: Date | null;
 }
 
+export interface DbSpendingBudget {
+  id: string;
+  month: string;
+  name: string;
+  amount: string;
+  created_at: Date | null;
+}
+
 export interface DbSpendingTransaction {
   id: string;
   date: Date;
   name: string;
   note: string | null;
   amount: string;
+  budget_id: string | null;
   created_at: Date | null;
 }

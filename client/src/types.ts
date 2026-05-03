@@ -21,6 +21,7 @@ export type {
   VlogsByWeek,
   SpendingTransaction,
   SpendingMonth,
+  SpendingBudget
 } from '../../shared/types';
 
 // Client-only types

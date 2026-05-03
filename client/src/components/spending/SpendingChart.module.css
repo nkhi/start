@@ -1,0 +1,56 @@
+/* Bottom Pane (Bar Chart) */
+.bottomPane {
+  display: flex;
+  align-items: flex-end;
+  padding: 24px;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.bottomPane::-webkit-scrollbar {
+  display: none;
+}
+
+.chartBarWrapper {
+  flex: 1;
+  min-width: 40px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.chartBarContainer {
+  width: 100%;
+  max-width: 60px;
+  display: flex;
+  flex-direction: column-reverse;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 4px 4px 0 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.chartBarSegment {
+  width: 100%;
+  border-top: 1px solid rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+.chartBarSegment:last-child {
+  border-top: none;
+}
+
+.chartBarContainer.budgetGreen .chartBarSegment { background: #34D399; }
+.chartBarContainer.budgetYellow .chartBarSegment { background: #EAB308; }
+.chartBarContainer.budgetRed .chartBarSegment { background: #FF3B30; }
+
+.chartBarLabel {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
