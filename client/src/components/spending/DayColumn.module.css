@@ -99,6 +99,17 @@
   text-align: right;
 }
 
+/* Hide number input spinners */
+.inlineAddAmount::-webkit-outer-spin-button,
+.inlineAddAmount::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.inlineAddAmount[type='number'] {
+  -moz-appearance: textfield;
+}
+
 /* Select Inputs */
 .selectInput {
   appearance: auto;

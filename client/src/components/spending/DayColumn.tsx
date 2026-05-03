@@ -99,6 +99,7 @@ export function DayColumn({
         <input
           className={`${styles.inlineAddInput} ${styles.inlineAddAmount}`}
           type="number"
+          inputMode="decimal"
           step="0.01"
           placeholder="0.00"
           value={newAmount}

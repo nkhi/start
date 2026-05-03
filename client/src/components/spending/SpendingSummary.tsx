@@ -10,25 +10,24 @@ interface SpendingSummaryProps {
   budgets: SpendingBudget[];
 }
 
-const BUDGET_COLORS = [
-  '#34D399', // Emerald
-  '#3B82F6', // Blue
-  '#8B5CF6', // Purple
-  '#F59E0B', // Amber
-  '#EC4899', // Pink
-  '#06B6D4', // Cyan
-];
-
 export function SpendingSummary({ totalBudget, totalSpent, spentByBudget, budgets }: SpendingSummaryProps) {
   const remaining = Math.max(0, totalBudget - totalSpent);
   const isOverBudget = totalSpent > totalBudget;
-  
+
   // Calculate segments
   // We want to show a segment for each budget that has spending
   const barTotal = Math.max(totalBudget, totalSpent);
   if (barTotal === 0) return null;
 
   const getPct = (val: number) => (val / barTotal) * 100;
+
+  const now = new Date();
+  const currentDay = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const targetSpent = (totalBudget / daysInMonth) * currentDay;
+
+  const goodSpent = Math.min(totalSpent, targetSpent);
+  const excessSpent = Math.max(0, totalSpent - targetSpent);
 
   return (
     <div className={styles.summaryContainer}>
@@ -46,39 +45,37 @@ export function SpendingSummary({ totalBudget, totalSpent, spentByBudget, budget
       </div>
 
       <div className={styles.summaryStatusBar}>
-        {budgets.map((budget, index) => {
-          const spent = spentByBudget[budget.id] || 0;
-          if (spent === 0) return null;
-          return (
-            <div
-              key={budget.id}
-              className={styles.summaryStatusSegment}
-              style={{ 
-                width: `${getPct(spent)}%`, 
-                backgroundColor: BUDGET_COLORS[index % BUDGET_COLORS.length] 
-              }}
-              title={`${budget.name}: ${formatCurrency(spent)}`}
-            />
-          );
-        })}
-        {/* Unassigned spending */}
-        {spentByBudget['unassigned'] > 0 && (
+        {/* Good spending (within target) */}
+        {goodSpent > 0 && (
           <div
             className={styles.summaryStatusSegment}
-            style={{ 
-              width: `${getPct(spentByBudget['unassigned'])}%`, 
-              backgroundColor: 'rgba(255, 255, 255, 0.4)' 
+            style={{
+              width: `${getPct(goodSpent)}%`,
+              backgroundColor: '#34D399' // Green
             }}
-            title={`Unassigned: ${formatCurrency(spentByBudget['unassigned'])}`}
+            title={`Within target: ${formatCurrency(goodSpent)}`}
           />
         )}
+
+        {/* Excess spending (above target) */}
+        {excessSpent > 0 && (
+          <div
+            className={styles.summaryStatusSegment}
+            style={{
+              width: `${getPct(excessSpent)}%`,
+              backgroundColor: '#FF3B30' // Red
+            }}
+            title={`Excess spending: ${formatCurrency(excessSpent)}`}
+          />
+        )}
+
         {/* Remaining budget segment */}
         {!isOverBudget && (
           <div
             className={styles.summaryStatusSegment}
-            style={{ 
-              width: `${getPct(remaining)}%`, 
-              backgroundColor: 'rgba(255, 255, 255, 0.1)' 
+            style={{
+              width: `${getPct(remaining)}%`,
+              backgroundColor: 'rgba(255, 255, 255, 0.1)'
             }}
             title={`Remaining: ${formatCurrency(remaining)}`}
           />
