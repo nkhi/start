@@ -2,25 +2,16 @@
 .splitContainer {
   height: 100%;
   display: grid;
-  grid-template-rows: 1.5fr 1fr;
-  /* Top pane slightly taller to accommodate lists */
+  grid-template-rows: 0.6fr 0.1fr 0.3fr;
   overflow: hidden;
 }
 
-/* Top Pane (Ledger) */
-.topPaneWrapper {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
+/* Ledger Area */
 
 .topPane {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 24px;
-  padding-bottom: 84px;
-  /* Space for the floating month switcher */
   display: flex;
   gap: 24px;
   align-items: flex-start;
@@ -28,7 +19,6 @@
   -ms-overflow-style: auto;
   scroll-behavior: smooth;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  flex: 1;
 }
 
 @media (min-width: 1001px) {
@@ -42,11 +32,17 @@
   }
 }
 
-/* Floating Bottom Left Controls */
+/* Middle Controls Area */
+.controlsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  /* background: rgba(255, 255, 255, 0.02); */
+  /* border-bottom: 1px solid rgba(255, 255, 255, 0.05); */
+}
+
 .controlsWrapper {
-  position: absolute;
-  bottom: 24px;
-  left: 24px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -94,11 +90,7 @@
   cursor: pointer;
 }
 
-/* Floating Summary Dashboard */
 .summaryContainer {
-  position: absolute;
-  bottom: 24px;
-  right: 24px;
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);

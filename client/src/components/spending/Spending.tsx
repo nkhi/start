@@ -192,28 +192,33 @@ export function Spending({ workMode = false }: SpendingProps) {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className={styles.topPaneWrapper}>
-          <div className={styles.topPane} ref={topPaneRef}>
-            {daysInMonth.map(dateStr => {
-              const d = new Date(dateStr);
-              const localDate = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
 
-              return (
-                <DayColumn
-                  key={dateStr}
-                  dateStr={dateStr}
-                  dateObj={localDate}
-                  isToday={dateStr === todayStr}
-                  dailyLimit={dailyLimit}
-                  budgets={budgets}
-                  transactions={groupedTransactions[dateStr] || []}
-                  onEdit={workMode ? undefined : (t, updates) => updateMutation.mutate({ id: t.id, updates })}
-                  onDelete={workMode ? undefined : (id) => deleteMutation.mutate(id)}
-                  onAdd={handleAddTransaction}
-                />
-              );
-            })}
-          </div>
+
+
+
+        <div className={styles.topPane} ref={topPaneRef}>
+          {daysInMonth.map(dateStr => {
+            const d = new Date(dateStr);
+            const localDate = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
+
+            return (
+              <DayColumn
+                key={dateStr}
+                dateStr={dateStr}
+                dateObj={localDate}
+                isToday={dateStr === todayStr}
+                dailyLimit={dailyLimit}
+                budgets={budgets}
+                transactions={groupedTransactions[dateStr] || []}
+                onEdit={workMode ? undefined : (t, updates) => updateMutation.mutate({ id: t.id, updates })}
+                onDelete={workMode ? undefined : (id) => deleteMutation.mutate(id)}
+                onAdd={handleAddTransaction}
+              />
+            );
+          })}
+        </div>
+
+        <div className={styles.controlsRow}>
           <div className={styles.controlsWrapper}>
             <div className={styles.monthNavContainer}>
               <button className={styles.monthNavBtn} onClick={handlePrevMonth}><CaretLeft size={18} weight="bold" /></button>
@@ -245,6 +250,22 @@ export function Spending({ workMode = false }: SpendingProps) {
           />
         </div>
 
+        <SpendingChart
+          daysInMonth={daysInMonth}
+          dayTotals={dayTotals}
+          dayTotalsByBudget={dayTotalsByBudget}
+          dailyLimit={dailyLimit}
+          budgets={budgets}
+          isCumulative={isCumulative}
+          onHoverDate={(dateStr, position) => {
+            setHoveredDate(dateStr);
+            setTooltipPosition(position);
+          }}
+        />
+
+
+
+
         <DragOverlay>
           {activeTransaction ? (
             <div className={`${transactionStyles.transactionItem} ${transactionStyles.dragOverlay}`}>
@@ -257,19 +278,6 @@ export function Spending({ workMode = false }: SpendingProps) {
           ) : null}
         </DragOverlay>
       </DndContext>
-
-      <SpendingChart
-        daysInMonth={daysInMonth}
-        dayTotals={dayTotals}
-        dayTotalsByBudget={dayTotalsByBudget}
-        dailyLimit={dailyLimit}
-        budgets={budgets}
-        isCumulative={isCumulative}
-        onHoverDate={(dateStr, position) => {
-          setHoveredDate(dateStr);
-          setTooltipPosition(position);
-        }}
-      />
 
       <SpendingTooltips
         hoveredDate={hoveredDate}
