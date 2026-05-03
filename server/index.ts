@@ -13,6 +13,7 @@ import landmarksRoutes from './routes/landmarks.ts';
 import calendarRoutes from './routes/calendar.ts';
 import memoriesRoutes from './routes/memories.ts';
 import servicesRoutes from './routes/services.ts';
+import spendingRoutes from './routes/spending.ts';
 import { checkCalendarConnection, syncCalendarEvents } from './services/calendarService.ts';
 
 console.log('[SERVER] 🏁 Starting server process...');
@@ -91,6 +92,7 @@ app.use('/', landmarksRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/', memoriesRoutes);
 app.use('/api/services', servicesRoutes);
+app.use('/', spendingRoutes);
 
 const PORT = process.env.PORT || 4000; // Changed from 3000 to avoid conflict with Cap
 app.listen(PORT, () => {

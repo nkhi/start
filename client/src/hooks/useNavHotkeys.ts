@@ -34,6 +34,7 @@ const TAB_HOTKEYS: Record<string, TabType> = {
     '4': 'memos',
     '5': 'lists',
     '6': 'next',
+    '7': 'spending',
 };
 
 // Tabs available in work mode

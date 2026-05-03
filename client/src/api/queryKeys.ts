@@ -48,4 +48,8 @@ export const queryKeys = {
     notes: {
         all: ['notes'] as const,
     },
+    spending: {
+        all: ['spending'] as const,
+        month: (month: string) => [...queryKeys.spending.all, 'month', month] as const,
+    },
 };

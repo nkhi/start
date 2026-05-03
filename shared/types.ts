@@ -306,6 +306,35 @@ export interface CreateMemoryRequest {
   createdAt?: string;
 }
 
+export interface SpendingTransaction {
+  id: string;
+  date: string;
+  name: string;
+  note: string | null;
+  amount: number;
+  createdAt: string | null;
+}
+
+export interface CreateSpendingTransactionRequest {
+  id: string;
+  date: string;
+  name: string;
+  note?: string;
+  amount: number;
+}
+
+export interface UpdateSpendingTransactionRequest {
+  date?: string;
+  name?: string;
+  note?: string;
+  amount?: number;
+}
+
+export interface SpendingMonth {
+  transactions: SpendingTransaction[];
+  monthTotal: number;
+}
+
 // ============================================
 // Helper Functions
 // ============================================

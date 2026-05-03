@@ -66,6 +66,10 @@ textarea {
   background: transparent;
 }
 
+#habit-container.spending {
+  background: #0A0A0A;
+}
+
 #habit-container.todos {
   background: transparent;
 }

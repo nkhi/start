@@ -115,3 +115,12 @@ export interface DbLandmark {
   position: number | null;
   created_at: Date | null;
 }
+
+export interface DbSpendingTransaction {
+  id: string;
+  date: Date;
+  name: string;
+  note: string | null;
+  amount: string;
+  created_at: Date | null;
+}

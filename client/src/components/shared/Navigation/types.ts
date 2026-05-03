@@ -1,6 +1,6 @@
 import type { Icon } from '@phosphor-icons/react';
 
-export type TabType = 'habits' | 'todos' | 'journal' | 'memos' | 'next' | 'lists' | 'landmarks' | 'daylight' | 'vlogs' | 'memories' | 'immich' | 'cap';
+export type TabType = 'habits' | 'todos' | 'journal' | 'memos' | 'next' | 'lists' | 'spending' | 'landmarks' | 'daylight' | 'vlogs' | 'memories' | 'immich' | 'cap';
 
 export interface ThemeConfig {
     /** Background color for the navigation container */

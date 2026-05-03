@@ -19,6 +19,8 @@ export type {
   TaskCounts,
   DiaryByDate,
   VlogsByWeek,
+  SpendingTransaction,
+  SpendingMonth,
 } from '../../shared/types';
 
 // Client-only types
