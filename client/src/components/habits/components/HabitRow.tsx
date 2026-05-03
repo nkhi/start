@@ -56,7 +56,10 @@ export function HabitRow({
             className={dynamicRowHeight ? styles.dynamicRow : ''}
             style={dynamicRowHeight ? { height: `${dynamicRowHeight}px` } : undefined}
         >
-            <td className={currentFailedStreak > 2 ? styles.criticalStreak : undefined}>
+            <td className={`
+                ${currentFailedStreak > 2 ? styles.criticalStreak : ''} 
+                ${habit.essential ? styles.essentialHabit : ''}
+            `.trim() || undefined}>
                 <HabitNameCell
                     habit={habit}
                     streak={getCurrentStreak(habit.id)}

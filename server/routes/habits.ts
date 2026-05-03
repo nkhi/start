@@ -23,7 +23,8 @@ router.get('/habits', async (_req: Request, res: Response) => {
       active: h.active,
       createdDate: h.created_date,
       comment: h.comment || null,
-      deadlineTime: h.deadline_time || null
+      deadlineTime: h.deadline_time || null,
+      essential: h.essential ?? null
     }));
 
     res.json(habits);

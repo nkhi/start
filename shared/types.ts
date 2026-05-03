@@ -13,11 +13,12 @@ export interface Habit {
   id: string;
   name: string;
   order: number;
-  defaultTime: 'morning' | 'night' | 'neither' | 'health' | 'exercise' | 'weekdays' | 'quitting' | 'growth' | 'routine';
+  defaultTime: 'morning' | 'night' | 'neither' | 'health' | 'exercise' | 'weekdays' | 'quitting' | 'growth' | 'routine' | 'ktlo';
   active: boolean;
   createdDate: string;
   comment?: string | null;
   deadlineTime?: string | null;
+  essential?: boolean | null;
 }
 
 export interface HabitEntry {

@@ -6,7 +6,8 @@ import {
     BarbellIcon,
     ResizeIcon,
     AxeIcon,
-    ClockIcon
+    ClockIcon,
+    LampIcon
 } from '@phosphor-icons/react';
 import type { Habit } from '../../../types';
 
@@ -114,6 +115,12 @@ export const HABIT_TIME_CONFIG: Record<HabitDefaultTime, HabitTimeConfig> = {
         label: 'Routine',
         showInFilter: true,
     },
+    ktlo: {
+        icon: LampIcon,
+        color: '#fbbf24', // Yellowish/amber for lamp
+        label: 'KTLO',
+        showInFilter: true,
+    },
     // Types that exist but don't need filter buttons or visible icons
     neither: {
         icon: null,
@@ -138,4 +145,5 @@ export const FILTER_TIME_TYPES: HabitDefaultTime[] = [
     'quitting',
     'night',
     'routine',
+    'ktlo',
 ];

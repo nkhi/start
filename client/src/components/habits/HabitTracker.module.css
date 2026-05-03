@@ -82,6 +82,13 @@
   background: #390000 !important;
 }
 
+.habitTable tbody td:first-child.essentialHabit {
+  background: #3d3000 !important;
+  /* Subtle dark gold/olive background */
+  border-left: 3px solid #ffd700;
+  /* Bright gold left accent */
+}
+
 .cell {
   width: 100%;
   height: 100%;
@@ -491,6 +498,12 @@
 .timeFilterBtn[data-color="#facc15"].active {
   color: #facc15;
 }
+
+.timeFilterBtn[data-color="#fbbf24"]:hover,
+.timeFilterBtn[data-color="#fbbf24"].active {
+  color: #fbbf24;
+}
+
 
 .timeFilterBtn[data-color="#e0f2fe"]:hover,
 .timeFilterBtn[data-color="#e0f2fe"].active {
