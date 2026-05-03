@@ -6,12 +6,18 @@
   gap: 8px;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: auto;
+  -ms-overflow-style: auto;
 }
 
-.bottomPane::-webkit-scrollbar {
-  display: none;
+@media (min-width: 1001px) {
+  .bottomPane {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .bottomPane::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .chartBarWrapper {

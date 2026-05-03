@@ -7,23 +7,36 @@
 }
 
 /* Top Pane (Ledger) */
-.topPane {
+.topPaneWrapper {
   position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.topPane {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 24px;
-  padding-bottom: 72px; /* Space for the floating month switcher */
+  padding-bottom: 84px; /* Space for the floating month switcher */
   display: flex;
   gap: 24px;
   align-items: flex-start;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: auto;
+  -ms-overflow-style: auto;
   scroll-behavior: smooth;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex: 1;
 }
 
-.topPane::-webkit-scrollbar {
-  display: none;
+@media (min-width: 1001px) {
+  .topPane {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .topPane::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Floating Month Switcher */

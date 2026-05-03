@@ -169,26 +169,28 @@ export function Spending() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className={styles.topPane} ref={topPaneRef}>
-          {daysInMonth.map(dateStr => {
-            const d = new Date(dateStr);
-            const localDate = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
+        <div className={styles.topPaneWrapper}>
+          <div className={styles.topPane} ref={topPaneRef}>
+            {daysInMonth.map(dateStr => {
+              const d = new Date(dateStr);
+              const localDate = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
 
-            return (
-              <DayColumn
-                key={dateStr}
-                dateStr={dateStr}
-                dateObj={localDate}
-                isToday={dateStr === todayStr}
-                dailyLimit={dailyLimit}
-                budgets={budgets}
-                transactions={groupedTransactions[dateStr] || []}
-                onEdit={(t, updates) => updateMutation.mutate({ id: t.id, updates })}
-                onDelete={(id) => deleteMutation.mutate(id)}
-                onAdd={handleAddTransaction}
-              />
-            );
-          })}
+              return (
+                <DayColumn
+                  key={dateStr}
+                  dateStr={dateStr}
+                  dateObj={localDate}
+                  isToday={dateStr === todayStr}
+                  dailyLimit={dailyLimit}
+                  budgets={budgets}
+                  transactions={groupedTransactions[dateStr] || []}
+                  onEdit={(t, updates) => updateMutation.mutate({ id: t.id, updates })}
+                  onDelete={(id) => deleteMutation.mutate(id)}
+                  onAdd={handleAddTransaction}
+                />
+              );
+            })}
+          </div>
 
           <div className={styles.monthNavContainer}>
             <button className={styles.monthNavBtn} onClick={handlePrevMonth}><CaretLeft weight="bold" /></button>
