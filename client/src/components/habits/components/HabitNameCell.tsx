@@ -105,11 +105,7 @@ export function HabitNameCell({ habit, streak, failedStreak, onMouseEnter, onMou
             );
         }
 
-        return (
-            <span className={styles.timeIcon} style={{ color: timeConfig?.color || '#9ca3af' }}>
-                <HabitTimeIcon defaultTime={habit.defaultTime} size={20} />
-            </span>
-        );
+        return <HabitTimeIcon defaultTime={habit.defaultTime} size={22} />;
     };
 
     return (

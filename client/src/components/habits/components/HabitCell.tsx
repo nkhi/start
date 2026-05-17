@@ -29,7 +29,7 @@ export function HabitCell({
 
     // We strictly use the styles from the module, assuming they are available.
     // We map state to class names manually here to avoid passing CONFIG object.
-    const stateClassMap = [styles.state0, styles.state1, styles.state2, styles.state3, styles.state4];
+    const stateClassMap = [styles.state0, styles.state1, styles.state2, styles.state3, styles.state4, styles.state5];
     const stateClass = stateClassMap[state];
 
     const handleClick = () => {

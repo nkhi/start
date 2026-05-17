@@ -74,7 +74,7 @@ export function useHabitData({ startDate, onDeadlineToast }: UseHabitDataProps) 
     const key = `${dateStr}_${habitId}`;
     const current = entries.get(key);
     const currentState = current?.state || 0;
-    let nextState = (currentState + 1) % 5;
+    let nextState = (currentState + 1) % 6;
 
     // Must find habit from current state or pass it in. 
     // We can rely on 'habits' state here.

@@ -25,6 +25,15 @@ export interface HabitEntry {
   entryId: string;
   date: string;
   habitId: string;
+  /**
+   * Habit entry state:
+   *   0 = · Empty (not logged)
+   *   1 = ✓ Done                (counts as success)
+   *   2 = ✕ Failed              (counts as failure)
+   *   3 = :) Done with exception (counts as success)
+   *   4 = :| Partially done     (neutral)
+   *   5 = ?: Forgot / Don't know (neutral)
+   */
   state: number;
   time?: string;
   timestamp: string;

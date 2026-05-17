@@ -145,6 +145,11 @@
   box-shadow: inset 0 -1px 0 0 #f59e0b;
 }
 
+.state5 {
+  color: #f97316;
+  box-shadow: inset 0 -1px 0 0 #f97316;
+}
+
 /* Daily Status Indicators for Header */
 .dailyStatusRed {
   box-shadow: inset 0 -1px 0 0 #dc2626 !important;

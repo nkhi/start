@@ -131,6 +131,8 @@ To initialize the database tables, run the SQL in [`db_utils/table_setup.sql`](d
 | `GET` | `/habit-entries?from=&to=` | Get entries in date range |
 | `POST` | `/habit-entry` | Create/update habit entry |
 
+**Entry `state` values:** `0`=empty, `1`=done ✓, `2`=failed ✕, `3`=done w/ exception :), `4`=partial :|, `5`=forgot ?:
+
 ### Tasks
 
 | Method | Endpoint | Description |

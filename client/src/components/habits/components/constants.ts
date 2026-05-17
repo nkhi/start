@@ -58,7 +58,7 @@ export const CHART_COLORS = [
     '#00BCD4', // Cyan
 ];
 
-export const STATE_ICONS = ['·', '✓', '✕', ':)', ':|'];
+export const STATE_ICONS = ['·', '✓', '✕', ':)', ':|', '?'];
 
 // Extract the defaultTime type from the Habit interface
 export type HabitDefaultTime = Habit['defaultTime'];

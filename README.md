@@ -34,7 +34,7 @@ This app exists to make it easy to iterate on *how* I organize myself. Ideally, 
 - **Sunday Reflection**: Record an end-of-week video reflection using the built-in **Loom SDK recorder**
 - **Flexible categories**: morning, night, exercise, health, weekdays, etc with icon differentiation and quick filtering
 - **Collapsible week views** See weekly progress rolled up over time
-- **State tracking**: Customizable states: ✅ Done, ❌ Failed, 🙂 Failed with exception, or 🫤 Succeeded Poorly
+- **State tracking**: Customizable states: ✅ Done, ❌ Failed, 🙂 Done with exception, 🫤 Succeeded Poorly, or ❓ Forgot / Don't Know
 
 <img src="assets/habits.gif" width="600" alt="habits">
 

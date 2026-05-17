@@ -61,7 +61,10 @@ router.get('/habit-entries', async (req: Request, res: Response) => {
   }
 });
 
-// Upsert a habit entry state (PUT for idempotent create-or-update)
+/**
+ * Upsert a habit entry state (PUT for idempotent create-or-update)
+ * Valid states: 0=empty, 1=done, 2=failed, 3=done w/ exception, 4=partial, 5=forgot
+ */
 router.put('/habit-entry/:entryId', async (req: Request, res: Response) => {
   const { entryId } = req.params;
   const { date, habitId, state, timestamp } = req.body;
