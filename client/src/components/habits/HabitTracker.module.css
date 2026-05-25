@@ -520,6 +520,11 @@
   color: #ef4444;
 }
 
+.timeFilterBtn[data-color="#6366f1"]:hover,
+.timeFilterBtn[data-color="#6366f1"].active {
+  color: #6366f1;
+}
+
 /* Show All Button - always visible when rendered */
 .showAllBtn {
   opacity: 1 !important;

@@ -14,10 +14,11 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Habit, HabitEntry } from '../types';
+import type { Habit, HabitEntry, HabitInsightsResponse, InsightTrendResponse } from '../types';
 import { fetchWithErrorReporting } from './errorReporter';
 import { API_BASE_URL } from '../config';
 import { queryKeys } from './queryKeys';
+
 
 // ============ REST API Functions ============
 
@@ -113,5 +114,35 @@ export function useReorderHabit() {
     mutationFn: ({ habitId, targetHabitId }: { habitId: string; targetHabitId: string | null }) =>
       reorderHabit(habitId, targetHabitId),
     onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.habits.all }),
+  });
+}
+
+// ============ Insights API ============
+
+export async function getInsightsSummary(days: number): Promise<HabitInsightsResponse> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/habit-insights/summary?days=${days}`);
+  if (!response.ok) throw new Error('Failed to fetch insights summary');
+  return response.json();
+}
+
+export async function getInsightsTrend(days: number): Promise<InsightTrendResponse> {
+  const response = await fetchWithErrorReporting(`${API_BASE_URL}/habit-insights/trend?days=${days}`);
+  if (!response.ok) throw new Error('Failed to fetch insights trend');
+  return response.json();
+}
+
+export function useInsightsSummary(days: number) {
+  return useQuery({
+    queryKey: queryKeys.habits.insights(days),
+    queryFn: () => getInsightsSummary(days),
+    staleTime: 5 * 60 * 1000, // 5 min — insights don’t need to be real-time
+  });
+}
+
+export function useInsightsTrend(days: number) {
+  return useQuery({
+    queryKey: queryKeys.habits.trend(days),
+    queryFn: () => getInsightsTrend(days),
+    staleTime: 5 * 60 * 1000,
   });
 }

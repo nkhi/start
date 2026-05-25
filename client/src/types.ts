@@ -21,8 +21,15 @@ export type {
   VlogsByWeek,
   SpendingTransaction,
   SpendingMonth,
-  SpendingBudget
+  SpendingBudget,
+  HabitInsightStateCounts,
+  HabitInsightDowEntry,
+  HabitInsightSummary,
+  HabitInsightsResponse,
+  InsightTrendBucket,
+  InsightTrendResponse,
 } from '../../shared/types';
+
 
 // Client-only types
 export interface WeeklyStats {

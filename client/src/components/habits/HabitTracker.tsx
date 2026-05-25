@@ -13,10 +13,12 @@ import { ReorderOverlay } from './components/ReorderOverlay';
 import { HabitTrackerHeader } from './components/HabitTrackerHeader';
 import { HabitRow } from './components/HabitRow';
 import { HabitTooltips } from './components/HabitTooltips';
+import { InsightsDashboard } from './components/insights/InsightsDashboard';
 import styles from './HabitTracker.module.css';
 
 import { HABIT_TRACKER_CONFIG } from './components/constants';
 import { CRITICAL_FILTER, UNFINISHED_FILTER } from './components/TimeFilterButtons';
+
 
 export function HabitTracker() {
   const tableWrapperRef = useRef<HTMLDivElement>(null);
@@ -97,6 +99,11 @@ export function HabitTracker() {
   const [selectedTimeFilter, setSelectedTimeFilter] = useState<string | null>(null);
   const [frozenFilterIds, setFrozenFilterIds] = useState<Set<string> | null>(null);
   const [dynamicRowHeight, setDynamicRowHeight] = useState<number | null>(null);
+  const [showInsights, setShowInsights] = useState(false);
+
+  const handleToggleInsights = () => {
+    setShowInsights(prev => !prev);
+  };
 
 
   useEffect(() => {
@@ -217,9 +224,22 @@ export function HabitTracker() {
     );
   }
 
+  if (showInsights) {
+    return (
+      <div style={{ position: 'absolute', inset: 0, zIndex: 10, overflowY: 'auto', background: '#0e0b09' }}>
+        <InsightsDashboard onClose={() => setShowInsights(false)} />
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className={styles.tableWrapper} ref={tableWrapperRef}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+
+      {/* Layout container: thead (always) + either tbody or InsightsDashboard */}
+      <div
+        className={styles.tableWrapper}
+        ref={tableWrapperRef}
+      >
         <table className={styles.habitTable}>
           <HabitTrackerHeader
             ref={theadRef}
@@ -234,36 +254,41 @@ export function HabitTracker() {
             onToggleWeek={toggleWeek}
             onVlogClick={handleVlogClick}
             getDayStats={getDayStats}
+            showInsights={false}
+            onToggleInsights={handleToggleInsights}
           />
           <tbody id="table-body">
-            {filteredHabits
-              .sort((a, b) => a.order - b.order)
-              .map(habit => (
-                <HabitRow
-                  key={habit.id}
-                  habit={habit}
-                  weeks={weeks}
-                  expandedWeeks={expandedWeeks}
-                  getEntry={getEntry}
-                  cycleState={cycleState}
-                  getHabitStats={getHabitStats}
-                  getCurrentStreak={getCurrentStreak}
-                  getFailedStreak={getFailedStreak}
-                  onToggleWeek={toggleWeek}
-                  getCellHandlers={getCellHandlers}
-                  wasLongPress={wasLongPress}
-                  onHabitNameMouseEnter={handleHabitNameMouseEnter}
-                  onHabitNameMouseLeave={handleHabitNameMouseLeave}
-                  onReorderStart={handleReorderStart}
-                  onDeadlineMouseEnter={handleDeadlineMouseEnter}
-                  onDeadlineMouseLeave={handleDeadlineMouseLeave}
-                  dynamicRowHeight={dynamicRowHeight}
-                />
-              ))}
-          </tbody>
+              {filteredHabits
+                .sort((a, b) => a.order - b.order)
+                .map(habit => (
+                  <HabitRow
+                    key={habit.id}
+                    habit={habit}
+                    weeks={weeks}
+                    expandedWeeks={expandedWeeks}
+                    getEntry={getEntry}
+                    cycleState={cycleState}
+                    getHabitStats={getHabitStats}
+                    getCurrentStreak={getCurrentStreak}
+                    getFailedStreak={getFailedStreak}
+                    onToggleWeek={toggleWeek}
+                    getCellHandlers={getCellHandlers}
+                    wasLongPress={wasLongPress}
+                    onHabitNameMouseEnter={handleHabitNameMouseEnter}
+                    onHabitNameMouseLeave={handleHabitNameMouseLeave}
+                    onReorderStart={handleReorderStart}
+                    onDeadlineMouseEnter={handleDeadlineMouseEnter}
+                    onDeadlineMouseLeave={handleDeadlineMouseLeave}
+                    dynamicRowHeight={dynamicRowHeight}
+                  />
+                ))}
+            </tbody>
         </table>
+
       </div>
 
+
+      {/* Fixed/absolute overlays — unaffected by flex context */}
       {viewingVlog && (
         <VlogModal
           vlog={viewingVlog}
@@ -279,10 +304,8 @@ export function HabitTracker() {
         habits={habits}
       />
 
-
       {commentPanel && <CommentPanel {...commentPanel} />}
       <Ring />
-
 
       {reorderingHabit && reorderPosition && (
         <ReorderOverlay
@@ -294,8 +317,7 @@ export function HabitTracker() {
         />
       )}
 
-
       <HabitDeadlineToast toasts={deadlineToasts} onDismiss={dismissDeadlineToast} />
-    </>
+    </div>
   );
 }

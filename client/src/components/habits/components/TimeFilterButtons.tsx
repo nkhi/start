@@ -1,10 +1,11 @@
-import { WarningIcon, FlagIcon } from '@phosphor-icons/react';
+import { WarningIcon, FlagIcon, InfoIcon } from '@phosphor-icons/react';
 import { HABIT_TIME_CONFIG, FILTER_TIME_TYPES, type HabitDefaultTime } from './constants';
 import styles from '../HabitTracker.module.css';
 import { useState } from 'react';
 import ChartModal from './ChartModal';
 import { useHoldProgress } from '../../../hooks/useHoldProgress';
 import { HOLD_DURATIONS } from '../../../constants/holdDurations';
+
 
 export const CRITICAL_FILTER = 'critical';
 export const UNFINISHED_FILTER = 'unfinished';
@@ -14,7 +15,10 @@ interface TimeFilterButtonsProps {
     onFilterChange: (filter: string | null) => void;
     chartData: any;
     habits: any;
+    showInsights: boolean;
+    onToggleInsights: () => void;
 }
+
 
 interface FilterButtonProps {
     isActive: boolean;
@@ -49,7 +53,8 @@ function FilterButton({ isActive, color, title, label, onClick, children }: Filt
     );
 }
 
-export function TimeFilterButtons({ selectedTimeFilter, onFilterChange, chartData, habits }: TimeFilterButtonsProps) {
+export function TimeFilterButtons({ selectedTimeFilter, onFilterChange, chartData, habits, showInsights, onToggleInsights }: TimeFilterButtonsProps) {
+
     const [showChart, setShowChart] = useState(false);
 
     const handleFilterClick = (timeType: HabitDefaultTime) => {
@@ -111,6 +116,20 @@ export function TimeFilterButtons({ selectedTimeFilter, onFilterChange, chartDat
                 >
                     <FlagIcon size={18} weight="duotone" />
                 </FilterButton>
+
+                {/* Separator */}
+                <span className={styles.filterSeparator} />
+
+                {/* Insights toggle */}
+                <button
+                    className={`${styles.timeFilterBtn} ${showInsights ? styles.active : ''}`}
+                    title="Habit Insights"
+                    data-color="#6366f1"
+                    onClick={onToggleInsights}
+                    style={{ marginLeft: 2 }}
+                >
+                    <InfoIcon size={18} weight={showInsights ? 'fill' : 'duotone'} />
+                </button>
 
             </div>
 

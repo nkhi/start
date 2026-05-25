@@ -2,6 +2,8 @@ import express, { Request, Response } from 'express';
 import * as db from '../db.ts';
 import type { DbHabit, DbEntry } from '../db-types.ts';
 import type { Habit, HabitEntry, CreateHabitEntryRequest } from '../../shared/types.ts';
+import { getInsightsSummary, getInsightsTrend } from '../services/habitInsightsService.ts';
+
 
 const router = express.Router();
 
@@ -213,5 +215,43 @@ router.post('/seed-habits', async (_req: Request, res: Response) => {
   // Skipping implementation as it's destructive and we have real data now
   res.status(501).json({ error: 'Seeding disabled in DB mode' });
 });
+
+// ─── Insights ────────────────────────────────────────────────────────────────
+
+/**
+ * GET /habit-insights/summary?days=30
+ * Returns per-habit state counts (current + prior period) and DOW breakdown.
+ * No raw entry rows — all aggregated in Postgres.
+ */
+router.get('/habit-insights/summary', async (req: Request, res: Response) => {
+  const rawDays = Number(req.query.days);
+  const days = rawDays > 0 && rawDays <= 730 ? rawDays : 30;
+  try {
+    const data = await getInsightsSummary(days);
+    res.json(data);
+  } catch (e) {
+    const error = e as Error;
+    console.error('Insights summary error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /habit-insights/trend?days=90
+ * Returns weekly-bucketed state counts per habit for trend charts.
+ */
+router.get('/habit-insights/trend', async (req: Request, res: Response) => {
+  const rawDays = Number(req.query.days);
+  const days = rawDays > 0 && rawDays <= 730 ? rawDays : 90;
+  try {
+    const data = await getInsightsTrend(days);
+    res.json(data);
+  } catch (e) {
+    const error = e as Error;
+    console.error('Insights trend error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 export default router;

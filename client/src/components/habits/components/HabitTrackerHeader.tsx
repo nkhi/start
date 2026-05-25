@@ -18,7 +18,10 @@ interface HabitTrackerHeaderProps {
     onToggleWeek: (weekKey: string) => void;
     onVlogClick: (weekStart: Date, e: React.MouseEvent) => void;
     getDayStats: (date: Date) => { percentage: number; totalCount: number; successCount: number; breakdown: Record<string, { success: number; total: number }> };
+    showInsights: boolean;
+    onToggleInsights: () => void;
 }
+
 
 export const HabitTrackerHeader = forwardRef<HTMLTableSectionElement, HabitTrackerHeaderProps>(({
     weeks,
@@ -31,7 +34,9 @@ export const HabitTrackerHeader = forwardRef<HTMLTableSectionElement, HabitTrack
     habits,
     onToggleWeek,
     onVlogClick,
-    getDayStats
+    getDayStats,
+    showInsights,
+    onToggleInsights,
 }, ref) => {
     return (
         <thead id="table-head" ref={ref}>
@@ -42,9 +47,11 @@ export const HabitTrackerHeader = forwardRef<HTMLTableSectionElement, HabitTrack
                         onFilterChange={onFilterChange}
                         chartData={chartData}
                         habits={habits}
+                        showInsights={showInsights}
+                        onToggleInsights={onToggleInsights}
                     />
                 </th>
-                {weeks.map((week) => {
+                {!showInsights && weeks.map((week) => {
                     const isExpanded = expandedWeeks.has(week.key);
                     const hasVlog = vlogs.has(week.key);
                     const weekStart = new Date(week.key + 'T00:00:00');
@@ -137,5 +144,6 @@ export const HabitTrackerHeader = forwardRef<HTMLTableSectionElement, HabitTrack
         </thead>
     );
 });
+
 
 HabitTrackerHeader.displayName = 'HabitTrackerHeader';

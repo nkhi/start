@@ -315,6 +315,65 @@ export interface CreateMemoryRequest {
   createdAt?: string;
 }
 
+// ============================================
+// Habit Insights API Types
+// ============================================
+
+export interface HabitInsightStateCounts {
+  s0: number; // not logged
+  s1: number; // done
+  s2: number; // failed
+  s3: number; // done w/ exception
+  s4: number; // partial
+  s5: number; // forgot
+}
+
+export interface HabitInsightDowEntry {
+  dow: number; // 0=Sun … 6=Sat
+  s1: number;
+  s2: number;
+  s3: number;
+  s4: number;
+  s5: number;
+  logged: number; // days with any non-0 state
+}
+
+export interface HabitInsightSummary {
+  habitId: string;
+  name: string;
+  category: string; // Habit['defaultTime']
+  essential: boolean;
+  createdDate: string;
+  /** Aggregated state counts for the requested range */
+  cur: HabitInsightStateCounts;
+  /** Aggregated state counts for the prior period of the same length */
+  prior: HabitInsightStateCounts;
+  /** Per-day-of-week breakdown (only days that have ≥1 entry are included) */
+  dow: HabitInsightDowEntry[];
+}
+
+export interface HabitInsightsResponse {
+  habits: HabitInsightSummary[];
+  days: number;
+  generatedAt: string;
+}
+
+export interface InsightTrendBucket {
+  weekStart: string; // YYYY-MM-DD (Monday)
+  habitId: string;
+  s1: number;
+  s2: number;
+  s3: number;
+  s4: number;
+  s5: number;
+  logged: number;
+}
+
+export interface InsightTrendResponse {
+  buckets: InsightTrendBucket[];
+  days: number;
+}
+
 export interface SpendingBudget {
   id: string;
   month: string;

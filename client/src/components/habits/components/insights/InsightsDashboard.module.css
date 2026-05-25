@@ -1,0 +1,514 @@
+/* ===================================================================
+   InsightsDashboard v2.1 — Desktop-optimised styles
+   Linear / Nintendo-inspired dark UI
+   =================================================================== */
+
+/* ── Root panel ──────────────────────────────────────────────────── */
+.panel {
+  width: 100%;
+  min-height: 100%;
+  background: #0e0b09;
+}
+
+/* ── Scroll container ────────────────────────────────────────────── */
+.panelInner {
+  padding: 20px 28px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 12px;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.backBtn:hover {
+  border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.04);
+}
+
+.headerTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.18);
+  flex: 1;
+}
+
+.rangeSelector {
+  display: flex;
+  gap: 2px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 3px;
+  overflow-x: auto;
+  max-width: 520px;
+  flex-shrink: 1;
+}
+.rangeSelector::-webkit-scrollbar { display: none; }
+.rangeBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.28);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  letter-spacing: 0.03em;
+}
+.rangeBtn:hover { color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.05); }
+.rangeBtnActive {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.9);
+}
+
+/* ── Top row: rings card + insights side by side ─────────────────── */
+.topRow {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.ringsCard {
+  /* intrinsic width based on rings content */
+  width: fit-content;
+  min-width: 300px;
+}
+
+.feedCard_wrapper {
+  /* takes remaining space, scrolls internally if needed */
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Loading / error ─────────────────────────────────────────────── */
+.loadingState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.2);
+  font-size: 13px;
+  min-height: 200px;
+}
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.08);
+  border-top-color: rgba(255,255,255,0.35);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Desktop 2-column grid ───────────────────────────────────────── */
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ── Section card ────────────────────────────────────────────────── */
+.sectionCard {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionTitle {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.22);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* ── Rings section ───────────────────────────────────────────────── */
+.ringsSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.superRingWrapper {
+  flex-shrink: 0;
+  position: relative;
+}
+.superRingCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.superRingPct {
+  font-size: 30px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.92);
+  letter-spacing: -0.05em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.superRingLabel {
+  font-size: 10px;
+  color: rgba(255,255,255,0.28);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 3px;
+}
+
+/* Individual rings — sized so 4 fit per row at min-width ~300px */
+.individualRings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 296px;
+}
+
+.ringItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+  background: none;
+  border: none;
+  padding: 5px;
+  border-radius: 9px;
+  outline: none;
+  -webkit-appearance: none;
+  width: 66px; /* fixed so 4 × 66 + 3 × 8 = 288px fits in 296px */
+}
+.ringItem:hover { opacity: 0.82; transform: translateY(-1px); }
+
+.ringItemSelected {
+  background: rgba(255,255,255,0.07);
+  outline: 1px solid rgba(255,255,255,0.1);
+}
+
+.ringItemLabel {
+  font-size: 10px;
+  color: rgba(255,255,255,0.38);
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.ringItemSelected .ringItemLabel { color: rgba(255,255,255,0.8); }
+
+/* ── Insight feed tile grid ──────────────────────────────────────── */
+.feedGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.feedEmpty {
+  color: rgba(255,255,255,0.2);
+  font-size: 12px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.feedCard {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-left: 3px solid;
+  border-radius: 9px;
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: background 0.15s;
+}
+.feedCard:hover { background: rgba(255,255,255,0.045); }
+
+.feedCardTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+.feedIcon { font-size: 15px; flex-shrink: 0; line-height: 1.1; }
+.feedHeadline {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.35;
+}
+.feedDetail {
+  font-size: 10px;
+  color: rgba(255,255,255,0.28);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Charts row (period compare + day pattern) ───────────────────── */
+.chartsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ── Trend chart internal padding ────────────────────────────────── */
+/* The sectionCard already provides outer padding;
+   the Recharts ResponsiveContainer expands to fill. */
+
+/* ── Legend pills (TrendLineChart) ──────────────────────────────── */
+.chartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.legendPill {
+  background: transparent;
+  border: 1px solid var(--pill-color, #555);
+  color: var(--pill-color, #555);
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 999px;
+  padding: 2px 9px;
+  cursor: pointer;
+  transition: all 0.15s;
+  opacity: 0.75;
+  -webkit-appearance: none;
+}
+.legendPill:hover { opacity: 1; }
+.legendPillHidden { opacity: 0.2; text-decoration: line-through; }
+
+.chartEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+  color: rgba(255,255,255,0.18);
+  font-size: 12px;
+}
+
+/* ── Period compare list ─────────────────────────────────────────── */
+.compareRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.compareRow:last-child { border-bottom: none; }
+
+.compareDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.compareName {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.compareBar {
+  flex: 2;
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  position: relative;
+  overflow: visible;
+}
+.compareBarFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.comparePriorMark {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 10px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 1px;
+}
+.compareNums {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+.comparePriorNum { color: rgba(255,255,255,0.18); }
+.compareArrow { color: rgba(255,255,255,0.12); font-size: 8px; }
+.compareCurNum {
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.compareDelta {
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-variant-numeric: tabular-nums;
+}
+.compareDeltaPos { color: #10b981; background: rgba(16,185,129,0.12); }
+.compareDeltaNeg { color: #ef4444; background: rgba(239,68,68,0.12); }
+.compareDeltaFlat { color: rgba(255,255,255,0.18); }
+
+/* ── Day pattern bars ────────────────────────────────────────────── */
+.dayBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 70px;
+  padding-top: 4px;
+}
+.dayBarCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+}
+.dayBar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.4s ease;
+  min-height: 2px;
+}
+.dayBarLabel {
+  font-size: 9px;
+  color: rgba(255,255,255,0.22);
+  font-weight: 500;
+}
+.dayBarPct {
+  font-size: 9px;
+  color: rgba(255,255,255,0.32);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* ── Grade tiers ─────────────────────────────────────────────────── */
+.tiersSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tierGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tierHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.tierGrade {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  min-width: 14px;
+}
+.tierLabel {
+  font-size: 11px;
+  color: rgba(255,255,255,0.28);
+  flex: 1;
+}
+.tierRange {
+  font-size: 10px;
+  color: rgba(255,255,255,0.16);
+  font-variant-numeric: tabular-nums;
+}
+.tierChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.habitChip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-left: 3px solid;
+  border-radius: 8px;
+  padding: 6px 10px;
+  transition: background 0.15s;
+}
+.habitChip:hover { background: rgba(255,255,255,0.055); }
+.chipEssential { color: #f97316; font-size: 11px; }
+.chipName {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.75);
+  white-space: nowrap;
+}
+.chipTag {
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 5px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.chipPct {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.45);
+  font-variant-numeric: tabular-nums;
+  margin-left: 2px;
+}
