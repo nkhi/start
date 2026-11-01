@@ -20,6 +20,8 @@ interface HabitTrackerHeaderProps {
     getDayStats: (date: Date) => { percentage: number; totalCount: number; successCount: number; breakdown: Record<string, { success: number; total: number }> };
     showInsights: boolean;
     onToggleInsights: () => void;
+    showSections: boolean;
+    onToggleSections: () => void;
 }
 
 
@@ -37,6 +39,8 @@ export const HabitTrackerHeader = forwardRef<HTMLTableSectionElement, HabitTrack
     getDayStats,
     showInsights,
     onToggleInsights,
+    showSections,
+    onToggleSections,
 }, ref) => {
     return (
         <thead id="table-head" ref={ref}>
@@ -49,6 +53,8 @@ export const HabitTrackerHeader = forwardRef<HTMLTableSectionElement, HabitTrack
                         habits={habits}
                         showInsights={showInsights}
                         onToggleInsights={onToggleInsights}
+                        showSections={showSections}
+                        onToggleSections={onToggleSections}
                     />
                 </th>
                 {!showInsights && weeks.map((week) => {

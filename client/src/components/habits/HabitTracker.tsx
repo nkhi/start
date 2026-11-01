@@ -16,7 +16,7 @@ import { HabitTooltips } from './components/HabitTooltips';
 import { InsightsDashboard } from './components/insights/InsightsDashboard';
 import styles from './HabitTracker.module.css';
 
-import { HABIT_TRACKER_CONFIG } from './components/constants';
+import { HABIT_TRACKER_CONFIG, HABIT_SECTIONS } from './components/constants';
 import { CRITICAL_FILTER, UNFINISHED_FILTER } from './components/TimeFilterButtons';
 
 
@@ -100,6 +100,7 @@ export function HabitTracker() {
   const [frozenFilterIds, setFrozenFilterIds] = useState<Set<string> | null>(null);
   const [dynamicRowHeight, setDynamicRowHeight] = useState<number | null>(null);
   const [showInsights, setShowInsights] = useState(false);
+  const [showSections, setShowSections] = useState(true);
 
   const handleToggleInsights = () => {
     setShowInsights(prev => !prev);
@@ -109,6 +110,12 @@ export function HabitTracker() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (habits.length > 0) {
+      console.log("Incoming habits mapping for sections:", habits.map(h => ({id: h.id, name: h.name})));
+    }
+  }, [habits]);
 
 
   const dates = useMemo(() => {
@@ -256,11 +263,17 @@ export function HabitTracker() {
             getDayStats={getDayStats}
             showInsights={false}
             onToggleInsights={handleToggleInsights}
+            showSections={showSections}
+            onToggleSections={() => setShowSections(prev => !prev)}
           />
           <tbody id="table-body">
-              {filteredHabits
-                .sort((a, b) => a.order - b.order)
-                .map(habit => (
+              {(() => {
+                const sortedHabits = [...filteredHabits].sort((a, b) => a.order - b.order);
+                const renderedHabitIds = new Set<string>();
+                
+                const elements: React.ReactNode[] = [];
+
+                const renderHabit = (habit: typeof habits[0]) => (
                   <HabitRow
                     key={habit.id}
                     habit={habit}
@@ -276,12 +289,57 @@ export function HabitTracker() {
                     wasLongPress={wasLongPress}
                     onHabitNameMouseEnter={handleHabitNameMouseEnter}
                     onHabitNameMouseLeave={handleHabitNameMouseLeave}
-                    onReorderStart={handleReorderStart}
+                    onReorderStart={showSections ? undefined : handleReorderStart}
                     onDeadlineMouseEnter={handleDeadlineMouseEnter}
                     onDeadlineMouseLeave={handleDeadlineMouseLeave}
                     dynamicRowHeight={dynamicRowHeight}
                   />
-                ))}
+                );
+
+                if (!showSections) {
+                  return sortedHabits.map(renderHabit);
+                }
+
+                // Render configured sections
+                HABIT_SECTIONS.forEach(section => {
+                  const sectionHabits = sortedHabits.filter(h => section.habitIds.includes(h.id));
+                  
+                  if (sectionHabits.length > 0) {
+                    elements.push(
+                      <tr key={`section-${section.id}`} className={styles.sectionSpacerRow}>
+                        <td colSpan={100}>
+                          <div className={styles.sectionTitle}>{section.name}</div>
+                        </td>
+                      </tr>
+                    );
+                    
+                    sectionHabits.forEach(habit => {
+                      renderedHabitIds.add(habit.id);
+                      elements.push(renderHabit(habit));
+                    });
+                  }
+                });
+
+                // Render remaining habits
+                const uncategorizedHabits = sortedHabits.filter(h => !renderedHabitIds.has(h.id));
+                if (uncategorizedHabits.length > 0) {
+                  if (HABIT_SECTIONS.length > 0 && renderedHabitIds.size > 0) {
+                    elements.push(
+                      <tr key="section-uncategorized" className={styles.sectionSpacerRow}>
+                        <td colSpan={100}>
+                          <div className={styles.sectionTitle}>Other Habits</div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  
+                  uncategorizedHabits.forEach(habit => {
+                    elements.push(renderHabit(habit));
+                  });
+                }
+
+                return elements;
+              })()}
             </tbody>
         </table>
 

@@ -914,3 +914,22 @@
   pointer-events: none;
   white-space: nowrap;
 }
+
+/* Section Spacers */
+.sectionSpacerRow td {
+  height: 40px !important; /* Smaller than normal rows */
+  border-bottom: none !important;
+  background: #110C09 !important; /* Match table background */
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 24px 16px 8px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 8px;
+}

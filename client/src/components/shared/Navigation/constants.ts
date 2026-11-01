@@ -4,17 +4,15 @@ import {
     HeartbeatIcon,
     LightbulbIcon,
     ListDashes,
-    CoffeeBeanIcon,
     TreeIcon,
     ImageIcon,
     VideoCameraIcon,
     ButterflyIcon,
     CalendarIcon,
-    LadderIcon,
     LadderSimpleIcon,
 } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../../../config';
-import type { NavItem, ExternalLink, TabType } from './types';
+import type { NavItem, ExternalLink } from './types';
 
 export const NAV_TABS: NavItem[] = [
     {

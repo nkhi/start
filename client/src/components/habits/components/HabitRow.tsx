@@ -22,7 +22,7 @@ interface HabitRowProps {
     // Name Cell Headers
     onHabitNameMouseEnter: (e: React.MouseEvent, habitId: string, comment?: string | null) => void;
     onHabitNameMouseLeave: () => void;
-    onReorderStart: (habit: Habit, position: ReorderPosition) => void;
+    onReorderStart?: (habit: Habit, position: ReorderPosition) => void;
     onDeadlineMouseEnter: (e: React.MouseEvent, deadlineTime: string) => void;
     onDeadlineMouseLeave: () => void;
 

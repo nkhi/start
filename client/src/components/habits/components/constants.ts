@@ -147,3 +147,29 @@ export const FILTER_TIME_TYPES: HabitDefaultTime[] = [
     'routine',
     'ktlo',
 ];
+
+export interface HabitSectionConfig {
+    id: string;
+    name: string;
+    habitIds: string[];
+}
+
+// order in habitIds doesn't matter, it is sorted in the component
+// morning is still 1 2 3 in the ui even if the habitIds list is 3 32 .. 1 2
+export const HABIT_SECTIONS: HabitSectionConfig[] = [
+    {
+        id: 'morning',
+        name: 'Morning',
+        habitIds: ['3', '32', '44', '21', '1', '2', '20', '5', '22', '41', '47']
+    },
+    {
+        id: 'evolution',
+        name: 'Evolution',
+        habitIds: ['39', '12', '6', '7', '23', '16', '17', '26', '27', '24', '25']
+    },
+    {
+        id: 'bedtime',
+        name: 'Bedtime',
+        habitIds: ['43', '8', '9', '10', '13', '42', '38', '45', '46', '40', '48']
+    }
+];

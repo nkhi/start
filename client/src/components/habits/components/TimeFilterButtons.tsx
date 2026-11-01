@@ -1,4 +1,4 @@
-import { WarningIcon, FlagIcon, InfoIcon } from '@phosphor-icons/react';
+import { WarningIcon, FlagIcon, InfoIcon, ListIcon } from '@phosphor-icons/react';
 import { HABIT_TIME_CONFIG, FILTER_TIME_TYPES, type HabitDefaultTime } from './constants';
 import styles from '../HabitTracker.module.css';
 import { useState } from 'react';
@@ -17,6 +17,8 @@ interface TimeFilterButtonsProps {
     habits: any;
     showInsights: boolean;
     onToggleInsights: () => void;
+    showSections: boolean;
+    onToggleSections: () => void;
 }
 
 
@@ -53,7 +55,7 @@ function FilterButton({ isActive, color, title, label, onClick, children }: Filt
     );
 }
 
-export function TimeFilterButtons({ selectedTimeFilter, onFilterChange, chartData, habits, showInsights, onToggleInsights }: TimeFilterButtonsProps) {
+export function TimeFilterButtons({ selectedTimeFilter, onFilterChange, chartData, habits, showInsights, onToggleInsights, showSections, onToggleSections }: TimeFilterButtonsProps) {
 
     const [showChart, setShowChart] = useState(false);
 
@@ -119,6 +121,17 @@ export function TimeFilterButtons({ selectedTimeFilter, onFilterChange, chartDat
 
                 {/* Separator */}
                 <span className={styles.filterSeparator} />
+
+                {/* Sections toggle */}
+                <button
+                    className={`${styles.timeFilterBtn} ${showSections ? styles.active : ''}`}
+                    title={showSections ? "Hide Sections" : "Show Sections"}
+                    data-color="#10b981"
+                    onClick={onToggleSections}
+                    style={{ marginLeft: 2 }}
+                >
+                    <ListIcon size={18} weight={showSections ? 'fill' : 'duotone'} />
+                </button>
 
                 {/* Insights toggle */}
                 <button
