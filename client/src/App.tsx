@@ -6,7 +6,6 @@ import { Todos } from './components/todos/Todos';
 import { Diary } from './components/journal/Diary';
 import { Next } from './components/grow/Next';
 import { Lists } from './components/lists/Lists';
-import { Spending } from './components/spending/Spending';
 import { Landmarks } from './components/landmarks/Landmarks';
 import { Memos } from './components/memos/Memos';
 import { Navigation, type TabType } from './components/shared/Navigation';
@@ -76,7 +75,6 @@ function AppContent() {
           {!WORK_MODE && activeTab === 'journal' && <Diary />}
           {!WORK_MODE && activeTab === 'next' && <Next />}
           {!WORK_MODE && activeTab === 'lists' && <Lists />}
-          {activeTab === 'spending' && <Spending workMode={WORK_MODE} />}
           {!WORK_MODE && activeTab === 'landmarks' && <Landmarks />}
           {!WORK_MODE && activeTab === 'immich' && <Immich />}
           {!WORK_MODE && activeTab === 'cap' && <Cap />}

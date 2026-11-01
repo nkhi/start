@@ -12,8 +12,6 @@ import {
     CalendarIcon,
     LadderIcon,
     LadderSimpleIcon,
-    CurrencyDollarSimple,
-    TipJarIcon,
 } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../../../config';
 import type { NavItem, ExternalLink, TabType } from './types';
@@ -57,15 +55,6 @@ export const NAV_TABS: NavItem[] = [
         icon: ListDashes,
         showInWorkMode: false,
         useDuotone: true
-    },
-    {
-        id: 'spending',
-        icon: TipJarIcon,
-        showInWorkMode: true,
-        useDuotone: true,
-        theme: {
-            background: '#0A0A0A'
-        }
     },
     {
         id: 'next',

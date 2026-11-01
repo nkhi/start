@@ -50,8 +50,4 @@ export const queryKeys = {
     notes: {
         all: ['notes'] as const,
     },
-    spending: {
-        all: ['spending'] as const,
-        month: (month: string, workMode: boolean = false) => [...queryKeys.spending.all, 'month', month, { workMode }] as const,
-    },
 };

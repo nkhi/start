@@ -4,14 +4,15 @@ import type { DbSpendingTransaction, DbSpendingBudget } from '../db-types.ts';
 import type { 
   SpendingTransaction, 
   SpendingBudget,
-  CreateSpendingTransactionRequest, 
   UpdateSpendingTransactionRequest 
 } from '../../shared/types.ts';
-import crypto from 'crypto';
 
 const router = express.Router();
 
-// Get transactions for a month
+/**
+ * @deprecated The spending sub-application is deprecated. The client UI entry points have been removed.
+ * Retained for legacy read-only access.
+ */
 router.get('/spending', async (req: Request, res: Response) => {
   const { month } = req.query as { month?: string }; // YYYY-MM
   if (!month) {
@@ -50,31 +51,13 @@ router.get('/spending', async (req: Request, res: Response) => {
       SELECT * FROM spending_budgets WHERE month = $1
     `, [month]);
 
-    let budgets: SpendingBudget[] = budgetResult.rows.map(b => ({
+    const budgets: SpendingBudget[] = budgetResult.rows.map(b => ({
       id: b.id,
       month: b.month,
       name: b.name,
       amount: parseFloat(b.amount),
       createdAt: b.created_at?.toISOString() || null
     }));
-
-    // Auto-create default budget if none exist
-    if (budgets.length === 0) {
-      const defaultId = crypto.randomUUID();
-      const defaultAmount = 400.00;
-      await db.query(`
-        INSERT INTO spending_budgets (id, month, name, amount)
-        VALUES ($1, $2, $3, $4)
-      `, [defaultId, month, 'Fun', defaultAmount]);
-
-      budgets.push({
-        id: defaultId,
-        month,
-        name: 'Fun',
-        amount: defaultAmount,
-        createdAt: new Date().toISOString()
-      });
-    }
 
     res.json({ transactions, monthTotal, budgets });
   } catch (e) {
@@ -83,7 +66,10 @@ router.get('/spending', async (req: Request, res: Response) => {
   }
 });
 
-// Anonymous budgets for Work Mode (only IDs and generic names)
+/**
+ * @deprecated The spending sub-application is deprecated.
+ * Retained for legacy read-only access to existing anonymous budgets.
+ */
 router.get('/spending/budgets/anonymous', async (req: Request, res: Response) => {
   const { month } = req.query as { month?: string };
   if (!month) return res.status(400).json({ error: 'Missing month parameter' });
@@ -93,17 +79,7 @@ router.get('/spending/budgets/anonymous', async (req: Request, res: Response) =>
       SELECT id FROM spending_budgets WHERE month = $1
     `, [month]);
 
-    let budgetIds = result.rows.map(r => r.id);
-
-    // Auto-create default if none exist (consistency with main endpoint)
-    if (budgetIds.length === 0) {
-      const defaultId = crypto.randomUUID();
-      await db.query(`
-        INSERT INTO spending_budgets (id, month, name, amount)
-        VALUES ($1, $2, $3, $4)
-      `, [defaultId, month, 'Fun', 400.00]);
-      budgetIds.push(defaultId);
-    }
+    const budgetIds = result.rows.map(r => r.id);
 
     const anonymousBudgets = budgetIds.map((id, index) => ({
       id,
@@ -119,31 +95,10 @@ router.get('/spending/budgets/anonymous', async (req: Request, res: Response) =>
   }
 });
 
-// Create transaction
-router.post('/spending', async (req: Request<object, object, CreateSpendingTransactionRequest>, res: Response) => {
-  const { id, date, name, note, amount, budgetId } = req.body;
-  if (!id || !date || !name || amount === undefined) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  try {
-    const createdAt = new Date().toISOString();
-    await db.query(`
-      INSERT INTO spending_transactions (id, date, name, note, amount, budget_id, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-    `, [id, date, name, note || null, amount, budgetId || null, createdAt]);
-    
-    const transaction: SpendingTransaction = {
-      id, date, name, note: note || null, amount, budgetId: budgetId || null, createdAt
-    };
-    res.json(transaction);
-  } catch (e) {
-    const error = e as Error;
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update transaction
+/**
+ * @deprecated The spending sub-application is deprecated.
+ * Retained for updating legacy transaction entries.
+ */
 router.patch('/spending/:id', async (req: Request<{ id: string }, object, UpdateSpendingTransactionRequest>, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
@@ -207,7 +162,10 @@ router.patch('/spending/:id', async (req: Request<{ id: string }, object, Update
   }
 });
 
-// Delete transaction
+/**
+ * @deprecated The spending sub-application is deprecated.
+ * Retained for deleting legacy transaction entries.
+ */
 router.delete('/spending/:id', async (req: Request<{ id: string }>, res: Response) => {
   const { id } = req.params;
   
