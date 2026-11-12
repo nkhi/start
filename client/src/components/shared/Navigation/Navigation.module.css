@@ -21,24 +21,29 @@
 
 .navContainer.immersive .tabSwitcher,
 .navContainer.immersive .rightLinks,
-.navContainer.immersive .leftSection>*:not(:first-child) {
+.navContainer.immersive .leftSection>*:not(:first-child),
+.navContainer.immersive .leftButtonCluster>*:not(:first-child) {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
 }
 
-.navContainer.immersive .leftSection button {
+.navContainer.immersive .leftButtonCluster>button {
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
-.navContainer.immersive:hover .leftSection button {
+.navContainer.immersive:hover .leftButtonCluster>button {
     opacity: 0.05;
     cursor: pointer;
 }
 
-.navContainer.immersive .leftSection button:hover {
+.navContainer.immersive .leftButtonCluster>button:hover {
     opacity: 1;
+}
+
+.navContainer.immersive .leftButtonCluster::before {
+    pointer-events: none;
 }
 
 .leftSection {
@@ -48,14 +53,60 @@
     align-items: center;
 }
 
-.tabSwitcher {
+.leftSection>*:not(.leftButtonCluster) {
+    position: relative;
+}
+
+.leftButtonCluster {
+    position: relative;
     display: flex;
+    align-items: center;
+}
+
+.leftButtonCluster::before {
+    content: '';
+    position: absolute;
+    top: -22px;
+    bottom: -22px;
+    left: -24px;
+    right: -140px;
+}
+
+.leftButtonCluster>* {
+    position: relative;
+}
+
+.leftButtonCluster>button,
+.leftButtonCluster>div>button {
+    opacity: 0.05;
+    transition: opacity 0.2s ease;
+}
+
+.leftButtonCluster:hover>button,
+.leftButtonCluster:hover>div>button,
+.leftButtonCluster:focus-within>button,
+.leftButtonCluster:focus-within>div>button {
+    opacity: 1;
+}
+
+.tabSwitcher {
+    position: relative;
+    display: flex;
+    align-items: center;
     background: transparent;
     padding: 4px;
     border-radius: 12px;
     gap: 4px;
     width: fit-content;
     transition: background 0.3s ease;
+}
+
+.navDivider {
+    width: 1px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.12);
+    margin: 0 4px;
+    flex-shrink: 0;
 }
 
 .navContainer.immersive .tabBtn,

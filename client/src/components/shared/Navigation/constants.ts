@@ -39,43 +39,43 @@ export const NAV_TABS: NavItem[] = [
         icon: LightbulbIcon,
         showInWorkMode: false,
         useDuotone: true,
+        // dividerAfter: true,
         theme: {
             background: '#151618'
         }
     },
     {
         id: 'landmarks',
+        label: 'Landmarks',
         icon: LadderSimpleIcon,
         showInWorkMode: false,
-        useDuotone: true
+        useDuotone: true,
+        overflow: true
     },
     {
         id: 'lists',
+        label: 'Lists',
         icon: ListDashes,
         showInWorkMode: false,
-        useDuotone: true
+        useDuotone: true,
+        overflow: true
     },
     {
         id: 'next',
+        label: 'Next',
         icon: TreeIcon,
         showInWorkMode: false,
-        useDuotone: true
-    },
-    {
-        id: 'immich',
-        icon: ImageIcon,
-        showInWorkMode: false,
         useDuotone: true,
-        isActive: (activeTab) => activeTab === 'immich' || activeTab === 'vlogs',
-        theme: {
-            background: '#000000'
-        }
+        dividerAfter: true,
+        overflow: true
     },
     {
         id: 'cap',
+        label: 'Cap',
         icon: VideoCameraIcon,
         showInWorkMode: false,
         useDuotone: true,
+        overflow: true,
         onClick: ({ onTabChange }) => {
             fetch(`${API_BASE_URL}/api/services/cap/start`, { method: 'POST' }).catch(console.error);
             onTabChange('cap');
@@ -84,6 +84,19 @@ export const NAV_TABS: NavItem[] = [
             background: '#111111'
         }
     },
+    {
+        id: 'immich',
+        label: 'Immich',
+        icon: ImageIcon,
+        showInWorkMode: false,
+        useDuotone: true,
+        overflow: true,
+        isActive: (activeTab) => activeTab === 'immich' || activeTab === 'vlogs',
+        theme: {
+            background: '#000000'
+        }
+    },
+
     // {
     //     id: 'memories',
     //     icon: TreeIcon, // Placeholder - not shown in nav, but needed for theme
@@ -101,13 +114,13 @@ export const EXTERNAL_LINKS: ExternalLink[] = [
         href: 'https://app.monarchmoney.com/accounts?chartType=performance&dateRange=6M&timeframe=month',
         icon: ButterflyIcon,
         color: '#f97316',
-        label: 'Opening Monarch'
+        label: 'Monarch'
     },
     {
         id: 'calendar',
         href: 'https://calendar.google.com/calendar/u/0/r#main_7',
         icon: CalendarIcon,
         color: '#3B82F6',
-        label: 'Opening Calendar'
+        label: 'Calendar'
     }
 ];

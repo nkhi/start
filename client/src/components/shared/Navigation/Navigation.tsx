@@ -4,14 +4,16 @@ import { ServerStatus } from '../ServerStatus';
 import styles from './Navigation.module.css';
 import { useDaylight } from '../../daylight/DaylightContext';
 import { NookButton } from '../../nook/NookButton';
-import { MemoryButton } from '../../memories/MemoryButton';
+// import { MemoryButton } from '../../memories/MemoryButton';
+import { MemoryPanel } from '../../memories/MemoryPanel';
 import { useNavHotkeys } from '../../../hooks/useNavHotkeys';
 import { useCalendarEventsContext } from '../../../contexts/CalendarEventsContext';
-import { useApiError } from '../ApiErrorContext';
+// import { useApiError } from '../ApiErrorContext';
 
 import { NAV_TABS, EXTERNAL_LINKS } from './constants';
 import { HoldButton } from './HoldButton';
-import { HoldLink } from './HoldLink';
+// import { HoldLink } from './HoldLink';
+import { NavOverflowMenu } from './NavOverflowMenu';
 import type { TabType } from './types';
 
 interface NavigationProps {
@@ -26,7 +28,7 @@ export function Navigation({ activeTab, lastTab, onTabChange, workMode = false }
     useNavHotkeys({ onTabChange, workMode });
     const [isMemoryPanelOpen, setIsMemoryPanelOpen] = React.useState(false);
     const calendarContext = useCalendarEventsContext();
-    const { addError } = useApiError();
+    // const { addError } = useApiError();
 
     // Prefetch calendar events on mount (±7 days)
     React.useEffect(() => {
@@ -73,28 +75,78 @@ export function Navigation({ activeTab, lastTab, onTabChange, workMode = false }
         }
     };
 
+    const primaryTabs = NAV_TABS.filter(tab => !tab.overflow && (!workMode || tab.showInWorkMode));
+    const overflowTabs = NAV_TABS.filter(tab => tab.overflow && (!workMode || tab.showInWorkMode));
+
     return (
         <div
             className={`${styles.navContainer} ${activeTab === 'daylight' ? styles.immersive : ''}`}
             style={navStyle}
         >
             <div className={styles.leftSection}>
-                <HoldButton
-                    onClick={handleDaylightClick}
-                    className={styles.tabBtn}
-                    color="#f59e0b"
-                    label="Opening Daylight"
-                >
-                    <SunDim size={20} weight="duotone" />
-                </HoldButton>
+                <div className={styles.leftButtonCluster}>
+                    <HoldButton
+                        onClick={handleDaylightClick}
+                        className={styles.tabBtn}
+                        color="#f59e0b"
+                        label="Opening Daylight"
+                    >
+                        <SunDim size={20} weight="duotone" />
+                    </HoldButton>
 
-                <NookButton />
+                    <NookButton />
+                </div>
 
                 <ServerStatus />
             </div>
 
             <div className={styles.tabSwitcher}>
-                {!workMode && (
+                {
+                    primaryTabs.map((tab, index, visibleTabs) => {
+                        const Icon = tab.icon;
+                        const isActive = tab.isActive ? tab.isActive(activeTab) : activeTab === tab.id;
+
+                        const handleClick = () => {
+                            if (tab.onClick) {
+                                tab.onClick({ onTabChange });
+                            } else {
+                                onTabChange(tab.id as TabType);
+                            }
+                        };
+
+                        return (
+                            <React.Fragment key={tab.id}>
+                                <button
+                                    className={`${styles.tabBtn} ${isActive ? styles.active : ''}`}
+                                    onClick={handleClick}
+                                >
+                                    <Icon
+                                        size={24}
+                                        weight={isActive ? (tab.useDuotone ? 'duotone' : 'bold') : 'regular'}
+                                        className={styles.navIcon}
+                                    />
+                                </button>
+                                {
+                                    tab.dividerAfter && (!workMode || index < visibleTabs.length - 1) && (
+                                        <span className={styles.navDivider} aria-hidden="true" />
+                                    )
+                                }
+                            </React.Fragment>
+                        );
+                    })
+                }
+                {!workMode && overflowTabs.length > 0 && (
+                    <NavOverflowMenu
+                        tabs={overflowTabs}
+                        externalLinks={EXTERNAL_LINKS}
+                        activeTab={activeTab}
+                        onTabChange={onTabChange}
+                        isMemoryPanelOpen={isMemoryPanelOpen}
+                        onOpenMemories={() => setIsMemoryPanelOpen(true)}
+                    />
+                )
+                }
+                {/* {!workMode && (
                     <MemoryButton
                         isPanelOpen={isMemoryPanelOpen}
                         onToggle={() => setIsMemoryPanelOpen(!isMemoryPanelOpen)}
@@ -115,55 +167,11 @@ export function Navigation({ activeTab, lastTab, onTabChange, workMode = false }
                         }}
                         className={`${styles.tabBtn} ${isMemoryPanelOpen ? styles.active : ''}`}
                     />
-                )}
-                {NAV_TABS.filter(tab => !workMode || tab.showInWorkMode).map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = tab.isActive ? tab.isActive(activeTab) : activeTab === tab.id;
-
-                    const handleClick = () => {
-                        if (tab.onClick) {
-                            tab.onClick({ onTabChange });
-                        } else {
-                            onTabChange(tab.id as TabType);
-                        }
-                    };
-
-                    return (
-                        <button
-                            key={tab.id}
-                            className={`${styles.tabBtn} ${isActive ? styles.active : ''}`}
-                            onClick={handleClick}
-                        >
-                            <Icon
-                                size={24}
-                                weight={isActive ? (tab.useDuotone ? 'duotone' : 'bold') : 'regular'}
-                                className={styles.navIcon}
-                            />
-                        </button>
-                    );
-                })}
-
+                )} */}
             </div>
-
-            {!workMode && (
-                <div className={styles.rightLinks}>
-                    {EXTERNAL_LINKS.map((link) => {
-                        const Icon = link.icon;
-                        return (
-                            <HoldLink
-                                key={link.id}
-                                href={link.href}
-                                className={styles.iconLink}
-                                color={link.color}
-                                label={link.label}
-                            >
-                                <Icon size={20} weight="duotone" />
-                            </HoldLink>
-                        );
-                    })}
-                </div>
+            {!workMode && isMemoryPanelOpen && (
+                <MemoryPanel onClose={() => setIsMemoryPanelOpen(false)} />
             )}
-            {workMode && <div className={styles.rightLinks} />}
         </div>
     );
 }

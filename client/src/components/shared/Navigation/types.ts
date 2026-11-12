@@ -19,6 +19,10 @@ export interface NavItem {
     isActive?: (activeTab: TabType) => boolean;
     /** Optional theme configuration for this tab */
     theme?: ThemeConfig;
+    /** Render a vertical divider after this item */
+    dividerAfter?: boolean;
+    /** Place this item inside the overflow popover menu instead of the main bar */
+    overflow?: boolean;
 }
 
 export interface ExternalLink {
