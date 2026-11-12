@@ -30,6 +30,7 @@ import {
   updateJournalNodePositions,
 } from "../../../api/journal";
 import { IdeaNodeCard, type IdeaNodeData } from "../components/IdeaNodeCard";
+import { getOpennessColors } from "../components/nodeTheme";
 import { FloatingEdge, type FloatingEdgeData } from "../components/FloatingEdge";
 import { FloatingConnectionLine } from "../components/FloatingConnectionLine";
 import { NodePopover } from "../components/NodePopover";
@@ -1266,6 +1267,7 @@ export function Garden({
   const filteredItems = (snapshot?.nodes || []).filter((n) =>
     q
       ? n.node.title.toLowerCase().includes(q) ||
+        (n.node.body?.toLowerCase().includes(q) ?? false) ||
         n.tags.some((t) => t.toLowerCase().includes(q))
       : true,
   );
@@ -1319,38 +1321,70 @@ export function Garden({
               </div>
             ) : (
               <div className={styles.gardenList}>
-                {filteredItems.map((item) => (
-                  <div
-                    key={item.node.id}
-                    className={styles.gardenListRow}
-                    onClick={() => setSelectedNode(item)}
-                  >
-                    <div className={styles.listRowMain}>
-                      <span className={styles.nodeKindBadge}>{item.node.kind}</span>
-                      <span className={styles.listRowTitle}>{item.node.title}</span>
-                      {item.tags.length > 0 && (
-                        <div className={styles.listRowTags}>
-                          {item.tags.map((t) => (
-                            <span key={t} className={styles.cardTag}>
-                              #{t}
-                            </span>
-                          ))}
+                {filteredItems.map((item) => {
+                  const colors = getOpennessColors(item.state.openness);
+                  const isHighPriority = item.state.priority >= 8;
+                  return (
+                    <div
+                      key={item.node.id}
+                      className={`${styles.gardenListRow} ${
+                        isHighPriority ? styles.gardenListRowHighPriority : ""
+                      }`}
+                      style={{
+                        backgroundColor: colors.bg,
+                        borderColor: colors.border,
+                      }}
+                      onClick={() => setSelectedNode(item)}
+                    >
+                      <div className={styles.listRowTop}>
+                        <div className={styles.listRowMeta}>
+                          <span
+                            className={styles.nodeKindBadge}
+                            style={{ color: colors.accent }}
+                          >
+                            {item.node.kind}
+                          </span>
+                          {item.tags.length > 0 && (
+                            <div className={styles.listRowTags}>
+                              {item.tags.map((t) => (
+                                <span key={t} className={styles.cardTag}>
+                                  #{t}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
+                        <div className={styles.listRowScores}>
+                          <span
+                            className={styles.scorePill}
+                            title={`Priority: ${item.state.priority}/10`}
+                          >
+                            P{item.state.priority}
+                          </span>
+                          <span
+                            className={styles.scorePill}
+                            title={`Intensity: ${item.state.intensity}/10`}
+                          >
+                            I{item.state.intensity}
+                          </span>
+                          <span
+                            className={styles.scorePill}
+                            style={{ color: colors.accent }}
+                            title={`Openness: ${item.state.openness}/10`}
+                          >
+                            O{item.state.openness}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className={styles.listRowTitle}>{item.node.title}</div>
+
+                      {item.node.body && (
+                        <div className={styles.listRowBody}>{item.node.body}</div>
                       )}
                     </div>
-                    <div className={styles.listRowScores}>
-                      <span className={styles.scorePill} title="Priority">
-                        P{item.state.priority}
-                      </span>
-                      <span className={styles.scorePill} title="Intensity">
-                        I{item.state.intensity}
-                      </span>
-                      <span className={styles.scorePill} title="Openness">
-                        O{item.state.openness}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
