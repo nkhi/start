@@ -190,7 +190,10 @@ export async function listJournalEntries(limit = 50): Promise<Entry[]> {
 
 export async function listJournalEntrySummaries(limit = 100): Promise<EntrySummary[]> {
   try {
-    const response = await fetchWithErrorReporting(`${JOURNAL_API}/entries/summaries?limit=${limit}`);
+    const response = await fetchWithErrorReporting(
+      `${JOURNAL_API}/entries/summaries?limit=${limit}`,
+      { cache: 'no-store' },
+    );
     if (!response.ok) return [];
     const data = await response.json();
     return Array.isArray(data) ? data : [];

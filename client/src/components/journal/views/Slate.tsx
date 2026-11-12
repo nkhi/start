@@ -260,10 +260,13 @@ export function Slate({
     if (editor) {
       isProgrammaticRef.current = true;
       try {
-        const json = JSON.parse(summary.entry.doc_json);
+        const json =
+          typeof summary.entry.doc_json === "string"
+            ? JSON.parse(summary.entry.doc_json)
+            : summary.entry.doc_json;
         editor.commands.setContent(json, { emitUpdate: false });
       } catch {
-        editor.commands.setContent(`<p>${summary.entry.plain_text}</p>`, {
+        editor.commands.setContent(`<p>${summary.entry.plain_text || ""}</p>`, {
           emitUpdate: false,
         });
       }

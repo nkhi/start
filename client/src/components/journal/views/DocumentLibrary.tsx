@@ -90,7 +90,7 @@ export function DocumentLibrary({
             {filtered.map((item) => {
               const primaryTitle =
                 item.primary_node?.node.title || "Reflective Journal";
-              const plainSnippet = item.entry.plain_text.trim();
+              const plainSnippet = (item.entry.plain_text || "").trim();
               const dateStr = formatTimestamp(item.entry.updated_at);
 
               return (

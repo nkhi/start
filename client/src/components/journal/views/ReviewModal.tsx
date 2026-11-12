@@ -52,10 +52,12 @@ export function ReviewModal({
   }, [isOpen, primaryNode?.node.id]);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   if (!isOpen || allNodes.length === 0) return null;
 
   const handleSkip = () => {
+    setSaveError(null);
     onComplete();
     onClose();
   };
@@ -77,6 +79,7 @@ export function ReviewModal({
   const handleSaveAll = async () => {
     try {
       setIsSaving(true);
+      setSaveError(null);
       for (const n of allNodes) {
         const sc = scores[n.node.id];
         if (sc) {
@@ -93,6 +96,11 @@ export function ReviewModal({
       onClose();
     } catch (err) {
       console.error("Failed to save post-session scores:", err);
+      setSaveError(
+        err instanceof Error
+          ? err.message
+          : "Could not save score updates. Please try again.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -159,6 +167,12 @@ export function ReviewModal({
             );
           })}
         </div>
+
+        {saveError && (
+          <p className={styles.saveError} role="alert">
+            {saveError}
+          </p>
+        )}
 
         <div className={styles.modalActions}>
           <button className={styles.btnSecondary} onClick={handleSkip}>

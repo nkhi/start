@@ -215,6 +215,18 @@ router.post('/nodes/:id/state', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { priority, intensity, openness, source } = req.body;
 
+  const p = Number(priority);
+  const i = Number(intensity);
+  const o = Number(openness);
+  if (!Number.isFinite(p) || !Number.isFinite(i) || !Number.isFinite(o)) {
+    return res.status(400).json({ error: 'Valid numeric scores are required' });
+  }
+
+  const cleanPriority = Math.min(10, Math.max(1, Math.round(p)));
+  const cleanIntensity = Math.min(10, Math.max(1, Math.round(i)));
+  const cleanOpenness = Math.min(10, Math.max(1, Math.round(o)));
+  const cleanSource = typeof source === 'string' && source.trim() ? source.trim() : 'manual';
+
   try {
     const result = await db.query(`
       UPDATE journal_nodes
@@ -222,16 +234,16 @@ router.post('/nodes/:id/state', async (req: Request, res: Response) => {
           intensity = $2,
           openness = $3,
           updated_at = NOW(),
-          score_history = score_history || jsonb_build_object(
+          score_history = COALESCE(score_history, '[]'::jsonb) || jsonb_build_object(
             'at', NOW(),
             'priority', $1::int2,
             'intensity', $2::int2,
             'openness', $3::int2,
-            'source', $4
+            'source', $4::text
           )::jsonb
       WHERE id = $5
       RETURNING priority, intensity, openness, updated_at;
-    `, [priority, intensity, openness, source || 'manual', id]);
+    `, [cleanPriority, cleanIntensity, cleanOpenness, cleanSource, id]);
 
     if (result.rows.length === 0) return res.status(404).json({ error: 'Node not found' });
 
@@ -241,7 +253,7 @@ router.post('/nodes/:id/state', async (req: Request, res: Response) => {
       priority: row.priority,
       intensity: row.intensity,
       openness: row.openness,
-      source: source || 'manual',
+      source: cleanSource,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -314,6 +326,19 @@ router.delete('/edges/:id', async (req: Request, res: Response) => {
   }
 });
 
+function formatEntryRow(row: Record<string, any>) {
+  return {
+    id: row.id,
+    doc_json: row.doc_json,
+    plain_text: row.plain_text ?? '',
+    word_count: row.word_count ?? 0,
+    primary_node_id: row.primary_node_id ?? undefined,
+    started_at: Math.floor(new Date(row.started_at).getTime() / 1000),
+    updated_at: Math.floor(new Date(row.updated_at).getTime() / 1000),
+    rev: row.rev,
+  };
+}
+
 // 8. POST /api/journal/entries - Upsert reflection document
 router.post('/entries', async (req: Request, res: Response) => {
   const { id, doc_json, plain_text, primary_node_id, mentioned_node_ids, word_count, suggestion_id } = req.body;
@@ -337,46 +362,15 @@ router.post('/entries', async (req: Request, res: Response) => {
       RETURNING *;
     `, [id, primary_node_id || null, mentioned_node_ids || [], doc_json, plain_text || '', wc, suggestion_id || null]);
 
-    const row = result.rows[0];
-    res.json({
-      id: row.id,
-      doc_json: row.doc_json,
-      plain_text: row.plain_text,
-      word_count: row.word_count,
-      primary_node_id: row.primary_node_id,
-      started_at: Math.floor(new Date(row.started_at).getTime() / 1000),
-      updated_at: Math.floor(new Date(row.updated_at).getTime() / 1000),
-      rev: row.rev,
-    });
+    res.json(formatEntryRow(result.rows[0]));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 8b. GET /api/journal/entries/:id - Get single entry
-router.get('/entries/:id', async (req: Request, res: Response) => {
-  const { id } = req.params;
-  try {
-    const result = await db.query(`SELECT * FROM journal_entries WHERE id = $1;`, [id]);
-    if (result.rows.length === 0) return res.json(null);
-    const row = result.rows[0];
-    res.json({
-      id: row.id,
-      doc_json: row.doc_json,
-      plain_text: row.plain_text,
-      word_count: row.word_count,
-      primary_node_id: row.primary_node_id,
-      started_at: Math.floor(new Date(row.started_at).getTime() / 1000),
-      updated_at: Math.floor(new Date(row.updated_at).getTime() / 1000),
-      rev: row.rev,
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// 8c. GET /api/journal/entries - List entries
+// 8b. GET /api/journal/entries - List entries
 router.get('/entries', async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store');
   const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
   try {
     const result = await db.query(`
@@ -385,16 +379,7 @@ router.get('/entries', async (req: Request, res: Response) => {
       ORDER BY updated_at DESC
       LIMIT $1;
     `, [limit]);
-    res.json(result.rows.map(row => ({
-      id: row.id,
-      doc_json: row.doc_json,
-      plain_text: row.plain_text,
-      word_count: row.word_count,
-      primary_node_id: row.primary_node_id,
-      started_at: Math.floor(new Date(row.started_at).getTime() / 1000),
-      updated_at: Math.floor(new Date(row.updated_at).getTime() / 1000),
-      rev: row.rev,
-    })));
+    res.json(result.rows.map(formatEntryRow));
   } catch (err: any) {
     console.error('Error fetching journal entries:', err);
     res.json([]);
@@ -402,54 +387,68 @@ router.get('/entries', async (req: Request, res: Response) => {
 });
 
 // 9. GET /api/journal/entries/summaries - Fast document library grid
+// Registered before /entries/:id so "summaries" is not matched as :id.
 router.get('/entries/summaries', async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store');
   try {
-    const limit = parseInt(req.query.limit as string) || 100;
+    const limit = Math.min(parseInt(req.query.limit as string, 10) || 100, 200);
     const result = await db.query(`
       SELECT 
         e.id AS entry_id,
         e.doc_json,
         e.plain_text,
         e.word_count,
+        e.primary_node_id,
         e.started_at,
         e.updated_at,
         e.rev,
         n.id AS node_id,
         n.title AS node_title,
         n.kind AS node_kind,
+        n.body AS node_body,
+        n.pos_x AS node_pos_x,
+        n.pos_y AS node_pos_y,
         n.priority AS node_priority,
         n.intensity AS node_intensity,
         n.openness AS node_openness,
-        n.tags AS node_tags
+        n.tags AS node_tags,
+        n.archived AS node_archived,
+        n.created_at AS node_created_at,
+        n.updated_at AS node_updated_at
       FROM journal_entries e
       LEFT JOIN journal_nodes n ON n.id = e.primary_node_id
       ORDER BY e.updated_at DESC
       LIMIT $1;
     `, [limit]);
 
-    const summaries = (result.rows || []).map(r => ({
-      entry: {
+    const summaries = (result.rows || []).map((r) => ({
+      entry: formatEntryRow({
         id: r.entry_id,
         doc_json: r.doc_json,
         plain_text: r.plain_text,
         word_count: r.word_count,
-        started_at: Math.floor(new Date(r.started_at).getTime() / 1000),
-        updated_at: Math.floor(new Date(r.updated_at).getTime() / 1000),
+        primary_node_id: r.primary_node_id,
+        started_at: r.started_at,
+        updated_at: r.updated_at,
         rev: r.rev,
-      },
-      primary_node: r.node_id ? {
-        node: {
-          id: r.node_id,
-          title: r.node_title,
-          kind: r.node_kind,
-        },
-        state: {
-          priority: r.node_priority,
-          intensity: r.node_intensity,
-          openness: r.node_openness,
-        },
-        tags: r.node_tags || [],
-      } : null,
+      }),
+      primary_node: r.node_id
+        ? formatNodeWithState({
+            id: r.node_id,
+            kind: r.node_kind,
+            title: r.node_title,
+            body: r.node_body,
+            pos_x: r.node_pos_x,
+            pos_y: r.node_pos_y,
+            archived: r.node_archived,
+            priority: r.node_priority,
+            intensity: r.node_intensity,
+            openness: r.node_openness,
+            tags: r.node_tags,
+            created_at: r.node_created_at,
+            updated_at: r.node_updated_at,
+          })
+        : null,
       mentioned_nodes: [],
     }));
 
@@ -457,6 +456,19 @@ router.get('/entries/summaries', async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('Error fetching entry summaries:', err);
     res.json([]);
+  }
+});
+
+// 8c. GET /api/journal/entries/:id - Get single entry
+router.get('/entries/:id', async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const { id } = req.params;
+  try {
+    const result = await db.query(`SELECT * FROM journal_entries WHERE id = $1;`, [id]);
+    if (result.rows.length === 0) return res.json(null);
+    res.json(formatEntryRow(result.rows[0]));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
