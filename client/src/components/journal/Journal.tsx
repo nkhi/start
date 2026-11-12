@@ -8,6 +8,7 @@ import type {
 import {
   getJournalGraph,
   getJournalSuggestion,
+  getNextJournalSuggestion,
 } from "../../api/journal";
 import { SplitLayout, type PaneMode } from "./layouts/SplitLayout";
 import { ViewSwitcher } from "./components/ViewSwitcher";
@@ -39,10 +40,12 @@ export function Journal() {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [connectedNodes, setConnectedNodes] = useState<NodeWithState[]>([]);
 
-  // Fetches next suggested topic using the ranking algorithm
-  const loadSuggestion = async (excludeId?: string) => {
+  // Fetches the current or next server-selected topic suggestion
+  const loadSuggestion = async (advance = false) => {
     try {
-      const suggestion = await getJournalSuggestion(excludeId);
+      const suggestion = advance
+        ? await getNextJournalSuggestion()
+        : await getJournalSuggestion();
       if (suggestion) {
         setActiveNode(suggestion.node);
         setBreakdown(suggestion.breakdown);
@@ -102,11 +105,10 @@ export function Journal() {
 
   // Called when reflection review is saved or skipped
   const handleReviewComplete = async () => {
-    const finishedId = activeNode?.node.id;
     const snap = await getJournalGraph();
     setSnapshot(snap || { nodes: [], edges: [] });
-    // Immediately rotate to the next high-scoring topic, excluding the one just finished
-    await loadSuggestion(finishedId);
+    // Advance the server-side suggestion cycle to the next topic
+    await loadSuggestion(true);
     setSessionKey((prev) => prev + 1);
   };
 
@@ -213,7 +215,7 @@ export function Journal() {
       ) : (
         <button
           className={styles.btnToolbarAction}
-          onClick={() => loadSuggestion(activeNode?.node.id)}
+          onClick={() => loadSuggestion(true)}
           title="Cycle to next suggested question"
         >
           ↻ Next topic

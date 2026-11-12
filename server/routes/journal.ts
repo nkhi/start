@@ -15,6 +15,7 @@ import type {
   CreateJournalEdgeRequest,
   SaveJournalEntryRequest,
 } from '../../shared/types.ts';
+import type { DbJournalNode } from '../db-types.ts';
 
 const router = express.Router();
 
@@ -459,53 +460,130 @@ router.get('/entries/summaries', async (req: Request, res: Response) => {
   }
 });
 
-// 10. GET /api/journal/suggest - Algorithmic 6-hr suggestion
-router.get('/suggest', async (req: Request, res: Response) => {
-  const { excludeId } = req.query as { excludeId?: string };
+export interface SuggestionCycleState {
+  currentId: string | null;
+  seenIds: Set<string>;
+}
 
+const suggestionCycleState: SuggestionCycleState = {
+  currentId: null,
+  seenIds: new Set<string>(),
+};
+
+/**
+ * Selects the current or next unarchived topic from pre-ranked rows so cycling
+ * visits every topic once before starting a fresh pass without immediate repeats.
+ */
+export function selectSuggestionFromRows<T extends { id: string }>(
+  rows: T[],
+  cycleState: SuggestionCycleState,
+  advance: boolean,
+  excludedId?: string,
+): T | null {
+  if (rows.length === 0) {
+    cycleState.currentId = null;
+    cycleState.seenIds.clear();
+    return null;
+  }
+
+  const activeIds = new Set(rows.map((row) => row.id));
+  for (const id of cycleState.seenIds) {
+    if (!activeIds.has(id)) {
+      cycleState.seenIds.delete(id);
+    }
+  }
+  if (cycleState.currentId && !activeIds.has(cycleState.currentId)) {
+    cycleState.currentId = null;
+  }
+
+  const effectiveExcludedId = excludedId && activeIds.has(excludedId) ? excludedId : undefined;
+  const shouldAdvance =
+    advance || (effectiveExcludedId !== undefined && effectiveExcludedId === cycleState.currentId);
+
+  if (!shouldAdvance && cycleState.currentId) {
+    const existing = rows.find((row) => row.id === cycleState.currentId);
+    if (existing) {
+      cycleState.seenIds.add(existing.id);
+      return existing;
+    }
+  }
+
+  if (cycleState.currentId) {
+    cycleState.seenIds.add(cycleState.currentId);
+  }
+  if (effectiveExcludedId) {
+    cycleState.seenIds.add(effectiveExcludedId);
+  }
+
+  const unseen = rows.filter((row) => !cycleState.seenIds.has(row.id));
+  let chosen: T;
+
+  if (unseen.length > 0) {
+    chosen = unseen[0];
+  } else {
+    // Completed a full pass over all unarchived topics; start the next pass without an immediate repeat.
+    const previousId = effectiveExcludedId ?? cycleState.currentId;
+    cycleState.seenIds.clear();
+    chosen = rows.find((row) => row.id !== previousId) ?? rows[0];
+  }
+
+  cycleState.currentId = chosen.id;
+  cycleState.seenIds.add(chosen.id);
+  return chosen;
+}
+
+function buildSuggestionResponse(row: DbJournalNode) {
+  return {
+    node: formatNodeWithState(row),
+    breakdown: {
+      total: Number((row.priority * 0.4 + row.openness * 0.4).toFixed(1)),
+      priority_term: Number((row.priority * 0.4).toFixed(1)),
+      intensity_term: Number((row.intensity * 0.2).toFixed(1)),
+      openness_term: Number((row.openness * 0.3).toFixed(1)),
+      salience_term: 0,
+      recurrence_term: 0,
+      staleness_term: 0,
+      penalty_term: 0,
+      why_summary: row.priority >= 8 ? 'High priority inquiry' : 'Open thread to revisit',
+    },
+    bucket: Math.floor(Date.now() / (1000 * 21600)),
+  };
+}
+
+async function handleSuggestionRequest(res: Response, advance: boolean, excludedId?: string) {
+  res.setHeader('Cache-Control', 'no-store');
   try {
     const result = await db.query(`
-      SELECT id, title, kind, priority, intensity, openness, tags, updated_at
+      SELECT *
       FROM journal_nodes
-      WHERE archived = false ${excludeId ? 'AND id != $1' : ''}
-      ORDER BY (priority * 1.5 + openness * 1.2) DESC, updated_at DESC
-      LIMIT 1;
-    `, excludeId ? [excludeId] : []);
+      WHERE archived = false
+      ORDER BY (priority * 1.5 + openness * 1.2) DESC, updated_at DESC, id ASC;
+    `);
 
-    if (!result || result.rows.length === 0) return res.json(null);
-    const row = result.rows[0];
+    const chosen = selectSuggestionFromRows(
+      (result?.rows || []) as DbJournalNode[],
+      suggestionCycleState,
+      advance,
+      excludedId,
+    );
 
-    res.json({
-      node: {
-        node: {
-          id: row.id,
-          title: row.title,
-          kind: row.kind,
-        },
-        state: {
-          priority: row.priority,
-          intensity: row.intensity,
-          openness: row.openness,
-        },
-        tags: row.tags || [],
-      },
-      breakdown: {
-        total: Number((row.priority * 0.4 + row.openness * 0.4).toFixed(1)),
-        priority_term: Number((row.priority * 0.4).toFixed(1)),
-        intensity_term: Number((row.intensity * 0.2).toFixed(1)),
-        openness_term: Number((row.openness * 0.3).toFixed(1)),
-        salience_term: 0,
-        recurrence_term: 0,
-        staleness_term: 0,
-        penalty_term: 0,
-        why_summary: row.priority >= 8 ? 'High priority inquiry' : 'Open thread to revisit',
-      },
-      bucket: Math.floor(Date.now() / (1000 * 21600)),
-    });
+    if (!chosen) return res.json(null);
+    return res.json(buildSuggestionResponse(chosen));
   } catch (err: any) {
     console.error('Error fetching suggestion:', err);
-    res.json(null);
+    return res.json(null);
   }
+}
+
+// 10. GET /api/journal/suggest - Current ranked topic suggestion (server-managed cycle)
+router.get('/suggest', async (req: Request, res: Response) => {
+  const { excludeId } = req.query as { excludeId?: string };
+  await handleSuggestionRequest(res, false, excludeId);
+});
+
+// 10b. POST /api/journal/suggest/next - Advance server-managed topic cycle
+router.post('/suggest/next', async (_req: Request, res: Response) => {
+  await handleSuggestionRequest(res, true);
 });
 
 // 11. Outline Parser Helper

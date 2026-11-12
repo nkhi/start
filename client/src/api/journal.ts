@@ -200,12 +200,12 @@ export async function listJournalEntrySummaries(limit = 100): Promise<EntrySumma
   }
 }
 
-export async function getJournalSuggestion(excludeNodeId?: string): Promise<SuggestionResponse | null> {
+async function fetchJournalSuggestion(url: string, init?: RequestInit): Promise<SuggestionResponse | null> {
   try {
-    const url = excludeNodeId
-      ? `${JOURNAL_API}/suggest?excludeId=${encodeURIComponent(excludeNodeId)}`
-      : `${JOURNAL_API}/suggest`;
-    const response = await fetchWithErrorReporting(url);
+    const response = await fetchWithErrorReporting(url, {
+      cache: 'no-store',
+      ...init,
+    });
     if (!response.ok) return null;
     const data = await response.json();
     return data || null;
@@ -213,6 +213,14 @@ export async function getJournalSuggestion(excludeNodeId?: string): Promise<Sugg
     console.warn('Failed to get journal suggestion:', err);
     return null;
   }
+}
+
+export async function getJournalSuggestion(): Promise<SuggestionResponse | null> {
+  return fetchJournalSuggestion(`${JOURNAL_API}/suggest`);
+}
+
+export async function getNextJournalSuggestion(): Promise<SuggestionResponse | null> {
+  return fetchJournalSuggestion(`${JOURNAL_API}/suggest/next`, { method: 'POST' });
 }
 
 export async function parseJournalSeed(outline: string): Promise<ParsedSeedGraph> {
