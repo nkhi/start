@@ -9,7 +9,7 @@ import {
   GARDEN_ARROW_MARKER_PATH,
   getFloatingEdgeParams,
   getRelationStyle,
-} from "./edgeGeometry";
+} from "../utils/edgeGeometry";
 import styles from "./FloatingEdge.module.css";
 
 export interface FloatingEdgeData extends Record<string, unknown> {

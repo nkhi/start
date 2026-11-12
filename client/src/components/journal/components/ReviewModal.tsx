@@ -2,14 +2,8 @@ import { useEffect, useState } from "react";
 import type { NodeWithState } from "../../../types";
 import { setJournalNodeState } from "../../../api/journal";
 import { useJournal } from "../JournalContext";
-import { ScoreSlider } from "../components/ScoreSlider";
+import { ThoughtScoreSliders, type ThoughtScores } from "./ScoreSlider";
 import styles from "./ReviewModal.module.css";
-
-interface NodeScores {
-  priority: number;
-  intensity: number;
-  openness: number;
-}
 
 export function ReviewModal() {
   const {
@@ -20,7 +14,6 @@ export function ReviewModal() {
     completeReview,
   } = useJournal();
 
-  // Collect all nodes to review: primary first, followed by connected
   const allNodes: NodeWithState[] = [];
   if (primaryNode) {
     allNodes.push(primaryNode);
@@ -31,11 +24,11 @@ export function ReviewModal() {
     }
   }
 
-  const [scores, setScores] = useState<Record<string, NodeScores>>({});
+  const [scores, setScores] = useState<Record<string, ThoughtScores>>({});
 
   useEffect(() => {
     if (!isOpen) return;
-    const initial: Record<string, NodeScores> = {};
+    const initial: Record<string, ThoughtScores> = {};
     if (primaryNode) {
       initial[primaryNode.node.id] = {
         priority: primaryNode.state.priority,
@@ -68,7 +61,7 @@ export function ReviewModal() {
 
   const updateScore = (
     nodeId: string,
-    field: "priority" | "intensity" | "openness",
+    field: keyof ThoughtScores,
     val: number,
   ) => {
     setScores((prev) => ({
@@ -142,29 +135,9 @@ export function ReviewModal() {
                 </div>
 
                 <div className={styles.reviewSliders}>
-                  <ScoreSlider
-                    label="Priority"
-                    value={sc.priority}
-                    onChange={(val) => updateScore(item.node.id, "priority", val)}
-                    minLabel="1 (Backburner)"
-                    maxLabel="10 (Urgent)"
-                    color="var(--ink)"
-                  />
-                  <ScoreSlider
-                    label="Intensity"
-                    value={sc.intensity}
-                    onChange={(val) => updateScore(item.node.id, "intensity", val)}
-                    minLabel="1 (Quiet)"
-                    maxLabel="10 (Heavy)"
-                    color="var(--warm)"
-                  />
-                  <ScoreSlider
-                    label="Openness"
-                    value={sc.openness}
-                    onChange={(val) => updateScore(item.node.id, "openness", val)}
-                    minLabel="1 (Resolved)"
-                    maxLabel="10 (Wide Open)"
-                    color="var(--accent)"
+                  <ThoughtScoreSliders
+                    scores={sc}
+                    onChange={(field, val) => updateScore(item.node.id, field, val)}
                   />
                 </div>
               </div>

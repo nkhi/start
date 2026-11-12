@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { SeedEdge } from "../../../types";
 import { commitJournalBatch, parseJournalSeed } from "../../../api/journal";
-import { ScoreSlider } from "./ScoreSlider";
+import { THOUGHT_KINDS } from "../utils/nodeTheme";
+import { ThoughtScoreSliders } from "./ScoreSlider";
 import styles from "./NewNodeModal.module.css";
 
 interface NewNodeModalProps {
@@ -23,8 +24,6 @@ export interface DraftThought {
   originalTitle?: string;
 }
 
-const KINDS = ["question", "idea", "phrase", "person", "area", "thought"];
-
 const DEFAULT_OUTLINE = `- What do I actually want from my career? {p:9 i:7 o:10} #work
   - Am I staying for money or meaning?
   - Fear of disappointing [[Dad]]
@@ -32,15 +31,14 @@ const DEFAULT_OUTLINE = `- What do I actually want from my career? {p:9 i:7 o:10
 - "I'm always behind" #phrase`;
 
 /**
- * Parses inline tags (#tag) and optional score notation {p:9 i:7 o:8}
+ * Parses inline tags (`#tag`) and optional score notation (`{p:9 i:7 o:8}`)
  * from a quick single-line thought string.
  */
 function parseQuickThought(rawText: string): DraftThought {
   const text = rawText.trim();
   const tags: string[] = [];
 
-  // Extract tags: #tag
-  const tagMatches = text.match(/#([a-zA-Z0-9_\-]+)/g);
+  const tagMatches = text.match(/#([a-zA-Z0-9_-]+)/g);
   if (tagMatches) {
     for (const m of tagMatches) {
       const cleanTag = m.replace(/^#/, "").trim();
@@ -50,7 +48,6 @@ function parseQuickThought(rawText: string): DraftThought {
     }
   }
 
-  // Extract scores: {p:8 i:7 o:9}
   let priority = 6;
   let intensity = 5;
   let openness = 8;
@@ -64,14 +61,12 @@ function parseQuickThought(rawText: string): DraftThought {
     if (oM) openness = Math.min(10, Math.max(1, parseInt(oM[1], 10)));
   }
 
-  // Clean title
   let cleanTitle = text
     .replace(/\{[^}]+\}/g, "")
-    .replace(/#([a-zA-Z0-9_\-]+)/g, "")
+    .replace(/#([a-zA-Z0-9_-]+)/g, "")
     .replace(/^-\s*/, "")
     .trim();
 
-  // If empty after stripping, fall back to raw
   if (!cleanTitle) cleanTitle = text;
 
   const kind = cleanTitle.endsWith("?") ? "question" : "thought";
@@ -95,24 +90,18 @@ export function NewNodeModal({
   onCreated,
   initialMode = "list",
 }: NewNodeModalProps) {
-  // Stage 1: Add Thoughts | Stage 2: Tune Dials
   const [stage, setStage] = useState<1 | 2>(1);
   const [inputMode, setInputMode] = useState<"list" | "outline">(initialMode);
 
-  // Stage 1 states
   const [quickInput, setQuickInput] = useState("");
   const [thoughts, setThoughts] = useState<DraftThought[]>([]);
   const [outlineText, setOutlineText] = useState(DEFAULT_OUTLINE);
   const [parsedEdges, setParsedEdges] = useState<SeedEdge[]>([]);
-
-  // Stage 2 states
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Status
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset when opening
   useEffect(() => {
     if (isOpen) {
       setStage(1);
@@ -128,7 +117,6 @@ export function NewNodeModal({
 
   if (!isOpen) return null;
 
-  // Add thought in quick list
   const handleAddQuick = () => {
     if (!quickInput.trim()) return;
     const item = parseQuickThought(quickInput);
@@ -140,7 +128,6 @@ export function NewNodeModal({
     setThoughts((prev) => prev.filter((t) => t.tempId !== tempId));
   };
 
-  // Move from Stage 1 to Stage 2
   const handleProceedToStage2 = async () => {
     setError(null);
 
@@ -154,7 +141,6 @@ export function NewNodeModal({
         const parsed = await parseJournalSeed(outlineText);
         if (!parsed.nodes || parsed.nodes.length === 0) {
           setError("No thoughts could be detected in this outline.");
-          setIsSubmitting(false);
           return;
         }
 
@@ -174,37 +160,19 @@ export function NewNodeModal({
         setParsedEdges(parsed.edges || []);
         setActiveIndex(0);
         setStage(2);
-      } catch (err: any) {
-        setError(err?.toString() || "Failed to parse outline");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to parse outline");
       } finally {
         setIsSubmitting(false);
       }
-    } else {
-      // List mode: if user typed something but didn't hit Add, include it
-      let finalThoughts = [...thoughts];
-      if (quickInput.trim()) {
-        const item = parseQuickThought(quickInput);
-        finalThoughts.push(item);
-        setThoughts(finalThoughts);
-        setQuickInput("");
-      }
-
-      if (finalThoughts.length === 0) {
-        setError("Please add at least one question or thought.");
-        return;
-      }
-
-      setActiveIndex(0);
-      setStage(2);
+      return;
     }
-  };
 
-  // Quick plant directly from Stage 1 with default dials
-  const handleQuickPlant = async () => {
-    let finalThoughts = [...thoughts];
+    const finalThoughts = [...thoughts];
     if (quickInput.trim()) {
-      const item = parseQuickThought(quickInput);
-      finalThoughts.push(item);
+      finalThoughts.push(parseQuickThought(quickInput));
+      setThoughts(finalThoughts);
+      setQuickInput("");
     }
 
     if (finalThoughts.length === 0) {
@@ -212,17 +180,10 @@ export function NewNodeModal({
       return;
     }
 
-    await commitThoughts(finalThoughts, []);
+    setActiveIndex(0);
+    setStage(2);
   };
 
-  // Update current active thought in Stage 2
-  const updateActiveThought = (updates: Partial<DraftThought>) => {
-    setThoughts((prev) =>
-      prev.map((item, idx) => (idx === activeIndex ? { ...item, ...updates } : item)),
-    );
-  };
-
-  // Commit all thoughts to database atomically via batch endpoint
   const commitThoughts = async (
     itemsToCommit: DraftThought[],
     edgesToCommit: SeedEdge[],
@@ -252,15 +213,33 @@ export function NewNodeModal({
 
       onCreated();
       onClose();
-    } catch (err: any) {
-      setError(err?.toString() || "Failed to commit garden thoughts");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to commit garden thoughts",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handlePlantFromStage2 = () => {
-    commitThoughts(thoughts, parsedEdges);
+  const handleQuickPlant = async () => {
+    const finalThoughts = [...thoughts];
+    if (quickInput.trim()) {
+      finalThoughts.push(parseQuickThought(quickInput));
+    }
+
+    if (finalThoughts.length === 0) {
+      setError("Please add at least one question or thought.");
+      return;
+    }
+
+    await commitThoughts(finalThoughts, []);
+  };
+
+  const updateActiveThought = (updates: Partial<DraftThought>) => {
+    setThoughts((prev) =>
+      prev.map((item, idx) => (idx === activeIndex ? { ...item, ...updates } : item)),
+    );
   };
 
   const activeThought = thoughts[activeIndex] || null;
@@ -271,7 +250,6 @@ export function NewNodeModal({
         className={`${styles.modalCard} ${styles.addThoughtCard}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className={styles.modalHeader}>
           <h2>{stage === 1 ? "Add to Garden" : "Tune Garden Dials"}</h2>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Close">
@@ -279,7 +257,6 @@ export function NewNodeModal({
           </button>
         </div>
 
-        {/* Stepper Navigation */}
         <div className={styles.modalStepper}>
           <div
             className={`${styles.modalStepBadge} ${stage === 1 ? styles.activeStep : styles.completedStep}`}
@@ -295,7 +272,6 @@ export function NewNodeModal({
           </div>
         </div>
 
-        {/* STAGE 1: Add Thoughts */}
         {stage === 1 && (
           <div className={styles.modalStageBody}>
             <p className={styles.modalSubtitle}>
@@ -303,7 +279,6 @@ export function NewNodeModal({
               the dials, tags, and type for each one.
             </p>
 
-            {/* Input Mode Toggle */}
             <div className={styles.modalTabBar}>
               <button
                 type="button"
@@ -402,7 +377,6 @@ export function NewNodeModal({
 
             {error && <div className={styles.modalError}>{error}</div>}
 
-            {/* Stage 1 Actions */}
             <div className={styles.modalActions}>
               <button type="button" className={styles.btnSecondary} onClick={onClose}>
                 Cancel
@@ -442,10 +416,8 @@ export function NewNodeModal({
           </div>
         )}
 
-        {/* STAGE 2: Tune Dials for Each Thought */}
         {stage === 2 && activeThought && (
           <div className={styles.modalStageBody}>
-            {/* Thought Selector / Stepper */}
             <div className={styles.stage2NavHeader}>
               <div className={styles.stage2PillsBar}>
                 {thoughts.map((t, idx) => (
@@ -490,7 +462,6 @@ export function NewNodeModal({
               </div>
             </div>
 
-            {/* Active Thought Configuration Fields */}
             <div className={styles.stage2EditorBox}>
               <div className={styles.modalField}>
                 <label className={styles.modalLabel}>Question / Thought</label>
@@ -512,7 +483,7 @@ export function NewNodeModal({
                     value={activeThought.kind}
                     onChange={(e) => updateActiveThought({ kind: e.target.value })}
                   >
-                    {KINDS.map((k) => (
+                    {THOUGHT_KINDS.map((k) => (
                       <option key={k} value={k}>
                         {k}
                       </option>
@@ -529,9 +500,9 @@ export function NewNodeModal({
                     onChange={(e) =>
                       updateActiveThought({
                         tags: e.target.value
-                            .split(",")
-                            .map((t) => t.trim().replace(/^#/, ""))
-                            .filter((t) => t.length > 0),
+                          .split(",")
+                          .map((t) => t.trim().replace(/^#/, ""))
+                          .filter((t) => t.length > 0),
                       })
                     }
                     placeholder="career, purpose"
@@ -551,36 +522,15 @@ export function NewNodeModal({
               </div>
 
               <div className={styles.modalSlidersBox}>
-                <ScoreSlider
-                  label="Priority"
-                  value={activeThought.priority}
-                  onChange={(val) => updateActiveThought({ priority: val })}
-                  minLabel="1 (Backburner)"
-                  maxLabel="10 (Urgent)"
-                  color="var(--ink)"
-                />
-                <ScoreSlider
-                  label="Intensity"
-                  value={activeThought.intensity}
-                  onChange={(val) => updateActiveThought({ intensity: val })}
-                  minLabel="1 (Quiet)"
-                  maxLabel="10 (Heavy)"
-                  color="var(--warm)"
-                />
-                <ScoreSlider
-                  label="Openness"
-                  value={activeThought.openness}
-                  onChange={(val) => updateActiveThought({ openness: val })}
-                  minLabel="1 (Resolved)"
-                  maxLabel="10 (Wide Open)"
-                  color="var(--accent)"
+                <ThoughtScoreSliders
+                  scores={activeThought}
+                  onChange={(field, val) => updateActiveThought({ [field]: val })}
                 />
               </div>
             </div>
 
             {error && <div className={styles.modalError}>{error}</div>}
 
-            {/* Stage 2 Actions */}
             <div className={styles.modalActions}>
               <button
                 type="button"
@@ -603,7 +553,7 @@ export function NewNodeModal({
               <button
                 type="button"
                 className={styles.btnPrimary}
-                onClick={handlePlantFromStage2}
+                onClick={() => void commitThoughts(thoughts, parsedEdges)}
                 disabled={isSubmitting || thoughts.length === 0}
               >
                 {isSubmitting

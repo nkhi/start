@@ -2,7 +2,7 @@ import { Position, type InternalNode, type Node } from "@xyflow/react";
 import {
   CARD_DEFAULT_HEIGHT,
   CARD_DEFAULT_WIDTH,
-} from "../layout/gardenPhysics";
+} from "./gardenPhysics";
 
 export const GARDEN_ARROW_MARKER_PATH =
   "M -13,-5.2 Q -7,-1.6 0,0 Q -7,1.6 -13,5.2 L -9.6,0 Z";

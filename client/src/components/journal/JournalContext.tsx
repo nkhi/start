@@ -19,7 +19,7 @@ import {
   getJournalSuggestion,
   getNextJournalSuggestion,
 } from "../../api/journal";
-import type { PaneMode } from "./layouts/SplitLayout";
+import type { PaneMode } from "./components/SplitLayout";
 
 interface JournalContextType {
   // Layout & View Modes

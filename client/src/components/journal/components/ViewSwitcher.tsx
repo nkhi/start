@@ -4,7 +4,7 @@ import {
   SquareSplitHorizontalIcon,
   type Icon,
 } from "@phosphor-icons/react";
-import type { PaneMode } from "../layouts/SplitLayout";
+import type { PaneMode } from "./SplitLayout";
 import styles from "./ViewSwitcher.module.css";
 
 interface ViewSwitcherProps {

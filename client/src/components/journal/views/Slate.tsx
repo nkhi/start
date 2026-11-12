@@ -61,7 +61,6 @@ export function Slate() {
     }
   }, []);
 
-  // Refresh summaries when opening the library view
   useEffect(() => {
     if (viewMode !== "library") return;
     let cancelled = false;
@@ -89,14 +88,14 @@ export function Slate() {
       },
     },
     onUpdate: ({ editor }) => {
-      // Programmatic clear or setContent must never trigger autosave
+      // Programmatic clear/setContent must never trigger autosave
       if (isProgrammaticRef.current) return;
 
       const text = editor.getText();
       const words = text.trim() ? text.trim().split(/\s+/).length : 0;
       setWordCount(words);
 
-      // Do not autosave empty draft for a new reflection session
+      // Do not autosave empty drafts for a new reflection session
       if (!editingSummaryRef.current && !text.trim()) {
         setSaveStatus("saved");
         if (autosaveTimeout.current) {
@@ -147,7 +146,6 @@ export function Slate() {
     },
   });
 
-  // Synchronize editor content when switching archived documents, topics, or reflection sessions
   useEffect(() => {
     if (!editor) return;
 
@@ -193,7 +191,6 @@ export function Slate() {
     void refreshSummaries();
   }, [editingSummary, activeNode?.node.id, sessionKey, editor, refreshSummaries]);
 
-  // Clean up timer on unmount
   useEffect(() => {
     return () => {
       if (autosaveTimeout.current) {
@@ -203,7 +200,6 @@ export function Slate() {
     };
   }, []);
 
-  // Done reflecting on the active topic OR Save & Close archived document
   const handleDone = async () => {
     if (!editor) return;
     const text = editor.getText();
@@ -214,46 +210,33 @@ export function Slate() {
       autosaveTimeout.current = null;
     }
 
-    if (editingSummaryRef.current) {
-      try {
-        setSaveStatus("saving");
-        await saveJournalEntry({
-          id: editingSummaryRef.current.entry.id,
-          doc_json: JSON.stringify(editor.getJSON()),
-          plain_text: text,
-          primary_node_id: editingSummaryRef.current.primary_node?.node.id,
-          word_count: words,
-        });
-        setSaveStatus("saved");
-        await refreshSummaries();
-        backToLibrary();
-      } catch (e) {
-        console.error("Failed to save edited entry:", e);
-        setSaveStatus("unsaved");
-      }
-      return;
-    }
-
+    const archived = editingSummaryRef.current;
     try {
       setSaveStatus("saving");
       const saved = await saveJournalEntry({
-        id: entryIdRef.current,
+        id: archived ? archived.entry.id : entryIdRef.current,
         doc_json: JSON.stringify(editor.getJSON()),
         plain_text: text,
-        primary_node_id: activeNodeRef.current?.node.id,
+        primary_node_id: archived
+          ? archived.primary_node?.node.id
+          : activeNodeRef.current?.node.id,
         word_count: words,
       });
       setSaveStatus("saved");
       await refreshSummaries();
-      finishWriting(saved);
+      if (archived) {
+        backToLibrary();
+      } else {
+        finishWriting(saved);
+      }
     } catch (e) {
-      console.error("Failed to save entry on done:", e);
+      console.error("Failed to save entry:", e);
       setSaveStatus("unsaved");
     }
   };
 
   const whisper = editingSummary
-    ? `ARCHIVED REFLECTION · BACKLINKED TO GARDEN`
+    ? "ARCHIVED REFLECTION · BACKLINKED TO GARDEN"
     : breakdown?.why_summary
       ? `SUGGESTED TOPIC · ${breakdown.why_summary}`
       : "TODAY'S SOUNDING BOARD";
@@ -268,7 +251,7 @@ export function Slate() {
     ? editingSummary.primary_node?.tags || []
     : activeNode?.tags || [];
 
-  // Exclude the document currently open/working on in the Slate from the past documents library
+  // Exclude the document currently open in the Slate from the library grid
   const currentDocId = editingSummary ? editingSummary.entry.id : entryId;
   const pastSummaries = (summaries || []).filter(
     (item) => item?.entry?.id && item.entry.id !== currentDocId,
@@ -276,7 +259,6 @@ export function Slate() {
 
   return (
     <div className={styles.slateRoot}>
-      {/* Main View: Either Document Library or TipTap Editor */}
       {viewMode === "library" ? (
         <DocumentLibrary
           summaries={pastSummaries}
@@ -286,7 +268,6 @@ export function Slate() {
         />
       ) : (
         <div className={styles.slateEditorView}>
-          {/* Header Section */}
           <div className={styles.slateTopHeader}>
             <div className={styles.slateWhisperRow}>
               <span className={styles.whisperHeader}>{whisper}</span>
@@ -301,7 +282,6 @@ export function Slate() {
               )}
             </div>
 
-            {/* Topic Title Prompt */}
             <h1 className={styles.slateTopicTitle}>{displayTitle}</h1>
 
             {displayTags.length > 0 && (
@@ -315,12 +295,10 @@ export function Slate() {
             )}
           </div>
 
-          {/* Scrollable TipTap Editor Area */}
           <div className={styles.slateEditorContainer}>
             <EditorContent editor={editor} />
           </div>
 
-          {/* Permanently Pinned Bottom Slate Bar */}
           <footer className={styles.slateFooterBar}>
             <div className={styles.slateMeta}>
               <span className={styles.wordCountLabel}>{wordCount} words</span>

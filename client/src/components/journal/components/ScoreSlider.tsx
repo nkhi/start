@@ -42,3 +42,63 @@ export function ScoreSlider({
     </div>
   );
 }
+
+export interface ThoughtScores {
+  priority: number;
+  intensity: number;
+  openness: number;
+}
+
+const SCORE_FIELDS: ReadonlyArray<{
+  key: keyof ThoughtScores;
+  label: string;
+  minLabel: string;
+  maxLabel: string;
+  color: string;
+}> = [
+  {
+    key: "priority",
+    label: "Priority",
+    minLabel: "1 (Backburner)",
+    maxLabel: "10 (Urgent)",
+    color: "var(--ink)",
+  },
+  {
+    key: "intensity",
+    label: "Intensity",
+    minLabel: "1 (Quiet)",
+    maxLabel: "10 (Heavy)",
+    color: "var(--warm)",
+  },
+  {
+    key: "openness",
+    label: "Openness",
+    minLabel: "1 (Resolved)",
+    maxLabel: "10 (Wide Open)",
+    color: "var(--accent)",
+  },
+];
+
+export function ThoughtScoreSliders({
+  scores,
+  onChange,
+}: {
+  scores: ThoughtScores;
+  onChange: (field: keyof ThoughtScores, value: number) => void;
+}) {
+  return (
+    <>
+      {SCORE_FIELDS.map(({ key, label, minLabel, maxLabel, color }) => (
+        <ScoreSlider
+          key={key}
+          label={label}
+          value={scores[key]}
+          onChange={(val) => onChange(key, val)}
+          minLabel={minLabel}
+          maxLabel={maxLabel}
+          color={color}
+        />
+      ))}
+    </>
+  );
+}

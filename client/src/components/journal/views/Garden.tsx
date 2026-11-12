@@ -31,7 +31,7 @@ import {
   updateJournalNodePositions,
 } from "../../../api/journal";
 import { IdeaNodeCard, type IdeaNodeData } from "../components/IdeaNodeCard";
-import { getOpennessColors } from "../components/nodeTheme";
+import { getOpennessColors } from "../utils/nodeTheme";
 import { FloatingEdge, type FloatingEdgeData } from "../components/FloatingEdge";
 import { FloatingConnectionLine } from "../components/FloatingConnectionLine";
 import { NodePopover } from "../components/NodePopover";
@@ -47,7 +47,7 @@ import {
   type LayoutEdgeInput,
   type LayoutNodeInput,
   type PositionMap,
-} from "../layout/gardenPhysics";
+} from "../utils/gardenPhysics";
 import { useJournal } from "../JournalContext";
 import styles from "./Garden.module.css";
 
@@ -413,7 +413,6 @@ function GardenMapCanvas({
     [fitBounds, getViewport],
   );
 
-  // 1. Observe Garden pane dimensions (split vs wide monitor vs ResizeHandle)
   const resizeGuardRef = useRef({
     autoReflow: true,
     hasActiveAnchor: false,
@@ -495,7 +494,7 @@ function GardenMapCanvas({
     };
   }, [fitView, getViewport]);
 
-  // 2. Sync snapshot nodes & edges ONLY when snapshot changes (never reset on searchQuery!)
+  // Sync snapshot only when snapshot changes so searchQuery never resets positions
   useEffect(() => {
     const existingPositions = restingPositionsRef.current;
     const measuredMap = new Map(
@@ -597,7 +596,7 @@ function GardenMapCanvas({
       : null;
   }, [focusedNodeId, snapshot.nodes]);
 
-  // 3. Initial fitView once React Flow has measured the cards (skip if an active topic will center instead)
+  // Initial fitView once React Flow has measured cards (skip if an active topic will center instead)
   useEffect(() => {
     if (nodesInitialized && !hasFittedInitialRef.current && snapshot.nodes.length > 0) {
       hasFittedInitialRef.current = true;
@@ -621,8 +620,7 @@ function GardenMapCanvas({
     getViewport,
   ]);
 
-  // 3b. Automatically push overlapping cards apart whenever real card dimensions
-  // are measured or change (initial render, text/body edit, compact expand/collapse).
+  // Push overlapping cards apart whenever measured card dimensions change
   const dimsSignature = nodes
     .map(
       (n) =>
@@ -698,8 +696,7 @@ function GardenMapCanvas({
     animateToPositions,
   ]);
 
-  // 4. Sync visual states (search dimming, focus/hover highlighting, semantic compacting)
-  // without touching node positions
+  // Sync visual states (search dimming, focus/hover highlighting) without moving positions
   const activeAnchorId = effectiveFocusedNodeId ?? hoveredNodeId;
 
   useEffect(() => {
@@ -767,7 +764,6 @@ function GardenMapCanvas({
     setEdges,
   ]);
 
-  // 4b. Sync focus when the visible topic on the Slate changes
   useEffect(() => {
     if (hoverTimerRef.current !== null) {
       window.clearTimeout(hoverTimerRef.current);
@@ -777,7 +773,6 @@ function GardenMapCanvas({
     setFocusedNodeId(activeTopicId ?? null);
   }, [activeTopicId]);
 
-  // 5. Run constellation contraction / restoration when activeAnchorId changes
   useEffect(() => {
     if (snapshot.nodes.length === 0 || !nodesInitialized) return;
 
@@ -811,7 +806,6 @@ function GardenMapCanvas({
     fitClusterInView,
   ]);
 
-  // 6. Track zoom changes for Semantic Zoom + Viewport Containment ("Auto-Reflow")
   const handleViewportEnd = useCallback(
     (viewport: Viewport) => {
       const zoomChanged = Math.abs(viewport.zoom - lastZoomRef.current) > 0.04;
@@ -872,7 +866,6 @@ function GardenMapCanvas({
     onEnd: handleViewportEnd,
   });
 
-  // 7. Escape key exits Focus Constellation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && effectiveFocusedNodeId) {
@@ -883,7 +876,6 @@ function GardenMapCanvas({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [effectiveFocusedNodeId]);
 
-  // Cleanup timers & animations on unmount
   useEffect(() => {
     return () => {
       stopPositionAnimation();
@@ -893,7 +885,6 @@ function GardenMapCanvas({
     };
   }, [stopPositionAnimation]);
 
-  // Handlers
   const onConnect = useCallback(
     (params: Connection) => {
       if (params.source && params.target && params.source !== params.target) {
@@ -1065,8 +1056,8 @@ function GardenMapCanvas({
 
       const inputs: LayoutNodeInput[] = nodesRef.current.map((n) => ({
         id: n.id,
-        x: n.id === node.id ? node.position.x : n.position.x,
-        y: n.id === node.id ? node.position.y : n.position.y,
+        x: n.position.x,
+        y: n.position.y,
         width: n.measured?.width ?? CARD_DEFAULT_WIDTH,
         height: n.measured?.height ?? CARD_DEFAULT_HEIGHT,
       }));
@@ -1111,7 +1102,6 @@ function GardenMapCanvas({
     setHoveredEdgeId(null);
   }, []);
 
-  // Explicit toolbar actions
   const handleTidyWeb = useCallback(() => {
     setFocusedNodeId(null);
     setHoveredNodeId(null);
@@ -1193,7 +1183,6 @@ function GardenMapCanvas({
       }`}
       ref={wrapperRef}
     >
-      {/* Vertical Canvas Layout Controls (Top-Left, mirroring React Flow Controls) */}
       <div className={styles.canvasToolbar} role="toolbar" aria-label="Canvas view controls">
         <button
           type="button"
@@ -1306,7 +1295,6 @@ export function Garden() {
 
   return (
     <div className={styles.gardenRoot}>
-      {/* Main Content: Map or List */}
       <div className={styles.gardenContent}>
         {viewMode === "map" ? (
           !snapshot || snapshot.nodes.length === 0 ? (
@@ -1428,18 +1416,14 @@ export function Garden() {
         )}
       </div>
 
-      {/* Floating Node Popover Inspector */}
       {selectedNode && (
         <NodePopover
           nodeWithState={selectedNode}
           onClose={() => setSelectedNode(null)}
-          onNodeUpdated={() => {
-            onRefresh();
-          }}
+          onNodeUpdated={onRefresh}
         />
       )}
 
-      {/* New Node Modal */}
       <NewNodeModal
         isOpen={isNewNodeOpen}
         onClose={onCloseNewNode}

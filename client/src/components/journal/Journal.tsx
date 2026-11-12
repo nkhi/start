@@ -1,9 +1,9 @@
 import { JournalProvider } from "./JournalContext";
-import { SplitLayout } from "./layouts/SplitLayout";
+import { SplitLayout } from "./components/SplitLayout";
 import { FloatingIsland } from "./components/FloatingIsland";
+import { ReviewModal } from "./components/ReviewModal";
 import { Garden } from "./views/Garden";
 import { Slate } from "./views/Slate";
-import { ReviewModal } from "./views/ReviewModal";
 import styles from "./Journal.module.css";
 
 export function Journal() {

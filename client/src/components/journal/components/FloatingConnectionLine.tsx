@@ -10,7 +10,7 @@ import {
   getFloatingConnectionPreviewParams,
   getFloatingEdgeParams,
   getNodeRect,
-} from "./edgeGeometry";
+} from "../utils/edgeGeometry";
 
 const HIT_MARGIN_PX = 10;
 const CONNECTING_MARKER_ID = "garden-connecting-arrow";

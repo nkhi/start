@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from "react";
 import { useJournal } from "../JournalContext";
-import { ResizeHandle } from "../components/ResizeHandle";
+import { ResizeHandle } from "./ResizeHandle";
 import styles from "./SplitLayout.module.css";
 
 export type PaneMode = "garden" | "split" | "slate";
@@ -26,7 +26,6 @@ export function SplitLayout({ left, right }: SplitLayoutProps) {
         className={`${styles.splitContainer} ${styles[`mode${mode.charAt(0).toUpperCase() + mode.slice(1)}`] || ""}`}
         ref={containerRef}
       >
-        {/* Left Pane (The Garden) */}
         <div
           className={`${styles.pane} ${styles.paneLeft}`}
           style={{
@@ -37,7 +36,6 @@ export function SplitLayout({ left, right }: SplitLayoutProps) {
           {left}
         </div>
 
-        {/* Resizable Handle (split mode only) */}
         {mode === "split" && (
           <ResizeHandle
             onResize={setRatio}
@@ -46,7 +44,6 @@ export function SplitLayout({ left, right }: SplitLayoutProps) {
           />
         )}
 
-        {/* Right Pane (The Slate) */}
         <div
           className={`${styles.pane} ${styles.paneRight}`}
           style={{

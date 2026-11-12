@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { NodeWithState } from "../../../types";
-import { getOpennessColors } from "./nodeTheme";
+import { getOpennessColors } from "../utils/nodeTheme";
 import styles from "./IdeaNodeCard.module.css";
 
 export interface IdeaNodeData extends Record<string, unknown> {
@@ -51,7 +51,6 @@ export const IdeaNodeCard = memo(({ data, selected }: NodeProps) => {
       <Handle id="bottom" type="source" position={Position.Bottom} className={styles.cardHandle} />
       <Handle id="left" type="source" position={Position.Left} className={styles.cardHandle} />
 
-      {/* Top kind, tags & edit button */}
       <div className={styles.cardTopline}>
         <span className={styles.cardKind} style={{ color: colors.accent }}>
           {item.node.kind}
@@ -85,7 +84,6 @@ export const IdeaNodeCard = memo(({ data, selected }: NodeProps) => {
         </div>
       </div>
 
-      {/* Node title */}
       <div
         className={`${styles.cardTitle} ${isCompact ? styles.cardTitleCompact : ""}`}
         style={{ fontSize: `${titleSize}px` }}
@@ -93,12 +91,10 @@ export const IdeaNodeCard = memo(({ data, selected }: NodeProps) => {
         {item.node.title}
       </div>
 
-      {/* Optional snippet of body notes */}
       {!isCompact && item.node.body && (
         <div className={styles.cardSnippet}>{item.node.body}</div>
       )}
 
-      {/* Bottom P / I / O rating pills */}
       {!isCompact && (
         <div className={styles.cardFooter}>
           <div className={styles.scoreBadge} title={`Priority: ${priority}/10`}>

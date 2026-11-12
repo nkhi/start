@@ -6,7 +6,8 @@ import {
   setJournalNodeState,
   updateJournalNode,
 } from "../../../api/journal";
-import { ScoreSlider } from "./ScoreSlider";
+import { THOUGHT_KINDS } from "../utils/nodeTheme";
+import { ThoughtScoreSliders } from "./ScoreSlider";
 import styles from "./NodePopover.module.css";
 
 interface NodePopoverProps {
@@ -14,8 +15,6 @@ interface NodePopoverProps {
   onClose: () => void;
   onNodeUpdated: () => void;
 }
-
-const KINDS = ["question", "idea", "phrase", "person", "area", "thought"];
 
 export function NodePopover({
   nodeWithState,
@@ -48,12 +47,12 @@ export function NodePopover({
           setLinkedCount(0);
           return;
         }
-        const c = summaries.filter(
+        const count = summaries.filter(
           (s) =>
             s?.primary_node?.node?.id === nodeWithState.node.id ||
             s?.mentioned_nodes?.some((m) => m?.node?.id === nodeWithState.node.id),
         ).length;
-        setLinkedCount(c);
+        setLinkedCount(count);
       })
       .catch(() => setLinkedCount(0));
   }, [nodeWithState]);
@@ -123,7 +122,6 @@ export function NodePopover({
           </button>
         </div>
 
-        {/* Title Input */}
         <div className={styles.popoverField}>
           <label className={styles.popoverLabel}>Prompt / Question</label>
           <textarea
@@ -135,7 +133,6 @@ export function NodePopover({
           />
         </div>
 
-        {/* Category & Tags Row */}
         <div className={styles.popoverRow}>
           <div className={`${styles.popoverField} ${styles.flex1}`}>
             <label className={styles.popoverLabel}>Type</label>
@@ -144,7 +141,7 @@ export function NodePopover({
               value={kind}
               onChange={(e) => setKind(e.target.value)}
             >
-              {KINDS.map((k) => (
+              {THOUGHT_KINDS.map((k) => (
                 <option key={k} value={k}>
                   {k}
                 </option>
@@ -164,7 +161,6 @@ export function NodePopover({
           </div>
         </div>
 
-        {/* Context / Notes */}
         <div className={styles.popoverField}>
           <label className={styles.popoverLabel}>Context Notes (optional)</label>
           <textarea
@@ -176,35 +172,17 @@ export function NodePopover({
           />
         </div>
 
-        {/* Tactile Sliders */}
         <div className={styles.popoverSlidersBox}>
-          <ScoreSlider
-            label="Priority"
-            value={priority}
-            onChange={setPriority}
-            minLabel="1 (Backburner)"
-            maxLabel="10 (Urgent)"
-            color="var(--ink)"
-          />
-          <ScoreSlider
-            label="Intensity"
-            value={intensity}
-            onChange={setIntensity}
-            minLabel="1 (Quiet)"
-            maxLabel="10 (Visceral / Heavy)"
-            color="var(--warm)"
-          />
-          <ScoreSlider
-            label="Openness"
-            value={openness}
-            onChange={setOpenness}
-            minLabel="1 (Resolved)"
-            maxLabel="10 (Wide Open)"
-            color="var(--accent)"
+          <ThoughtScoreSliders
+            scores={{ priority, intensity, openness }}
+            onChange={(field, val) => {
+              if (field === "priority") setPriority(val);
+              else if (field === "intensity") setIntensity(val);
+              else setOpenness(val);
+            }}
           />
         </div>
 
-        {/* Actions */}
         <div className={styles.popoverActions}>
           <button className={styles.popoverBtnDelete} onClick={handleDelete}>
             Delete
@@ -226,4 +204,3 @@ export function NodePopover({
     </div>
   );
 }
-

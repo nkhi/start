@@ -34,7 +34,6 @@ export function ResizeHandle({
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const rawRatio = (e.clientX - rect.left) / rect.width;
-      // Clamp ratio between 25% and 75%
       const clamped = Math.max(0.25, Math.min(0.75, rawRatio));
       onResize(clamped);
     };

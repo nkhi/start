@@ -1,3 +1,12 @@
+export const THOUGHT_KINDS = [
+  "question",
+  "idea",
+  "phrase",
+  "person",
+  "area",
+  "thought",
+] as const;
+
 export interface OpennessColors {
   bg: string;
   border: string;
