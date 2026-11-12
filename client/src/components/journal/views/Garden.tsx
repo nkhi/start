@@ -13,7 +13,10 @@ import {
   addEdge,
   type Connection,
   type Edge as FlowEdge,
+  type EdgeMouseHandler,
   type Node as FlowNode,
+  type OnConnectEnd,
+  type OnEdgesDelete,
   type OnNodeDrag,
   type Viewport,
   BackgroundVariant,
@@ -23,10 +26,12 @@ import "@xyflow/react/dist/style.css";
 import type { GraphSnapshot, NodeWithState } from "../../../types";
 import {
   createJournalEdge,
+  deleteJournalEdge,
   updateJournalNodePositions,
 } from "../../../api/journal";
 import { IdeaNodeCard, type IdeaNodeData } from "../components/IdeaNodeCard";
 import { FloatingEdge, type FloatingEdgeData } from "../components/FloatingEdge";
+import { FloatingConnectionLine } from "../components/FloatingConnectionLine";
 import { NodePopover } from "../components/NodePopover";
 import { NewNodeModal } from "../components/NewNodeModal";
 import {
@@ -96,6 +101,8 @@ function GardenMapCanvas({
 
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [autoReflow, setAutoReflow] = useState<boolean>(true);
   const [compactPeripheral, setCompactPeripheral] = useState<boolean>(false);
 
@@ -108,8 +115,10 @@ function GardenMapCanvas({
   const hasFittedInitialRef = useRef<boolean>(false);
   const isAnimatingViewportRef = useRef<boolean>(false);
   const isDraggingRef = useRef<boolean>(false);
+  const isConnectingRef = useRef<boolean>(false);
   const lastZoomRef = useRef<number>(1);
   const hoverTimerRef = useRef<number | null>(null);
+  const edgeHoverTimerRef = useRef<number | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const animTargetRef = useRef<PositionMap | null>(null);
   const viewportTimerRef = useRef<number | null>(null);
@@ -126,6 +135,109 @@ function GardenMapCanvas({
   useEffect(() => {
     nodesRef.current = nodes;
   }, [nodes]);
+
+  const handleEdgeHoverChange = useCallback(
+    (edgeId: string, hovered: boolean) => {
+      if (edgeHoverTimerRef.current !== null) {
+        window.clearTimeout(edgeHoverTimerRef.current);
+        edgeHoverTimerRef.current = null;
+      }
+      if (hovered) {
+        setHoveredEdgeId(edgeId);
+      } else {
+        edgeHoverTimerRef.current = window.setTimeout(() => {
+          setHoveredEdgeId((prev) => (prev === edgeId ? null : prev));
+        }, 110);
+      }
+    },
+    [],
+  );
+
+  const handleDeleteEdge = useCallback(
+    async (edgeId: string) => {
+      if (edgeHoverTimerRef.current !== null) {
+        window.clearTimeout(edgeHoverTimerRef.current);
+        edgeHoverTimerRef.current = null;
+      }
+      setHoveredEdgeId((prev) => (prev === edgeId ? null : prev));
+      setEdges((eds) => eds.filter((e) => e.id !== edgeId));
+
+      if (edgeId.startsWith("temp-edge-")) return;
+
+      try {
+        await deleteJournalEdge(edgeId);
+        onRefresh();
+      } catch (err) {
+        console.error("Failed to delete edge:", err);
+        onRefresh();
+      }
+    },
+    [setEdges, onRefresh],
+  );
+
+  const commitEdgeConnection = useCallback(
+    async (
+      sourceId: string,
+      targetId: string,
+      sourceHandle: string | null = null,
+      targetHandle: string | null = null,
+    ) => {
+      if (!sourceId || !targetId || sourceId === targetId) return;
+
+      const alreadyExists = (snapshot.edges || []).some(
+        (e) =>
+          e.src === sourceId &&
+          e.dst === targetId &&
+          e.relation === "relates_to",
+      );
+      if (alreadyExists) return;
+
+      const tempId = `temp-edge-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      setEdges((eds) =>
+        addEdge(
+          {
+            id: tempId,
+            source: sourceId,
+            target: targetId,
+            sourceHandle,
+            targetHandle,
+            type: "floating",
+            data: {
+              relation: "relates_to",
+              status: "accepted",
+              onEdgeHoverChange: handleEdgeHoverChange,
+              onDeleteEdge: handleDeleteEdge,
+            },
+          },
+          eds,
+        ),
+      );
+
+      try {
+        const created = await createJournalEdge({
+          src: sourceId,
+          dst: targetId,
+          relation: "relates_to",
+        });
+        setEdges((eds) =>
+          eds.map((edge) =>
+            edge.id === tempId ? { ...edge, id: created.id } : edge,
+          ),
+        );
+        onRefresh();
+      } catch (err) {
+        console.error("Failed to persist edge:", err);
+        setEdges((eds) => eds.filter((edge) => edge.id !== tempId));
+      }
+    },
+    [
+      snapshot.edges,
+      setEdges,
+      onRefresh,
+      handleEdgeHoverChange,
+      handleDeleteEdge,
+    ],
+  );
 
   const stopPositionAnimation = useCallback(() => {
     if (animFrameRef.current !== null) {
@@ -397,6 +509,7 @@ function GardenMapCanvas({
         type: "ideaNode",
         position: pos,
         zIndex: 1,
+        deletable: false,
         data: {
           item,
           isDimmed: false,
@@ -419,12 +532,23 @@ function GardenMapCanvas({
         status: e.status,
         isFocused: false,
         isDimmed: false,
+        isHovered: false,
+        onEdgeHoverChange: handleEdgeHoverChange,
+        onDeleteEdge: handleDeleteEdge,
       },
     }));
 
     setNodes(flowNodes);
     setEdges(flowEdges);
-  }, [snapshot, layoutEdges, onSelectForEdit, setNodes, setEdges]);
+  }, [
+    snapshot,
+    layoutEdges,
+    onSelectForEdit,
+    handleEdgeHoverChange,
+    handleDeleteEdge,
+    setNodes,
+    setEdges,
+  ]);
 
   const effectiveFocusedNodeId = useMemo(() => {
     if (!focusedNodeId) return null;
@@ -561,13 +685,18 @@ function GardenMapCanvas({
         const matchesSearch =
           !searchMatches ||
           (searchMatches.has(edge.source) && searchMatches.has(edge.target));
+        const isEdgeHovered = hoveredEdgeId === edge.id;
 
         return {
           ...edge,
-          zIndex: isConnectedToAnchor ? 25 : 0,
+          zIndex:
+            isEdgeHovered || edge.selected ? 35 : isConnectedToAnchor ? 25 : 0,
           data: {
             ...edge.data,
             isFocused: isConnectedToAnchor,
+            isHovered: isEdgeHovered,
+            onEdgeHoverChange: handleEdgeHoverChange,
+            onDeleteEdge: handleDeleteEdge,
             isDimmed:
               (Boolean(activeAnchorId) && !isConnectedToAnchor) || !matchesSearch,
           },
@@ -578,8 +707,11 @@ function GardenMapCanvas({
     snapshot,
     searchQuery,
     activeAnchorId,
+    hoveredEdgeId,
     compactPeripheral,
     onSelectForEdit,
+    handleEdgeHoverChange,
+    handleDeleteEdge,
     setNodes,
     setEdges,
   ]);
@@ -694,42 +826,126 @@ function GardenMapCanvas({
     return () => {
       stopPositionAnimation();
       if (hoverTimerRef.current !== null) window.clearTimeout(hoverTimerRef.current);
+      if (edgeHoverTimerRef.current !== null) window.clearTimeout(edgeHoverTimerRef.current);
       if (viewportTimerRef.current !== null) window.clearTimeout(viewportTimerRef.current);
     };
   }, [stopPositionAnimation]);
 
   // Handlers
   const onConnect = useCallback(
-    async (params: Connection) => {
+    (params: Connection) => {
       if (params.source && params.target && params.source !== params.target) {
-        setEdges((eds) =>
-          addEdge(
-            {
-              ...params,
-              type: "floating",
-              data: { relation: "relates_to", status: "accepted" },
-            },
-            eds,
-          ),
+        void commitEdgeConnection(
+          params.source,
+          params.target,
+          params.sourceHandle,
+          params.targetHandle,
         );
-        try {
-          await createJournalEdge({
-            src: params.source,
-            dst: params.target,
-            relation: "relates_to",
-          });
-          onRefresh();
-        } catch (err) {
-          console.error("Failed to persist edge:", err);
-        }
       }
     },
-    [setEdges, onRefresh],
+    [commitEdgeConnection],
+  );
+
+  const onConnectStart = useCallback(() => {
+    isConnectingRef.current = true;
+    setIsConnecting(true);
+    if (hoverTimerRef.current !== null) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setHoveredNodeId(null);
+  }, []);
+
+  const onConnectEnd: OnConnectEnd = useCallback(
+    (event, connectionState) => {
+      isConnectingRef.current = false;
+      setIsConnecting(false);
+
+      if (connectionState.isValid || !connectionState.fromNode) return;
+
+      let clientX: number | undefined;
+      let clientY: number | undefined;
+      if ("changedTouches" in event && event.changedTouches.length > 0) {
+        clientX = event.changedTouches[0].clientX;
+        clientY = event.changedTouches[0].clientY;
+      } else if ("clientX" in event) {
+        clientX = event.clientX;
+        clientY = event.clientY;
+      }
+
+      if (clientX == null || clientY == null) return;
+
+      const flowPos = screenToFlowPosition({ x: clientX, y: clientY });
+      const margin = 12;
+      let bestTarget: FlowNode<IdeaNodeData> | null = null;
+      let bestZ = -Infinity;
+
+      for (const candidate of nodesRef.current) {
+        if (candidate.id === connectionState.fromNode.id) continue;
+        const w = candidate.measured?.width ?? CARD_DEFAULT_WIDTH;
+        const h = candidate.measured?.height ?? CARD_DEFAULT_HEIGHT;
+        if (
+          flowPos.x >= candidate.position.x - margin &&
+          flowPos.x <= candidate.position.x + w + margin &&
+          flowPos.y >= candidate.position.y - margin &&
+          flowPos.y <= candidate.position.y + h + margin
+        ) {
+          const z = candidate.zIndex ?? 0;
+          if (z >= bestZ) {
+            bestZ = z;
+            bestTarget = candidate;
+          }
+        }
+      }
+
+      if (bestTarget) {
+        void commitEdgeConnection(connectionState.fromNode.id, bestTarget.id);
+      }
+    },
+    [screenToFlowPosition, commitEdgeConnection],
+  );
+
+  const onEdgesDelete: OnEdgesDelete<FlowEdge<FloatingEdgeData>> = useCallback(
+    async (deletedEdges) => {
+      const persistedIds = deletedEdges
+        .map((e) => e.id)
+        .filter((id) => !id.startsWith("temp-edge-"));
+      if (persistedIds.length === 0) return;
+
+      setHoveredEdgeId((prev) =>
+        prev && persistedIds.includes(prev) ? null : prev,
+      );
+
+      try {
+        await Promise.all(persistedIds.map((id) => deleteJournalEdge(id)));
+      } catch (err) {
+        console.error("Failed to delete selected edges:", err);
+      } finally {
+        onRefresh();
+      }
+    },
+    [onRefresh],
+  );
+
+  const onEdgeMouseEnter: EdgeMouseHandler<FlowEdge<FloatingEdgeData>> = useCallback(
+    (_, edge) => {
+      handleEdgeHoverChange(edge.id, true);
+    },
+    [handleEdgeHoverChange],
+  );
+
+  const onEdgeMouseLeave: EdgeMouseHandler<FlowEdge<FloatingEdgeData>> = useCallback(
+    (_, edge) => {
+      handleEdgeHoverChange(edge.id, false);
+    },
+    [handleEdgeHoverChange],
   );
 
   const onNodeMouseEnter = useCallback(
     (_: React.MouseEvent, node: FlowNode<IdeaNodeData>) => {
-      if (effectiveFocusedNodeId || isDraggingRef.current) return;
+      if (effectiveFocusedNodeId || isDraggingRef.current || isConnectingRef.current) {
+        return;
+      }
       if (hoverTimerRef.current !== null) {
         window.clearTimeout(hoverTimerRef.current);
       }
@@ -830,6 +1046,7 @@ function GardenMapCanvas({
   const onPaneClick = useCallback(() => {
     setFocusedNodeId(null);
     setHoveredNodeId(null);
+    setHoveredEdgeId(null);
   }, []);
 
   // Explicit toolbar actions
@@ -921,7 +1138,12 @@ function GardenMapCanvas({
   );
 
   return (
-    <div className={styles.gardenFlowWrapper} ref={wrapperRef}>
+    <div
+      className={`${styles.gardenFlowWrapper} ${
+        isConnecting ? styles.gardenConnecting : ""
+      }`}
+      ref={wrapperRef}
+    >
       {/* Floating Canvas Layout Toolbar */}
       <div className={styles.canvasToolbar}>
         <button
@@ -992,6 +1214,13 @@ function GardenMapCanvas({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
+        onClickConnectStart={onConnectStart}
+        onClickConnectEnd={onConnectEnd}
+        onEdgesDelete={onEdgesDelete}
+        onEdgeMouseEnter={onEdgeMouseEnter}
+        onEdgeMouseLeave={onEdgeMouseLeave}
         onNodeClick={onNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeMouseEnter={onNodeMouseEnter}
@@ -1001,7 +1230,10 @@ function GardenMapCanvas({
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        connectionLineComponent={FloatingConnectionLine}
         connectionMode={ConnectionMode.Loose}
+        connectionRadius={42}
+        connectOnClick={true}
         proOptions={{ hideAttribution: true }}
         minZoom={0.2}
         maxZoom={2}

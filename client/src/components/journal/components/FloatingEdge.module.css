@@ -1,0 +1,64 @@
+.edgePill {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(20, 15, 13, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 10.5px;
+  font-weight: 500;
+  font-family: var(--font-ui, system-ui, sans-serif);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  cursor: default;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.edgePillSelected {
+  box-shadow:
+    0 0 0 1px rgba(240, 232, 220, 0.22),
+    0 8px 20px rgba(0, 0, 0, 0.65);
+}
+
+.edgePillLabel {
+  line-height: 1.2;
+}
+
+.deleteEdgeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin-right: -2px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+.deleteEdgeBtn:hover,
+.deleteEdgeBtn:focus-visible {
+  background: rgba(217, 119, 87, 0.28);
+  border-color: rgba(234, 134, 102, 0.85);
+  color: #ffd7c8;
+  transform: scale(1.08);
+  outline: none;
+}
