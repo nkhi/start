@@ -40,6 +40,7 @@ export type {
   SuggestionResponse,
   CreateJournalNodeRequest,
   UpdateJournalNodeRequest,
+  JournalNodePositionUpdate,
   SetJournalNodeStateRequest,
   CreateJournalEdgeRequest,
   SaveJournalEntryRequest,

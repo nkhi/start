@@ -18,6 +18,7 @@ import type {
   EdgeStatus,
   CreateJournalNodeRequest,
   UpdateJournalNodeRequest,
+  JournalNodePositionUpdate,
   CreateJournalEdgeRequest,
   SaveJournalEntryRequest,
   BatchJournalCreateRequest,
@@ -62,6 +63,25 @@ export async function updateJournalNode(id: string, payload: UpdateJournalNodeRe
     body: JSON.stringify(payload),
   });
   if (!response.ok) throw new Error('Failed to update journal node');
+}
+
+export async function updateJournalNodePositions(
+  positions: JournalNodePositionUpdate[]
+): Promise<void> {
+  if (positions.length === 0) return;
+  const response = await fetchWithErrorReporting(`${JOURNAL_API}/nodes/positions`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ positions }),
+  });
+  if (!response.ok) throw new Error('Failed to persist journal node positions');
+}
+
+export async function resetJournalNodePositions(): Promise<void> {
+  const response = await fetchWithErrorReporting(`${JOURNAL_API}/nodes/positions`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to reset journal node positions');
 }
 
 export async function archiveJournalNode(id: string, archived: boolean): Promise<void> {

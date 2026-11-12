@@ -139,6 +139,8 @@ export interface DbJournalNode {
   kind: string;
   title: string;
   body: string | null;
+  pos_x: number | null;
+  pos_y: number | null;
   priority: number;
   intensity: number;
   openness: number;

@@ -18,11 +18,37 @@ import type {
 
 const router = express.Router();
 
+function formatNodeWithState(row: Record<string, any>) {
+  const createdAt = Math.floor(new Date(row.created_at).getTime() / 1000);
+  const updatedAt = Math.floor(new Date(row.updated_at).getTime() / 1000);
+  return {
+    node: {
+      id: row.id,
+      kind: row.kind,
+      title: row.title,
+      body: row.body,
+      pos_x: row.pos_x ?? null,
+      pos_y: row.pos_y ?? null,
+      archived: row.archived,
+      created_at: createdAt,
+      updated_at: updatedAt,
+    },
+    state: {
+      at: updatedAt,
+      priority: row.priority,
+      intensity: row.intensity,
+      openness: row.openness,
+      source: 'manual',
+    },
+    tags: row.tags || [],
+  };
+}
+
 // 1. GET /api/journal/graph - Full garden snapshot
 router.get('/graph', async (_req: Request, res: Response) => {
   try {
     const nodesRes = await db.query(`
-      SELECT id, kind, title, body, priority, intensity, openness, tags, score_history, archived, created_at, updated_at
+      SELECT id, kind, title, body, pos_x, pos_y, priority, intensity, openness, tags, score_history, archived, created_at, updated_at
       FROM journal_nodes
       WHERE archived = false
       ORDER BY updated_at DESC;
@@ -36,25 +62,7 @@ router.get('/graph', async (_req: Request, res: Response) => {
     `);
 
     // Format nodes to match UI expectations (NodeWithState shape)
-    const nodes = nodesRes.rows.map(row => ({
-      node: {
-        id: row.id,
-        kind: row.kind,
-        title: row.title,
-        body: row.body,
-        archived: row.archived,
-        created_at: Math.floor(new Date(row.created_at).getTime() / 1000),
-        updated_at: Math.floor(new Date(row.updated_at).getTime() / 1000),
-      },
-      state: {
-        at: Math.floor(new Date(row.updated_at).getTime() / 1000),
-        priority: row.priority,
-        intensity: row.intensity,
-        openness: row.openness,
-        source: 'manual',
-      },
-      tags: row.tags || [],
-    }));
+    const nodes = nodesRes.rows.map(formatNodeWithState);
 
     const edges = edgesRes.rows.map(row => ({
       id: row.id,
@@ -77,7 +85,7 @@ router.get('/graph', async (_req: Request, res: Response) => {
 
 // 2. POST /api/journal/nodes - Create thought
 router.post('/nodes', async (req: Request, res: Response) => {
-  const { kind, title, body, priority, intensity, openness, tags } = req.body;
+  const { kind, title, body, pos_x, pos_y, priority, intensity, openness, tags } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'Title is required' });
 
   const id = 'node-' + crypto.randomUUID();
@@ -85,34 +93,76 @@ router.post('/nodes', async (req: Request, res: Response) => {
   const i = intensity ?? 5;
   const o = openness ?? 8;
   const cleanTags = tags || [];
+  const posX = typeof pos_x === 'number' && Number.isFinite(pos_x) ? pos_x : null;
+  const posY = typeof pos_y === 'number' && Number.isFinite(pos_y) ? pos_y : null;
 
   try {
     const result = await db.query(`
-      INSERT INTO journal_nodes (id, kind, title, body, priority, intensity, openness, tags)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO journal_nodes (id, kind, title, body, pos_x, pos_y, priority, intensity, openness, tags)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *;
-    `, [id, kind || 'thought', title.trim(), body || null, p, i, o, cleanTags]);
+    `, [id, kind || 'thought', title.trim(), body || null, posX, posY, p, i, o, cleanTags]);
 
-    const row = result.rows[0];
-    res.json({
-      node: {
-        id: row.id,
-        kind: row.kind,
-        title: row.title,
-        body: row.body,
-        archived: row.archived,
-        created_at: Math.floor(new Date(row.created_at).getTime() / 1000),
-        updated_at: Math.floor(new Date(row.updated_at).getTime() / 1000),
-      },
-      state: {
-        at: Math.floor(new Date(row.updated_at).getTime() / 1000),
-        priority: row.priority,
-        intensity: row.intensity,
-        openness: row.openness,
-        source: 'manual',
-      },
-      tags: row.tags,
-    });
+    res.json(formatNodeWithState(result.rows[0]));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2b. PATCH /api/journal/nodes/positions - Batch persist node corkboard coordinates
+// Registered before /nodes/:id so "positions" is not matched as :id.
+router.patch('/nodes/positions', async (req: Request, res: Response) => {
+  const rawPositions = req.body?.positions;
+  if (!Array.isArray(rawPositions)) {
+    return res.status(400).json({ error: 'positions array is required' });
+  }
+
+  const ids: string[] = [];
+  const xs: number[] = [];
+  const ys: number[] = [];
+
+  for (const item of rawPositions) {
+    if (
+      item &&
+      typeof item.id === 'string' &&
+      item.id.length > 0 &&
+      typeof item.x === 'number' &&
+      Number.isFinite(item.x) &&
+      typeof item.y === 'number' &&
+      Number.isFinite(item.y)
+    ) {
+      ids.push(item.id);
+      xs.push(item.x);
+      ys.push(item.y);
+    }
+  }
+
+  if (ids.length === 0) {
+    return res.json({ ok: true, updated: 0 });
+  }
+
+  try {
+    const result = await db.query(`
+      UPDATE journal_nodes AS j
+      SET pos_x = v.x,
+          pos_y = v.y
+      FROM (
+        SELECT * FROM UNNEST($1::text[], $2::float8[], $3::float8[]) AS t(id, x, y)
+      ) AS v
+      WHERE j.id = v.id;
+    `, [ids, xs, ys]);
+
+    res.json({ ok: true, updated: result.rowCount ?? ids.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2c. DELETE /api/journal/nodes/positions - Reset persisted positions back to auto-layout
+router.delete('/nodes/positions', async (_req: Request, res: Response) => {
+  try {
+    await db.query(`UPDATE journal_nodes SET pos_x = NULL, pos_y = NULL WHERE archived = false;`);
+    res.json({ ok: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

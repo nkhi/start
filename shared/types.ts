@@ -72,6 +72,8 @@ export interface Node {
   kind: string;
   title: string;
   body: string | null;
+  pos_x?: number | null;
+  pos_y?: number | null;
   archived: boolean;
   created_at: number;
   updated_at: number;
@@ -171,10 +173,18 @@ export interface CreateJournalNodeRequest {
   kind?: string;
   title: string;
   body?: string;
+  pos_x?: number | null;
+  pos_y?: number | null;
   priority?: number;
   intensity?: number;
   openness?: number;
   tags?: string[];
+}
+
+export interface JournalNodePositionUpdate {
+  id: string;
+  x: number;
+  y: number;
 }
 
 export interface UpdateJournalNodeRequest {
