@@ -11,43 +11,28 @@ import {
   PlusIcon,
   XIcon,
 } from "@phosphor-icons/react";
-import type { PaneMode } from "../layouts/SplitLayout";
+import { useJournal } from "../JournalContext";
 import { ViewSwitcher } from "./ViewSwitcher";
 import styles from "./FloatingIsland.module.css";
 
-interface FloatingIslandProps {
-  mode: PaneMode;
-  onModeChange: (mode: PaneMode) => void;
-  gardenViewMode: "map" | "list";
-  onToggleGardenView: () => void;
-  isNewNodeOpen: boolean;
-  onOpenNewNode: () => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  slateViewMode: "editor" | "library";
-  isViewingArchived: boolean;
-  onNextTopic: () => void;
-  onToggleLibrary: () => void;
-  onStartNewReflection: () => void;
-  onBackToLibrary: () => void;
-}
+export function FloatingIsland() {
+  const {
+    mode,
+    setMode,
+    gardenViewMode,
+    toggleGardenView,
+    isNewNodeOpen,
+    openNewNode,
+    searchQuery,
+    setSearchQuery,
+    slateViewMode,
+    isViewingArchived,
+    nextTopic,
+    toggleLibrary,
+    startNewReflection,
+    backToLibrary,
+  } = useJournal();
 
-export function FloatingIsland({
-  mode,
-  onModeChange,
-  gardenViewMode,
-  onToggleGardenView,
-  isNewNodeOpen,
-  onOpenNewNode,
-  searchQuery,
-  onSearchChange,
-  slateViewMode,
-  isViewingArchived,
-  onNextTopic,
-  onToggleLibrary,
-  onStartNewReflection,
-  onBackToLibrary,
-}: FloatingIslandProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchShellRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -89,7 +74,7 @@ export function FloatingIsland({
   };
 
   const handleSearchClearOrClose = () => {
-    onSearchChange("");
+    setSearchQuery("");
     setIsSearchOpen(false);
     searchInputRef.current?.blur();
   };
@@ -103,7 +88,7 @@ export function FloatingIsland({
             <button
               type="button"
               className={styles.islandBtn}
-              onClick={onToggleGardenView}
+              onClick={toggleGardenView}
               data-tooltip={gardenViewMode === "map" ? "List view" : "Map view"}
               aria-label={
                 gardenViewMode === "map"
@@ -121,7 +106,7 @@ export function FloatingIsland({
             <button
               type="button"
               className={`${styles.islandBtn} ${isNewNodeOpen ? styles.islandBtnActive : ""}`}
-              onClick={onOpenNewNode}
+              onClick={openNewNode}
               data-tooltip="Add thought"
               aria-label="Add thoughts or outline to your garden"
             >
@@ -133,7 +118,7 @@ export function FloatingIsland({
         )}
 
         {/* Layout Switcher & Expandable Search */}
-        <ViewSwitcher mode={mode} onChange={onModeChange} />
+        <ViewSwitcher mode={mode} onChange={setMode} />
 
         <div
           ref={searchShellRef}
@@ -163,7 +148,7 @@ export function FloatingIsland({
               className={styles.searchInput}
               placeholder="Search thoughts, tags, docs..."
               value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Escape") {
                   e.preventDefault();
@@ -196,7 +181,7 @@ export function FloatingIsland({
               <button
                 type="button"
                 className={styles.islandBtn}
-                onClick={onStartNewReflection}
+                onClick={startNewReflection}
                 data-tooltip="Write reflection"
                 aria-label="Start a new reflection on today's sounding board"
               >
@@ -207,7 +192,7 @@ export function FloatingIsland({
                 <button
                   type="button"
                   className={styles.islandBtn}
-                  onClick={onBackToLibrary}
+                  onClick={backToLibrary}
                   data-tooltip="Back to library"
                   aria-label="Return to documents library"
                 >
@@ -216,7 +201,7 @@ export function FloatingIsland({
                 <button
                   type="button"
                   className={styles.islandBtn}
-                  onClick={onStartNewReflection}
+                  onClick={startNewReflection}
                   data-tooltip="New reflection"
                   aria-label="Start a new reflection from today's suggestions"
                 >
@@ -227,7 +212,7 @@ export function FloatingIsland({
               <button
                 type="button"
                 className={styles.islandBtn}
-                onClick={onNextTopic}
+                onClick={() => void nextTopic()}
                 data-tooltip="Next topic"
                 aria-label="Cycle to next suggested question"
               >
@@ -238,7 +223,7 @@ export function FloatingIsland({
             <button
               type="button"
               className={`${styles.islandBtn} ${slateViewMode === "library" ? styles.islandBtnActive : ""}`}
-              onClick={onToggleLibrary}
+              onClick={toggleLibrary}
               data-tooltip={
                 slateViewMode === "library" ? "Back to editor" : "Document library"
               }
@@ -257,4 +242,3 @@ export function FloatingIsland({
     </div>
   );
 }
-

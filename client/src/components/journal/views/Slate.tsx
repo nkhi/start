@@ -2,71 +2,30 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { CheckIcon, CircleNotchIcon, FileDashedIcon } from "@phosphor-icons/react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import type {
-  Breakdown,
-  Entry,
-  EntrySummary,
-  NodeWithState,
-} from "../../../types";
+import type { EntrySummary } from "../../../types";
 import {
   listJournalEntrySummaries,
   saveJournalEntry,
 } from "../../../api/journal";
+import { useJournal } from "../JournalContext";
 import { DocumentLibrary } from "./DocumentLibrary";
 import styles from "./Slate.module.css";
 
-export interface SlateActions {
-  toggleLibrary: () => void;
-  startNewReflection: () => void;
-  backToLibrary: () => void;
-}
+export function Slate() {
+  const {
+    activeNode,
+    breakdown,
+    sessionKey,
+    searchQuery,
+    slateViewMode: viewMode,
+    editingSummary,
+    selectEntry,
+    startNewReflection,
+    backToLibrary,
+    finishWriting,
+  } = useJournal();
 
-interface SlateProps {
-  activeNode: NodeWithState | null;
-  breakdown: Breakdown | null;
-  sessionKey?: number;
-  searchQuery?: string;
-  onFinishWriting: (entry: Entry) => void;
-  actionsRef?: React.MutableRefObject<SlateActions | null>;
-  onViewModeChange?: (mode: "editor" | "library") => void;
-  onViewingArchivedChange?: (isArchived: boolean) => void;
-  onVisibleTopicChange?: (nodeId: string | null) => void;
-}
-
-export function Slate({
-  activeNode,
-  breakdown,
-  sessionKey,
-  searchQuery = "",
-  onFinishWriting,
-  actionsRef,
-  onViewModeChange,
-  onViewingArchivedChange,
-  onVisibleTopicChange,
-}: SlateProps) {
-  const [viewMode, setViewMode] = useState<"editor" | "library">("editor");
   const [summaries, setSummaries] = useState<EntrySummary[]>([]);
-  const [editingSummary, setEditingSummary] = useState<EntrySummary | null>(null);
-
-  useEffect(() => {
-    onViewModeChange?.(viewMode);
-  }, [viewMode, onViewModeChange]);
-
-  useEffect(() => {
-    onViewingArchivedChange?.(Boolean(editingSummary));
-  }, [editingSummary, onViewingArchivedChange]);
-
-  const visibleTopicId =
-    viewMode === "editor"
-      ? editingSummary
-        ? (editingSummary.primary_node?.node.id ?? null)
-        : (activeNode?.node.id ?? null)
-      : null;
-
-  useEffect(() => {
-    onVisibleTopicChange?.(visibleTopicId);
-  }, [visibleTopicId, onVisibleTopicChange]);
-
   const [entryId, setEntryId] = useState<string>(() => "entry-" + crypto.randomUUID());
   const [wordCount, setWordCount] = useState(0);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">(
@@ -74,18 +33,24 @@ export function Slate({
   );
 
   const entryIdRef = useRef(entryId);
-  entryIdRef.current = entryId;
-
   const editingSummaryRef = useRef(editingSummary);
-  editingSummaryRef.current = editingSummary;
-
   const activeNodeRef = useRef(activeNode);
-  activeNodeRef.current = activeNode;
+
+  useEffect(() => {
+    entryIdRef.current = entryId;
+  }, [entryId]);
+
+  useEffect(() => {
+    editingSummaryRef.current = editingSummary;
+  }, [editingSummary]);
+
+  useEffect(() => {
+    activeNodeRef.current = activeNode;
+  }, [activeNode]);
 
   const autosaveTimeout = useRef<number | null>(null);
   const isProgrammaticRef = useRef(false);
 
-  // Fetch summaries from DB
   const refreshSummaries = useCallback(async () => {
     try {
       const list = await listJournalEntrySummaries(100);
@@ -96,9 +61,23 @@ export function Slate({
     }
   }, []);
 
+  // Refresh summaries when opening the library view
   useEffect(() => {
-    refreshSummaries();
-  }, [refreshSummaries]);
+    if (viewMode !== "library") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await listJournalEntrySummaries(100);
+        if (!cancelled) setSummaries(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.warn("Could not load entry summaries:", err);
+        if (!cancelled) setSummaries([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [viewMode]);
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -159,7 +138,7 @@ export function Slate({
             word_count: words,
           });
           setSaveStatus("saved");
-          refreshSummaries();
+          void refreshSummaries();
         } catch (e) {
           console.error("Autosave failed:", e);
           setSaveStatus("unsaved");
@@ -168,19 +147,38 @@ export function Slate({
     },
   });
 
-  // When active topic changes or sessionKey advances, start a fresh reflection session
+  // Synchronize editor content when switching archived documents, topics, or reflection sessions
   useEffect(() => {
     if (!editor) return;
-    // If user is currently viewing an archived entry from the library, do not interrupt unless sessionKey changed
-    if (editingSummaryRef.current && sessionKey === undefined) return;
 
     if (autosaveTimeout.current) {
       window.clearTimeout(autosaveTimeout.current);
       autosaveTimeout.current = null;
     }
 
-    setEditingSummary(null);
-    editingSummaryRef.current = null;
+    editingSummaryRef.current = editingSummary;
+
+    if (editingSummary) {
+      isProgrammaticRef.current = true;
+      try {
+        const json =
+          typeof editingSummary.entry.doc_json === "string"
+            ? JSON.parse(editingSummary.entry.doc_json)
+            : editingSummary.entry.doc_json;
+        editor.commands.setContent(json, { emitUpdate: false });
+      } catch {
+        editor.commands.setContent(
+          `<p>${editingSummary.entry.plain_text || ""}</p>`,
+          { emitUpdate: false },
+        );
+      }
+      isProgrammaticRef.current = false;
+
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setWordCount(editingSummary.entry.word_count || 0);
+      setSaveStatus("saved");
+      return;
+    }
 
     const newId = "entry-" + crypto.randomUUID();
     setEntryId(newId);
@@ -192,8 +190,8 @@ export function Slate({
 
     setWordCount(0);
     setSaveStatus("saved");
-    refreshSummaries();
-  }, [activeNode?.node.id, sessionKey, editor, refreshSummaries]);
+    void refreshSummaries();
+  }, [editingSummary, activeNode?.node.id, sessionKey, editor, refreshSummaries]);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -204,84 +202,6 @@ export function Slate({
       }
     };
   }, []);
-
-  // When user clicks a sheet of paper from the library
-  const handleSelectEntry = (summary: EntrySummary) => {
-    if (autosaveTimeout.current) {
-      window.clearTimeout(autosaveTimeout.current);
-      autosaveTimeout.current = null;
-    }
-
-    setEditingSummary(summary);
-    editingSummaryRef.current = summary;
-    setViewMode("editor");
-
-    if (editor) {
-      isProgrammaticRef.current = true;
-      try {
-        const json =
-          typeof summary.entry.doc_json === "string"
-            ? JSON.parse(summary.entry.doc_json)
-            : summary.entry.doc_json;
-        editor.commands.setContent(json, { emitUpdate: false });
-      } catch {
-        editor.commands.setContent(`<p>${summary.entry.plain_text || ""}</p>`, {
-          emitUpdate: false,
-        });
-      }
-      isProgrammaticRef.current = false;
-
-      setWordCount(summary.entry.word_count || 0);
-      setSaveStatus("saved");
-    }
-  };
-
-  // Start a fresh reflection session on current algorithmic suggestion
-  const handleStartNewReflection = () => {
-    if (autosaveTimeout.current) {
-      window.clearTimeout(autosaveTimeout.current);
-      autosaveTimeout.current = null;
-    }
-
-    setEditingSummary(null);
-    editingSummaryRef.current = null;
-    setViewMode("editor");
-
-    const newId = "entry-" + crypto.randomUUID();
-    setEntryId(newId);
-    entryIdRef.current = newId;
-
-    if (editor) {
-      isProgrammaticRef.current = true;
-      editor.commands.clearContent(false);
-      isProgrammaticRef.current = false;
-
-      setWordCount(0);
-      setSaveStatus("saved");
-    }
-  };
-
-  // Returning to library from viewing an archived document
-  const handleBackToLibrary = () => {
-    if (autosaveTimeout.current) {
-      window.clearTimeout(autosaveTimeout.current);
-      autosaveTimeout.current = null;
-    }
-    setEditingSummary(null);
-    editingSummaryRef.current = null;
-    refreshSummaries();
-    setViewMode("library");
-  };
-
-  // Toggle between Library and Editor
-  const handleToggleLibrary = () => {
-    if (viewMode === "editor") {
-      refreshSummaries();
-      setViewMode("library");
-    } else {
-      setViewMode("editor");
-    }
-  };
 
   // Done reflecting on the active topic OR Save & Close archived document
   const handleDone = async () => {
@@ -306,9 +226,7 @@ export function Slate({
         });
         setSaveStatus("saved");
         await refreshSummaries();
-        setEditingSummary(null);
-        editingSummaryRef.current = null;
-        setViewMode("library");
+        backToLibrary();
       } catch (e) {
         console.error("Failed to save edited entry:", e);
         setSaveStatus("unsaved");
@@ -327,7 +245,7 @@ export function Slate({
       });
       setSaveStatus("saved");
       await refreshSummaries();
-      onFinishWriting(saved);
+      finishWriting(saved);
     } catch (e) {
       console.error("Failed to save entry on done:", e);
       setSaveStatus("unsaved");
@@ -356,16 +274,6 @@ export function Slate({
     (item) => item?.entry?.id && item.entry.id !== currentDocId,
   );
 
-  useEffect(() => {
-    if (actionsRef) {
-      actionsRef.current = {
-        toggleLibrary: handleToggleLibrary,
-        startNewReflection: handleStartNewReflection,
-        backToLibrary: handleBackToLibrary,
-      };
-    }
-  });
-
   return (
     <div className={styles.slateRoot}>
       {/* Main View: Either Document Library or TipTap Editor */}
@@ -373,8 +281,8 @@ export function Slate({
         <DocumentLibrary
           summaries={pastSummaries}
           searchQuery={searchQuery}
-          onSelectEntry={handleSelectEntry}
-          onNewReflection={handleStartNewReflection}
+          onSelectEntry={selectEntry}
+          onNewReflection={startNewReflection}
         />
       ) : (
         <div className={styles.slateEditorView}>
@@ -385,7 +293,7 @@ export function Slate({
               {editingSummary && (
                 <button
                   className={styles.btnSkipTopic}
-                  onClick={handleBackToLibrary}
+                  onClick={backToLibrary}
                   title="Back to library grid"
                 >
                   ← All Documents

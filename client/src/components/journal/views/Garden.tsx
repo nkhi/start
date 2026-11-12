@@ -48,18 +48,8 @@ import {
   type LayoutNodeInput,
   type PositionMap,
 } from "../layout/gardenPhysics";
+import { useJournal } from "../JournalContext";
 import styles from "./Garden.module.css";
-
-interface GardenProps {
-  snapshot: GraphSnapshot | null;
-  viewMode: "map" | "list";
-  searchQuery?: string;
-  activeTopicId?: string | null;
-  onRefresh: () => void;
-  isNewNodeOpen: boolean;
-  onOpenNewNode: () => void;
-  onCloseNewNode: () => void;
-}
 
 interface GardenMapCanvasProps {
   snapshot: GraphSnapshot;
@@ -1286,16 +1276,22 @@ function GardenMapCanvas({
   );
 }
 
-export function Garden({
-  snapshot,
-  viewMode,
-  searchQuery = "",
-  activeTopicId = null,
-  onRefresh,
-  isNewNodeOpen,
-  onOpenNewNode,
-  onCloseNewNode,
-}: GardenProps) {
+export function Garden() {
+  const {
+    snapshot,
+    gardenViewMode: viewMode,
+    searchQuery,
+    activeTopicId,
+    refreshJournalData,
+    isNewNodeOpen,
+    openNewNode: onOpenNewNode,
+    closeNewNode: onCloseNewNode,
+  } = useJournal();
+
+  const onRefresh = useCallback(() => {
+    void refreshJournalData();
+  }, [refreshJournalData]);
+
   const [selectedNode, setSelectedNode] = useState<NodeWithState | null>(null);
 
   // Filtered nodes for list view

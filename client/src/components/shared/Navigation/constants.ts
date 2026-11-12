@@ -10,6 +10,7 @@ import {
     ButterflyIcon,
     CalendarIcon,
     LadderSimpleIcon,
+    NotebookIcon,
 } from '@phosphor-icons/react';
 import { API_BASE_URL } from '../../../config';
 import type { NavItem, ExternalLink } from './types';
@@ -29,7 +30,7 @@ export const NAV_TABS: NavItem[] = [
     },
     {
         id: 'journal',
-        icon: HeartbeatIcon,
+        icon: NotebookIcon,
         showInWorkMode: false,
         useDuotone: true
     },

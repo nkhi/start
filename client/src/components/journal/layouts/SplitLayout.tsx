@@ -1,16 +1,17 @@
 import { useRef, useState, type ReactNode } from "react";
+import { useJournal } from "../JournalContext";
 import { ResizeHandle } from "../components/ResizeHandle";
 import styles from "./SplitLayout.module.css";
 
 export type PaneMode = "garden" | "split" | "slate";
 
 interface SplitLayoutProps {
-  mode: PaneMode;
   left: ReactNode;
   right: ReactNode;
 }
 
-export function SplitLayout({ mode, left, right }: SplitLayoutProps) {
+export function SplitLayout({ left, right }: SplitLayoutProps) {
+  const { mode } = useJournal();
   const [ratio, setRatio] = useState<number>(0.5);
   const containerRef = useRef<HTMLDivElement | null>(null);
 

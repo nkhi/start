@@ -1,16 +1,9 @@
 import { useEffect, useState } from "react";
 import type { NodeWithState } from "../../../types";
 import { setJournalNodeState } from "../../../api/journal";
+import { useJournal } from "../JournalContext";
 import { ScoreSlider } from "../components/ScoreSlider";
 import styles from "./ReviewModal.module.css";
-
-interface ReviewModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  primaryNode: NodeWithState | null;
-  connectedNodes: NodeWithState[];
-  onComplete: () => void;
-}
 
 interface NodeScores {
   priority: number;
@@ -18,13 +11,15 @@ interface NodeScores {
   openness: number;
 }
 
-export function ReviewModal({
-  isOpen,
-  onClose,
-  primaryNode,
-  connectedNodes,
-  onComplete,
-}: ReviewModalProps) {
+export function ReviewModal() {
+  const {
+    isReviewOpen: isOpen,
+    closeReview: onClose,
+    activeNode: primaryNode,
+    connectedNodes,
+    completeReview,
+  } = useJournal();
+
   // Collect all nodes to review: primary first, followed by connected
   const allNodes: NodeWithState[] = [];
   if (primaryNode) {
@@ -41,15 +36,24 @@ export function ReviewModal({
   useEffect(() => {
     if (!isOpen) return;
     const initial: Record<string, NodeScores> = {};
-    for (const n of allNodes) {
-      initial[n.node.id] = {
-        priority: n.state.priority,
-        intensity: n.state.intensity,
-        openness: n.state.openness,
+    if (primaryNode) {
+      initial[primaryNode.node.id] = {
+        priority: primaryNode.state.priority,
+        intensity: primaryNode.state.intensity,
+        openness: primaryNode.state.openness,
       };
     }
+    for (const cn of connectedNodes) {
+      if (!initial[cn.node.id]) {
+        initial[cn.node.id] = {
+          priority: cn.state.priority,
+          intensity: cn.state.intensity,
+          openness: cn.state.openness,
+        };
+      }
+    }
     setScores(initial);
-  }, [isOpen, primaryNode?.node.id]);
+  }, [isOpen, primaryNode, connectedNodes]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -58,7 +62,7 @@ export function ReviewModal({
 
   const handleSkip = () => {
     setSaveError(null);
-    onComplete();
+    void completeReview();
     onClose();
   };
 
@@ -92,7 +96,7 @@ export function ReviewModal({
           );
         }
       }
-      onComplete();
+      void completeReview();
       onClose();
     } catch (err) {
       console.error("Failed to save post-session scores:", err);
