@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  SquareHalfIcon,
+  SquareSplitHorizontalIcon,
+  type Icon,
+} from "@phosphor-icons/react";
 import type { PaneMode } from "../layouts/SplitLayout";
 import styles from "./ViewSwitcher.module.css";
 
@@ -7,9 +12,61 @@ interface ViewSwitcherProps {
   onChange: (mode: PaneMode) => void;
 }
 
+const VIEW_OPTIONS: ReadonlyArray<{
+  id: PaneMode;
+  label: string;
+  menuTitle: string;
+  shortcut: string;
+  Icon: Icon;
+  rotated?: boolean;
+}> = [
+  {
+    id: "garden",
+    label: "Garden",
+    menuTitle: "Garden Only",
+    shortcut: "⌘1",
+    Icon: SquareHalfIcon,
+    rotated: true,
+  },
+  {
+    id: "split",
+    label: "Split",
+    menuTitle: "Split View",
+    shortcut: "⌘2",
+    Icon: SquareSplitHorizontalIcon,
+  },
+  {
+    id: "slate",
+    label: "Slate",
+    menuTitle: "Slate Only",
+    shortcut: "⌘3",
+    Icon: SquareHalfIcon,
+  },
+];
+
 export function ViewSwitcher({ mode, onChange }: ViewSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleGlobalShortcuts = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+        if (e.key === "1") {
+          e.preventDefault();
+          onChange("garden");
+        } else if (e.key === "2") {
+          e.preventDefault();
+          onChange("split");
+        } else if (e.key === "3") {
+          e.preventDefault();
+          onChange("slate");
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalShortcuts);
+    return () => window.removeEventListener("keydown", handleGlobalShortcuts);
+  }, [onChange]);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -34,105 +91,53 @@ export function ViewSwitcher({ mode, onChange }: ViewSwitcherProps) {
     };
   }, [isOpen]);
 
-  const getIcon = (targetMode: PaneMode) => {
-    switch (targetMode) {
-      case "garden":
-        return (
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path
-              d="M1.5 2.5A1 1 0 0 1 2.5 1.5h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-11zm1 0v11h4v-11h-4zm5 0v11h6a.5.5 0 0 0 .5-.5v-10a.5.5 0 0 0-.5-.5h-6z"
-              opacity="0.25"
-            />
-            <path d="M2.5 1.5A1 1 0 0 0 1.5 2.5v11a1 1 0 0 0 1 1h4v-13h-4z" />
-          </svg>
-        );
-      case "slate":
-        return (
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path
-              d="M1.5 2.5A1 1 0 0 1 2.5 1.5h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-11zm1 0v11h4v-11h-4zm5 0v11h6a.5.5 0 0 0 .5-.5v-10a.5.5 0 0 0-.5-.5h-6z"
-              opacity="0.25"
-            />
-            <path d="M8.5 1.5v13h5a1 1 0 0 0 1-1v-11a1 1 0 0 0-1-1h-5z" />
-          </svg>
-        );
-      case "split":
-      default:
-        return (
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M1.5 2.5A1 1 0 0 1 2.5 1.5h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-11zm6 0v11h6a.5.5 0 0 0 .5-.5v-10a.5.5 0 0 0-.5-.5h-6zm-1 0h-4a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h4v-11z" />
-          </svg>
-        );
-    }
-  };
-
-  const getLabel = (targetMode: PaneMode) => {
-    switch (targetMode) {
-      case "garden":
-        return "Garden";
-      case "slate":
-        return "Slate";
-      case "split":
-      default:
-        return "Split";
-    }
-  };
+  const activeOption =
+    VIEW_OPTIONS.find((option) => option.id === mode) ?? VIEW_OPTIONS[1];
+  const ActiveIcon = activeOption.Icon;
 
   return (
     <div className={styles.viewSwitcherWrap} ref={containerRef}>
       <button
-        className={styles.btnViewSwitcher}
+        type="button"
+        className={`${styles.btnViewSwitcher} ${isOpen ? styles.btnViewSwitcherOpen : ""}`}
         onClick={() => setIsOpen((prev) => !prev)}
-        title={`Current view: ${getLabel(mode)}. Click to change view.`}
-        aria-label="Toggle Workspace View"
+        data-tooltip={isOpen ? undefined : `Layout: ${activeOption.label}`}
+        aria-label={`Current layout: ${activeOption.label}. Click to switch view`}
         aria-expanded={isOpen}
       >
-        <span className={styles.viewSwitcherIcon}>{getIcon(mode)}</span>
+        <span className={styles.viewSwitcherIcon}>
+          <ActiveIcon
+            size={17}
+            className={activeOption.rotated ? styles.rotatedIcon : undefined}
+          />
+        </span>
       </button>
 
       {isOpen && (
         <div className={styles.viewDropdownMenu} role="menu">
-          <button
-            className={`${styles.viewDropdownItem} ${mode === "garden" ? styles.activeItem : ""}`}
-            onClick={() => {
-              onChange("garden");
-              setIsOpen(false);
-            }}
-            role="menuitem"
-          >
-            <span className={styles.itemIcon}>{getIcon("garden")}</span>
-            <span className={styles.itemTitle}>Garden Only</span>
-            <span className={styles.itemShortcut}>⌘1</span>
-          </button>
-
-          <button
-            className={`${styles.viewDropdownItem} ${mode === "split" ? styles.activeItem : ""}`}
-            onClick={() => {
-              onChange("split");
-              setIsOpen(false);
-            }}
-            role="menuitem"
-          >
-            <span className={styles.itemIcon}>{getIcon("split")}</span>
-            <span className={styles.itemTitle}>Split View</span>
-            <span className={styles.itemShortcut}>⌘2</span>
-          </button>
-
-          <button
-            className={`${styles.viewDropdownItem} ${mode === "slate" ? styles.activeItem : ""}`}
-            onClick={() => {
-              onChange("slate");
-              setIsOpen(false);
-            }}
-            role="menuitem"
-          >
-            <span className={styles.itemIcon}>{getIcon("slate")}</span>
-            <span className={styles.itemTitle}>Slate Only</span>
-            <span className={styles.itemShortcut}>⌘3</span>
-          </button>
+          {VIEW_OPTIONS.map(({ id, menuTitle, shortcut, Icon: OptionIcon, rotated }) => (
+            <button
+              key={id}
+              type="button"
+              className={`${styles.viewDropdownItem} ${mode === id ? styles.activeItem : ""}`}
+              onClick={() => {
+                onChange(id);
+                setIsOpen(false);
+              }}
+              role="menuitem"
+            >
+              <span className={styles.itemIcon}>
+                <OptionIcon
+                  size={15}
+                  className={rotated ? styles.rotatedIcon : undefined}
+                />
+              </span>
+              <span className={styles.itemTitle}>{menuTitle}</span>
+              <span className={styles.itemShortcut}>{shortcut}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>
   );
 }
-

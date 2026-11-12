@@ -9,52 +9,11 @@
   background: transparent;
 }
 
-/* 48px Unified Shared Header above both panes */
-.sharedHeaderBar {
-  height: 56px;
-  min-height: 48px;
-  width: 100%;
-  background: transparent;
-  border-bottom: 1px solid #363029;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  box-sizing: border-box;
-  z-index: 50;
-  user-select: none;
-}
-
-.headerSection {
-  display: flex;
-  align-items: center;
-}
-
-.headerLeft {
-  gap: 8px;
-  flex: 1 1 0;
-  min-width: 0;
-  justify-content: flex-start;
-}
-
-.headerCenter {
-  gap: 8px;
-  flex: 0 0 auto;
-  justify-content: center;
-}
-
-.headerRight {
-  gap: 8px;
-  flex: 1 1 0;
-  min-width: 0;
-  justify-content: flex-end;
-}
-
-/* Main Split View below header */
+/* Main Split View filling full height */
 .splitContainer {
   display: flex;
   flex: 1;
-  height: calc(100% - 48px);
+  height: 100%;
   width: 100%;
   overflow: hidden;
   position: relative;
@@ -69,6 +28,10 @@
 .paneLeft {
   background: transparent;
   border-right: 1px solid #363029;
+}
+
+.modeGarden .paneLeft {
+  border-right: none;
 }
 
 .paneRight {

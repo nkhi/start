@@ -73,7 +73,7 @@ export function DocumentLibrary({
             </h3>
             <p>
               {query
-                ? "Try searching for a different keyword or topic in the search bar above."
+                ? "Try searching for a different keyword or topic."
                 : "When you reflect on the Slate and complete a session, each entry is preserved here as a permanent document linked back to your garden."}
             </p>
             {!query && (

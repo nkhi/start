@@ -73,50 +73,100 @@
   fill: currentColor !important;
 }
 
-/* Floating Canvas Layout Toolbar */
+/* Vertical Canvas Layout Controls (Top-Left, mirroring React Flow Controls) */
 .canvasToolbar {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 15px;
+  left: 15px;
   z-index: 15;
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px;
-  border-radius: 9px;
-  background: rgba(22, 17, 14, 0.86);
+  flex-direction: column;
+  background: #16110e;
   border: 1px solid #363029;
-  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  box-shadow: none;
 }
 
 .canvasToolBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
   background: transparent;
-  border: 1px solid transparent;
-  color: rgba(255, 255, 255, 0.65);
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 500;
-  padding: 4px 9px;
-  border-radius: 6px;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
   cursor: pointer;
-  transition: all 140ms ease;
-  white-space: nowrap;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.canvasToolBtn:first-child {
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
+}
+
+.canvasToolBtn:last-child {
+  border-bottom: none;
+  border-bottom-left-radius: 7px;
+  border-bottom-right-radius: 7px;
 }
 
 .canvasToolBtn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.canvasToolBtn:focus-visible {
+  outline: none;
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
 }
 
 .canvasToolBtnActive {
   background: rgba(124, 154, 142, 0.16);
-  border-color: rgba(124, 154, 142, 0.35);
   color: #a9c7ba;
 }
 
 .canvasToolBtnActive:hover {
   background: rgba(124, 154, 142, 0.24);
   color: #cbe3d8;
+}
+
+.canvasToolBtn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 9px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(16, 12, 10, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+  z-index: 30;
+}
+
+.canvasToolBtn[data-tooltip]:hover::after,
+.canvasToolBtn[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+  transition-delay: 140ms;
 }
 
 /* Empty State */
@@ -176,7 +226,7 @@
   height: 100%;
   width: 100%;
   overflow-y: auto;
-  padding: 18px 20px;
+  padding: 18px 20px 88px;
   box-sizing: border-box;
 }
 

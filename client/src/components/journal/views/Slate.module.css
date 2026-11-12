@@ -125,14 +125,14 @@
 
 /* Permanently Pinned Bottom Slate Bar */
 .slateFooterBar {
-  height: 56px;
-  min-height: 56px;
+  height: 68px;
+  min-height: 68px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 48px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  justify-content: flex-end;
+  gap: 20px;
+  padding: 0 40px 8px;
   background: transparent;
   z-index: 10;
 }
@@ -140,7 +140,7 @@
 .slateMeta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-family: var(--font-ui);
   font-size: 12px;
   color: var(--ink-soft);
@@ -151,26 +151,33 @@
   color: var(--ink);
 }
 
-.saveStatusDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25);
-  transition: background 200ms ease;
+.saveStatusIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 200ms ease;
 }
 
-.saveStatusDot[data-status="saved"] {
-  background: var(--accent);
+.saveStatusIcon[data-status="saved"] {
+  color: var(--accent);
 }
 
-.saveStatusDot[data-status="saving"] {
-  background: var(--warm);
+.saveStatusIcon[data-status="saving"] {
+  color: var(--warm);
 }
 
-.saveStatusText {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.spinIcon {
+  animation: slateSpin 900ms linear infinite;
+}
+
+@keyframes slateSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btnDone {

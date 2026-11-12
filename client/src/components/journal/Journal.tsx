@@ -11,14 +11,9 @@ import {
   getNextJournalSuggestion,
 } from "../../api/journal";
 import { SplitLayout, type PaneMode } from "./layouts/SplitLayout";
-import { ViewSwitcher } from "./components/ViewSwitcher";
+import { FloatingIsland } from "./components/FloatingIsland";
 import { Garden } from "./views/Garden";
-import {
-  Grid3x3Icon,
-  PenDocIcon,
-  Slate,
-  type SlateActions,
-} from "./views/Slate";
+import { Slate, type SlateActions } from "./views/Slate";
 import { ReviewModal } from "./views/ReviewModal";
 import styles from "./Journal.module.css";
 
@@ -113,140 +108,10 @@ export function Journal() {
     setSessionKey((prev) => prev + 1);
   };
 
-  // Left header section (Garden controls)
-  const headerLeft = (
-    <>
-      <div className={styles.viewModeToggle}>
-        <button
-          className={gardenViewMode === "map" ? styles.activeMode : ""}
-          onClick={() => setGardenViewMode("map")}
-          title="Graph Map View"
-        >
-          Map
-        </button>
-        <button
-          className={gardenViewMode === "list" ? styles.activeMode : ""}
-          onClick={() => setGardenViewMode("list")}
-          title="List View"
-        >
-          List
-        </button>
-      </div>
-
-      <button
-        className={`${styles.btnToolbarAction} ${styles.btnAddThought}`}
-        onClick={() => setIsNewNodeOpen(true)}
-        title="Add thoughts or outline to your garden"
-      >
-        + Add Thought
-      </button>
-    </>
-  );
-
-  // Center header section (View Switcher + Center Search Input)
-  const headerCenter = (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <ViewSwitcher mode={mode} onChange={setMode} />
-      <div className={styles.sharedSearchContainer}>
-        <span className={styles.sharedSearchIcon}>
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="7" cy="7" r="5" />
-            <path d="M11 11l3.5 3.5" />
-          </svg>
-        </span>
-        <input
-          type="text"
-          className={styles.sharedSearchInput}
-          placeholder="Search thoughts, tags, or documents..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {searchQuery.trim().length > 0 && (
-          <button
-            className={styles.btnClearSearch}
-            onClick={() => setSearchQuery("")}
-            title="Clear search"
-            aria-label="Clear search"
-          >
-            ✕
-          </button>
-        )}
-      </div>
-    </div>
-  );
-
-  // Right header section (Slate controls)
-  const headerRight = (
-    <>
-      {slateViewMode === "library" ? (
-        <button
-          className={styles.btnToolbarAction}
-          onClick={() => slateRef.current?.startNewReflection()}
-          title="Start a new reflection on today's sounding board"
-        >
-          <PenDocIcon /> Write Reflection
-        </button>
-      ) : isViewingArchived ? (
-        <>
-          <button
-            className={styles.btnToolbarAction}
-            onClick={() => slateRef.current?.backToLibrary()}
-            title="Return to documents library"
-          >
-            ← Library
-          </button>
-          <button
-            className={styles.btnToolbarAction}
-            onClick={() => slateRef.current?.startNewReflection()}
-            title="Start a new reflection from today's suggestions"
-          >
-            + New Reflection
-          </button>
-        </>
-      ) : (
-        <button
-          className={styles.btnToolbarAction}
-          onClick={() => loadSuggestion(true)}
-          title="Cycle to next suggested question"
-        >
-          ↻ Next topic
-        </button>
-      )}
-
-      {/* 3x3 Grid Icon Button to toggle Library */}
-      <button
-        className={`${styles.btnGridToggle} ${slateViewMode === "library" ? styles.activeGrid : ""}`}
-        onClick={() => slateRef.current?.toggleLibrary()}
-        title={
-          slateViewMode === "library"
-            ? "Switch back to Editor"
-            : "Open Document Library"
-        }
-        aria-label="Document Library"
-      >
-        <Grid3x3Icon />
-      </button>
-    </>
-  );
-
   return (
     <div className={styles.journalRoot}>
       <SplitLayout
-        headerLeft={headerLeft}
-        headerCenter={headerCenter}
-        headerRight={headerRight}
         mode={mode}
-        onModeChange={setMode}
         left={
           <Garden
             snapshot={snapshot}
@@ -276,6 +141,25 @@ export function Journal() {
             onFinishWriting={handleFinishWriting}
           />
         }
+      />
+
+      <FloatingIsland
+        mode={mode}
+        onModeChange={setMode}
+        gardenViewMode={gardenViewMode}
+        onToggleGardenView={() =>
+          setGardenViewMode((prev) => (prev === "map" ? "list" : "map"))
+        }
+        isNewNodeOpen={isNewNodeOpen}
+        onOpenNewNode={() => setIsNewNodeOpen(true)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        slateViewMode={slateViewMode}
+        isViewingArchived={isViewingArchived}
+        onNextTopic={() => loadSuggestion(true)}
+        onToggleLibrary={() => slateRef.current?.toggleLibrary()}
+        onStartNewReflection={() => slateRef.current?.startNewReflection()}
+        onBackToLibrary={() => slateRef.current?.backToLibrary()}
       />
 
       {/* Post-Session Review Modal */}

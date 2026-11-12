@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BroomIcon, FrameCornersIcon, MagnetIcon } from "@phosphor-icons/react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -1202,23 +1203,25 @@ function GardenMapCanvas({
       }`}
       ref={wrapperRef}
     >
-      {/* Floating Canvas Layout Toolbar */}
-      <div className={styles.canvasToolbar}>
+      {/* Vertical Canvas Layout Controls (Top-Left, mirroring React Flow Controls) */}
+      <div className={styles.canvasToolbar} role="toolbar" aria-label="Canvas view controls">
         <button
           type="button"
           className={styles.canvasToolBtn}
           onClick={handleTidyWeb}
-          title="Cluster connected thoughts cleanly and save arrangement"
+          data-tooltip="Tidy Web"
+          aria-label="Tidy Web — cluster connected thoughts cleanly and save arrangement"
         >
-          Tidy Web
+          <BroomIcon size={14} />
         </button>
         <button
           type="button"
           className={styles.canvasToolBtn}
           onClick={handleReflowToView}
-          title="Fit all cards cleanly into the current screen size"
+          data-tooltip="Fit Screen"
+          aria-label="Fit Screen — fit all cards cleanly into the current screen size"
         >
-          Fit Screen
+          <FrameCornersIcon size={14} />
         </button>
         <button
           type="button"
@@ -1233,9 +1236,11 @@ function GardenMapCanvas({
               }
             }
           }}
-          title="Automatically compact & keep cards in frame while zooming or resizing"
+          data-tooltip={`Auto-Reflow: ${autoReflow ? "On" : "Off"}`}
+          aria-label={`Auto-Reflow: ${autoReflow ? "On" : "Off"}`}
+          aria-pressed={autoReflow}
         >
-          Auto-Reflow: {autoReflow ? "On" : "Off"}
+          <MagnetIcon size={14} weight={autoReflow ? "fill" : "regular"} />
         </button>
       </div>
 

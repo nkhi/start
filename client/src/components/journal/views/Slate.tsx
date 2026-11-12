@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { CheckIcon, CircleNotchIcon, FileDashedIcon } from "@phosphor-icons/react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type {
@@ -30,48 +31,6 @@ interface SlateProps {
   onViewModeChange?: (mode: "editor" | "library") => void;
   onViewingArchivedChange?: (isArchived: boolean) => void;
   onVisibleTopicChange?: (nodeId: string | null) => void;
-}
-
-// Crisp 3x3 Grid Icon
-export function Grid3x3Icon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <rect x="1" y="1" width="3.5" height="3.5" rx="0.75" />
-      <rect x="6.25" y="1" width="3.5" height="3.5" rx="0.75" />
-      <rect x="11.5" y="1" width="3.5" height="3.5" rx="0.75" />
-      <rect x="1" y="6.25" width="3.5" height="3.5" rx="0.75" />
-      <rect x="6.25" y="6.25" width="3.5" height="3.5" rx="0.75" />
-      <rect x="11.5" y="6.25" width="3.5" height="3.5" rx="0.75" />
-      <rect x="1" y="11.5" width="3.5" height="3.5" rx="0.75" />
-      <rect x="6.25" y="11.5" width="3.5" height="3.5" rx="0.75" />
-      <rect x="11.5" y="11.5" width="3.5" height="3.5" rx="0.75" />
-    </svg>
-  );
-}
-
-// Pen / Document Icon for returning to editor
-export function PenDocIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M11 2a2.121 2.121 0 0 1 3 3L5 14H2v-3L11 2z" />
-    </svg>
-  );
 }
 
 export function Slate({
@@ -457,13 +416,31 @@ export function Slate({
           <footer className={styles.slateFooterBar}>
             <div className={styles.slateMeta}>
               <span className={styles.wordCountLabel}>{wordCount} words</span>
-              <span className={styles.saveStatusDot} data-status={saveStatus} />
-              <span className={styles.saveStatusText}>
-                {saveStatus === "saving"
-                  ? "Saving..."
-                  : saveStatus === "saved"
-                    ? "Saved to Journal"
-                    : "Draft"}
+              <span
+                className={styles.saveStatusIcon}
+                data-status={saveStatus}
+                title={
+                  saveStatus === "saving"
+                    ? "Saving..."
+                    : saveStatus === "saved"
+                      ? "Saved"
+                      : "Draft"
+                }
+                aria-label={
+                  saveStatus === "saving"
+                    ? "Saving"
+                    : saveStatus === "saved"
+                      ? "Saved"
+                      : "Draft"
+                }
+              >
+                {saveStatus === "saving" ? (
+                  <CircleNotchIcon size={14} weight="bold" className={styles.spinIcon} />
+                ) : saveStatus === "saved" ? (
+                  <CheckIcon size={14} weight="bold" />
+                ) : (
+                  <FileDashedIcon size={14} />
+                )}
               </span>
             </div>
 
@@ -472,7 +449,7 @@ export function Slate({
               onClick={handleDone}
               title="Complete this session and reflect on your feelings"
             >
-              {editingSummary ? "Save & Close →" : "Done Reflecting →"}
+              {editingSummary ? "Save & Close →" : "Done →"}
             </button>
           </footer>
         </div>
