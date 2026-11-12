@@ -29,6 +29,7 @@ interface SlateProps {
   actionsRef?: React.MutableRefObject<SlateActions | null>;
   onViewModeChange?: (mode: "editor" | "library") => void;
   onViewingArchivedChange?: (isArchived: boolean) => void;
+  onVisibleTopicChange?: (nodeId: string | null) => void;
 }
 
 // Crisp 3x3 Grid Icon
@@ -82,6 +83,7 @@ export function Slate({
   actionsRef,
   onViewModeChange,
   onViewingArchivedChange,
+  onVisibleTopicChange,
 }: SlateProps) {
   const [viewMode, setViewMode] = useState<"editor" | "library">("editor");
   const [summaries, setSummaries] = useState<EntrySummary[]>([]);
@@ -94,6 +96,17 @@ export function Slate({
   useEffect(() => {
     onViewingArchivedChange?.(Boolean(editingSummary));
   }, [editingSummary, onViewingArchivedChange]);
+
+  const visibleTopicId =
+    viewMode === "editor"
+      ? editingSummary
+        ? (editingSummary.primary_node?.node.id ?? null)
+        : (activeNode?.node.id ?? null)
+      : null;
+
+  useEffect(() => {
+    onVisibleTopicChange?.(visibleTopicId);
+  }, [visibleTopicId, onVisibleTopicChange]);
 
   const [entryId, setEntryId] = useState<string>(() => "entry-" + crypto.randomUUID());
   const [wordCount, setWordCount] = useState(0);

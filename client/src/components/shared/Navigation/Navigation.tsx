@@ -94,6 +94,28 @@ export function Navigation({ activeTab, lastTab, onTabChange, workMode = false }
             </div>
 
             <div className={styles.tabSwitcher}>
+                {!workMode && (
+                    <MemoryButton
+                        isPanelOpen={isMemoryPanelOpen}
+                        onToggle={() => setIsMemoryPanelOpen(!isMemoryPanelOpen)}
+                        onTimelineOpen={() => {
+                            const today = new Date();
+                            // Month is 0-indexed (11 is December).
+                            // Last 4 days are 28, 29, 30, 31.
+                            const isEndOfYear =
+                                today.getMonth() === 11 &&
+                                today.getDate() >= 28;
+
+                            if (isEndOfYear) {
+                                setIsMemoryPanelOpen(false);
+                                onTabChange('memories');
+                            } else {
+                                addError(425, 'memories', "It is not time to look back yet.");
+                            }
+                        }}
+                        className={`${styles.tabBtn} ${isMemoryPanelOpen ? styles.active : ''}`}
+                    />
+                )}
                 {NAV_TABS.filter(tab => !workMode || tab.showInWorkMode).map((tab) => {
                     const Icon = tab.icon;
                     const isActive = tab.isActive ? tab.isActive(activeTab) : activeTab === tab.id;
@@ -121,28 +143,6 @@ export function Navigation({ activeTab, lastTab, onTabChange, workMode = false }
                     );
                 })}
 
-                {!workMode && (
-                    <MemoryButton
-                        isPanelOpen={isMemoryPanelOpen}
-                        onToggle={() => setIsMemoryPanelOpen(!isMemoryPanelOpen)}
-                        onTimelineOpen={() => {
-                            const today = new Date();
-                            // Month is 0-indexed (11 is December).
-                            // Last 4 days are 28, 29, 30, 31.
-                            const isEndOfYear =
-                                today.getMonth() === 11 &&
-                                today.getDate() >= 28;
-
-                            if (isEndOfYear) {
-                                setIsMemoryPanelOpen(false);
-                                onTabChange('memories');
-                            } else {
-                                addError(425, 'memories', "It is not time to look back yet.");
-                            }
-                        }}
-                        className={`${styles.tabBtn} ${isMemoryPanelOpen ? styles.active : ''}`}
-                    />
-                )}
             </div>
 
             {!workMode && (

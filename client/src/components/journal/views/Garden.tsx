@@ -53,6 +53,7 @@ interface GardenProps {
   snapshot: GraphSnapshot | null;
   viewMode: "map" | "list";
   searchQuery?: string;
+  activeTopicId?: string | null;
   onRefresh: () => void;
   isNewNodeOpen: boolean;
   onOpenNewNode: () => void;
@@ -62,6 +63,7 @@ interface GardenProps {
 interface GardenMapCanvasProps {
   snapshot: GraphSnapshot;
   searchQuery: string;
+  activeTopicId: string | null;
   onRefresh: () => void;
   onSelectForEdit: (item: NodeWithState) => void;
 }
@@ -94,13 +96,16 @@ function buildAdjacencySet(snapshot: GraphSnapshot, anchorId: string | null): Se
 function GardenMapCanvas({
   snapshot,
   searchQuery,
+  activeTopicId,
   onRefresh,
   onSelectForEdit,
 }: GardenMapCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode<IdeaNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge<FloatingEdgeData>>([]);
 
-  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(
+    () => activeTopicId ?? null,
+  );
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
@@ -351,9 +356,22 @@ function GardenMapCanvas({
     };
   }, [screenToFlowPosition]);
 
+  const isPaneVisibleRef = useRef<boolean>(true);
+  const pendingFitClusterRef = useRef<{
+    anchorId: string;
+    neighborIds: Set<string>;
+    targetPositions: PositionMap;
+  } | null>(null);
+
   // Helper to focus camera onto a node + its 1-hop neighbors using target positions
   const fitClusterInView = useCallback(
     (anchorId: string, neighborIds: Set<string>, targetPositions: PositionMap) => {
+      if (!isPaneVisibleRef.current) {
+        pendingFitClusterRef.current = { anchorId, neighborIds, targetPositions };
+        return;
+      }
+      pendingFitClusterRef.current = null;
+
       const clusterIds = new Set<string>([anchorId, ...neighborIds]);
       const measuredMap = new Map(
         nodesRef.current.map((n) => [n.id, n.measured]),
@@ -378,16 +396,21 @@ function GardenMapCanvas({
 
       if (!Number.isFinite(minX)) return;
 
+      const rawW = maxX - minX;
+      const rawH = maxY - minY;
+      const targetW = Math.max(420, rawW);
+      const targetH = Math.max(280, rawH);
+
       isAnimatingViewportRef.current = true;
       if (viewportTimerRef.current !== null) {
         window.clearTimeout(viewportTimerRef.current);
       }
       fitBounds(
         {
-          x: minX,
-          y: minY,
-          width: Math.max(260, maxX - minX),
-          height: Math.max(180, maxY - minY),
+          x: minX - (targetW - rawW) / 2,
+          y: minY - (targetH - rawH) / 2,
+          width: targetW,
+          height: targetH,
         },
         { padding: 0.24, duration: 420 },
       );
@@ -412,6 +435,11 @@ function GardenMapCanvas({
     };
   }, [autoReflow, focusedNodeId, hoveredNodeId]);
 
+  const fitClusterInViewRef = useRef(fitClusterInView);
+  useEffect(() => {
+    fitClusterInViewRef.current = fitClusterInView;
+  }, [fitClusterInView]);
+
   useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
@@ -419,7 +447,10 @@ function GardenMapCanvas({
     const updateRect = () => {
       const rect = el.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
+        isPaneVisibleRef.current = true;
         canvasSizeRef.current = { width: rect.width, height: rect.height };
+      } else {
+        isPaneVisibleRef.current = false;
       }
     };
     updateRect();
@@ -429,10 +460,27 @@ function GardenMapCanvas({
       const entry = entries[0];
       if (!entry) return;
       const { width, height } = entry.contentRect;
-      if (width <= 0 || height <= 0) return;
+      if (width <= 0 || height <= 0) {
+        isPaneVisibleRef.current = false;
+        return;
+      }
 
+      isPaneVisibleRef.current = true;
       const prevW = canvasSizeRef.current.width;
       canvasSizeRef.current = { width, height };
+
+      const pendingCluster = pendingFitClusterRef.current;
+      if (pendingCluster) {
+        pendingFitClusterRef.current = null;
+        window.requestAnimationFrame(() => {
+          fitClusterInViewRef.current(
+            pendingCluster.anchorId,
+            pendingCluster.neighborIds,
+            pendingCluster.targetPositions,
+          );
+        });
+        return;
+      }
 
       const guard = resizeGuardRef.current;
       if (!guard.autoReflow || guard.hasActiveAnchor) return;
@@ -558,18 +606,29 @@ function GardenMapCanvas({
       : null;
   }, [focusedNodeId, snapshot.nodes]);
 
-  // 3. Initial fitView once React Flow has measured the cards
+  // 3. Initial fitView once React Flow has measured the cards (skip if an active topic will center instead)
   useEffect(() => {
     if (nodesInitialized && !hasFittedInitialRef.current && snapshot.nodes.length > 0) {
       hasFittedInitialRef.current = true;
+      if (effectiveFocusedNodeId) return;
+
       isAnimatingViewportRef.current = true;
+      if (viewportTimerRef.current !== null) {
+        window.clearTimeout(viewportTimerRef.current);
+      }
       fitView({ padding: 0.18, duration: 300 });
-      window.setTimeout(() => {
+      viewportTimerRef.current = window.setTimeout(() => {
         isAnimatingViewportRef.current = false;
         lastZoomRef.current = getViewport().zoom;
       }, 340);
     }
-  }, [nodesInitialized, snapshot.nodes.length, fitView, getViewport]);
+  }, [
+    nodesInitialized,
+    snapshot.nodes.length,
+    effectiveFocusedNodeId,
+    fitView,
+    getViewport,
+  ]);
 
   // 3b. Automatically push overlapping cards apart whenever real card dimensions
   // are measured or change (initial render, text/body edit, compact expand/collapse).
@@ -717,9 +776,19 @@ function GardenMapCanvas({
     setEdges,
   ]);
 
+  // 4b. Sync focus when the visible topic on the Slate changes
+  useEffect(() => {
+    if (hoverTimerRef.current !== null) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setHoveredNodeId(null);
+    setFocusedNodeId(activeTopicId ?? null);
+  }, [activeTopicId]);
+
   // 5. Run constellation contraction / restoration when activeAnchorId changes
   useEffect(() => {
-    if (snapshot.nodes.length === 0) return;
+    if (snapshot.nodes.length === 0 || !nodesInitialized) return;
 
     if (!activeAnchorId) {
       animateToPositions(restingPositionsRef.current, 240);
@@ -736,13 +805,14 @@ function GardenMapCanvas({
 
     animateToPositions(positions, 240);
 
-    // If locked via single-click, smoothly center the card + its connections
+    // If locked via single-click or Slate sync, smoothly center the card + its connections
     if (effectiveFocusedNodeId === activeAnchorId) {
       fitClusterInView(activeAnchorId, neighborIds, positions);
     }
   }, [
     activeAnchorId,
     effectiveFocusedNodeId,
+    nodesInitialized,
     snapshot.nodes.length,
     layoutEdges,
     getCurrentLayoutInputs,
@@ -1125,19 +1195,6 @@ function GardenMapCanvas({
     getViewport,
   ]);
 
-  const focusedItem = useMemo(() => {
-    if (!effectiveFocusedNodeId) return null;
-    return snapshot.nodes.find((n) => n.node.id === effectiveFocusedNodeId) ?? null;
-  }, [effectiveFocusedNodeId, snapshot.nodes]);
-
-  const focusedNeighborCount = useMemo(
-    () =>
-      effectiveFocusedNodeId
-        ? buildAdjacencySet(snapshot, effectiveFocusedNodeId).size
-        : 0,
-    [effectiveFocusedNodeId, snapshot],
-  );
-
   return (
     <div
       className={`${styles.gardenFlowWrapper} ${
@@ -1181,33 +1238,6 @@ function GardenMapCanvas({
           Auto-Reflow: {autoReflow ? "On" : "Off"}
         </button>
       </div>
-
-      {/* Active Focus Constellation Banner */}
-      {focusedItem && (
-        <div className={styles.focusBanner}>
-          <span className={styles.focusBannerDot} />
-          <span className={styles.focusBannerTitle}>{focusedItem.node.title}</span>
-          <span className={styles.focusBannerMeta}>
-            {focusedNeighborCount}{" "}
-            {focusedNeighborCount === 1 ? "connection" : "connections"}
-          </span>
-          <button
-            type="button"
-            className={styles.focusBannerBtn}
-            onClick={() => onSelectForEdit(focusedItem)}
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            className={styles.focusBannerBtn}
-            onClick={() => setFocusedNodeId(null)}
-            title="Exit focus (Esc)"
-          >
-            Done
-          </button>
-        </div>
-      )}
 
       <ReactFlow<FlowNode<IdeaNodeData>, FlowEdge<FloatingEdgeData>>
         nodes={nodes}
@@ -1255,6 +1285,7 @@ export function Garden({
   snapshot,
   viewMode,
   searchQuery = "",
+  activeTopicId = null,
   onRefresh,
   isNewNodeOpen,
   onOpenNewNode,
@@ -1294,6 +1325,7 @@ export function Garden({
               <GardenMapCanvas
                 snapshot={snapshot}
                 searchQuery={searchQuery}
+                activeTopicId={activeTopicId}
                 onRefresh={onRefresh}
                 onSelectForEdit={setSelectedNode}
               />
@@ -1324,15 +1356,19 @@ export function Garden({
                 {filteredItems.map((item) => {
                   const colors = getOpennessColors(item.state.openness);
                   const isHighPriority = item.state.priority >= 8;
+                  const isActiveTopic = item.node.id === activeTopicId;
                   return (
                     <div
                       key={item.node.id}
                       className={`${styles.gardenListRow} ${
                         isHighPriority ? styles.gardenListRowHighPriority : ""
-                      }`}
+                      } ${isActiveTopic ? styles.gardenListRowActive : ""}`}
                       style={{
                         backgroundColor: colors.bg,
-                        borderColor: colors.border,
+                        borderColor: isActiveTopic ? colors.accent : colors.border,
+                        boxShadow: isActiveTopic
+                          ? `0 0 0 1px ${colors.accent}, 0 10px 28px rgba(0, 0, 0, 0.55)`
+                          : undefined,
                       }}
                       onClick={() => setSelectedNode(item)}
                     >

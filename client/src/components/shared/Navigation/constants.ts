@@ -22,12 +22,6 @@ export const NAV_TABS: NavItem[] = [
         useDuotone: true
     },
     {
-        id: 'landmarks',
-        icon: LadderSimpleIcon,
-        showInWorkMode: false,
-        useDuotone: true
-    },
-    {
         id: 'todos',
         icon: ListChecks,
         showInWorkMode: true,
@@ -47,6 +41,12 @@ export const NAV_TABS: NavItem[] = [
         theme: {
             background: '#151618'
         }
+    },
+    {
+        id: 'landmarks',
+        icon: LadderSimpleIcon,
+        showInWorkMode: false,
+        useDuotone: true
     },
     {
         id: 'lists',

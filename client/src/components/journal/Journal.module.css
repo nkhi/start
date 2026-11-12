@@ -4,7 +4,8 @@
   --journal-surface: #16110e;
   --journal-ink: rgba(255, 255, 255, 0.9);
   --journal-ink-soft: rgba(255, 255, 255, 0.5);
-  --journal-accent: #7c9a8e; /* sage */
+  --journal-accent: #7c9a8e;
+  /* sage */
   --journal-warm: #e9c9a8;
   --journal-cool: #b9c8d6;
 
@@ -61,8 +62,8 @@
 .sharedSearchContainer {
   display: flex;
   align-items: center;
-  width: 320px;
-  height: 30px;
+  width: 370px;
+  height: 36px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;

@@ -11,7 +11,7 @@
 
 /* 48px Unified Shared Header above both panes */
 .sharedHeaderBar {
-  height: 48px;
+  height: 56px;
   min-height: 48px;
   width: 100%;
   background: transparent;

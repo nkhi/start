@@ -35,6 +35,7 @@ export function Journal() {
 
   const [slateViewMode, setSlateViewMode] = useState<"editor" | "library">("editor");
   const [isViewingArchived, setIsViewingArchived] = useState(false);
+  const [visibleSlateTopicId, setVisibleSlateTopicId] = useState<string | null>(null);
   const slateRef = useRef<SlateActions | null>(null);
 
   const [isReviewOpen, setIsReviewOpen] = useState(false);
@@ -251,6 +252,7 @@ export function Journal() {
             snapshot={snapshot}
             viewMode={gardenViewMode}
             searchQuery={searchQuery}
+            activeTopicId={visibleSlateTopicId}
             isNewNodeOpen={isNewNodeOpen}
             onOpenNewNode={() => setIsNewNodeOpen(true)}
             onCloseNewNode={() => setIsNewNodeOpen(false)}
@@ -270,6 +272,7 @@ export function Journal() {
             actionsRef={slateRef}
             onViewModeChange={setSlateViewMode}
             onViewingArchivedChange={setIsViewingArchived}
+            onVisibleTopicChange={setVisibleSlateTopicId}
             onFinishWriting={handleFinishWriting}
           />
         }
