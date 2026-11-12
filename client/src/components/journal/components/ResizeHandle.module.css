@@ -1,0 +1,27 @@
+.resizeHandle {
+  width: 12px;
+  margin-left: -6px;
+  margin-right: -6px;
+  height: 100%;
+  cursor: col-resize;
+  position: relative;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms ease;
+  user-select: none;
+}
+
+.resizeHandle:hover,
+.resizeHandle.dragging {
+  background: rgba(124, 154, 142, 0.2);
+}
+
+.resizeHandleBar {
+  width: 2px;
+  height: 48px;
+  background: rgba(138, 134, 127, 0.3);
+  border-radius: 1px;
+}
+

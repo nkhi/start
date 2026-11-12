@@ -1,0 +1,105 @@
+/* Split Workspace Layout */
+.splitWorkspaceRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg);
+}
+
+/* 48px Unified Shared Header above both panes */
+.sharedHeaderBar {
+  height: 48px;
+  min-height: 48px;
+  width: 100%;
+  background: var(--bg);
+  border-bottom: 1px solid rgba(138, 134, 127, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  box-sizing: border-box;
+  z-index: 50;
+  user-select: none;
+}
+
+.headerSection {
+  display: flex;
+  align-items: center;
+}
+
+.headerLeft {
+  gap: 8px;
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: flex-start;
+}
+
+.headerCenter {
+  gap: 8px;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.headerRight {
+  gap: 8px;
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+/* Main Split View below header */
+.splitContainer {
+  display: flex;
+  flex: 1;
+  height: calc(100% - 48px);
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.pane {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.paneLeft {
+  background: var(--bg);
+  border-right: 1px solid rgba(138, 134, 127, 0.12);
+}
+
+.paneRight {
+  background: var(--surface);
+}
+
+/* Vertical Resize Handle */
+.resizeHandle {
+  width: 12px;
+  margin-left: -6px;
+  margin-right: -6px;
+  height: 100%;
+  cursor: col-resize;
+  position: relative;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms ease;
+  user-select: none;
+}
+
+.resizeHandle:hover,
+.resizeHandle.dragging {
+  background: rgba(124, 154, 142, 0.2);
+}
+
+.resizeHandleBar {
+  width: 2px;
+  height: 48px;
+  background: rgba(138, 134, 127, 0.3);
+  border-radius: 1px;
+}
+

@@ -58,6 +58,189 @@ export interface Task {
   puntDays?: number; // Days between activeDate and createdAt (calculated server-side)
 }
 
+// ============================================
+// Journal (Mull) Types
+// ============================================
+
+export type StateSource = 'manual' | 'post_session' | 'seed';
+export type EdgeOrigin = 'user' | 'suggested';
+export type EdgeStatus = 'accepted' | 'pending' | 'rejected';
+export type EntryNodeRole = 'primary' | 'mentioned' | 'suggested';
+
+export interface Node {
+  id: string;
+  kind: string;
+  title: string;
+  body: string | null;
+  archived: boolean;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface NodeState {
+  at: number;
+  priority: number;
+  intensity: number;
+  openness: number;
+  source: StateSource;
+}
+
+export interface NodeWithState {
+  node: Node;
+  state: NodeState;
+  tags: string[];
+}
+
+export interface Edge {
+  id: string;
+  src: string;
+  dst: string;
+  relation: string;
+  directed: boolean;
+  weight: number;
+  origin: EdgeOrigin;
+  status: EdgeStatus;
+  created_at: number;
+}
+
+export interface GraphSnapshot {
+  nodes: NodeWithState[];
+  edges: Edge[];
+}
+
+export interface Entry {
+  id: string;
+  doc_json: string;
+  plain_text: string;
+  started_at: number;
+  updated_at: number;
+  word_count: number;
+  suggestion_id?: string | null;
+  rev: number;
+  primary_node_id?: string | null;
+  mentioned_node_ids?: string[];
+}
+
+export interface EntrySummary {
+  entry: Entry;
+  primary_node: NodeWithState | null;
+  mentioned_nodes: NodeWithState[];
+}
+
+export interface SeedNode {
+  temp_id: string;
+  kind: string;
+  title: string;
+  priority: number;
+  intensity: number;
+  openness: number;
+  tags: string[];
+}
+
+export interface SeedEdge {
+  src_title: string;
+  dst_title: string;
+  relation: string;
+}
+
+export interface ParsedSeedGraph {
+  nodes: SeedNode[];
+  edges: SeedEdge[];
+}
+
+export interface Breakdown {
+  total: number;
+  priority_term: number;
+  intensity_term: number;
+  openness_term: number;
+  salience_term: number;
+  recurrence_term: number;
+  staleness_term: number;
+  penalty_term: number;
+  why_summary: string;
+}
+
+export interface SuggestionResponse {
+  node: NodeWithState;
+  breakdown: Breakdown;
+  bucket: number;
+}
+
+// Request Types
+export interface CreateJournalNodeRequest {
+  kind?: string;
+  title: string;
+  body?: string;
+  priority?: number;
+  intensity?: number;
+  openness?: number;
+  tags?: string[];
+}
+
+export interface UpdateJournalNodeRequest {
+  title?: string;
+  body?: string | null;
+  kind?: string;
+  tags?: string[];
+}
+
+export interface SetJournalNodeStateRequest {
+  priority: number;
+  intensity: number;
+  openness: number;
+  source?: StateSource;
+}
+
+export interface CreateJournalEdgeRequest {
+  src: string;
+  dst: string;
+  relation?: string;
+  directed?: boolean;
+  weight?: number;
+}
+
+export interface SaveJournalEntryRequest {
+  id: string;
+  doc_json: string;
+  plain_text: string;
+  suggestion_id?: string;
+  word_count?: number;
+  primary_node_id?: string;
+  mentioned_node_ids?: string[];
+}
+
+export interface BatchJournalNodeInput {
+  temp_id?: string;
+  kind?: string;
+  title: string;
+  body?: string;
+  priority?: number;
+  intensity?: number;
+  openness?: number;
+  tags?: string[];
+  original_title?: string;
+}
+
+export interface BatchJournalEdgeInput {
+  src_title?: string;
+  dst_title?: string;
+  src_id?: string;
+  dst_id?: string;
+  relation?: string;
+}
+
+export interface BatchJournalCreateRequest {
+  nodes?: BatchJournalNodeInput[];
+  edges?: BatchJournalEdgeInput[];
+  outline?: string;
+}
+
+export interface BatchJournalCreateResponse {
+  ok: boolean;
+  nodeCount: number;
+  edgeCount: number;
+}
+
 // Note = NextItem in the server
 export interface Note {
   id: string;

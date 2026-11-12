@@ -1,0 +1,197 @@
+/* Slate / TipTap Document Editor Styles */
+.slateRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+/* Active Writing Editor Sub-view */
+.slateEditorView {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Header Section */
+.slateTopHeader {
+  padding: 32px 48px 14px;
+  border-bottom: 1px solid rgba(138, 134, 127, 0.08);
+  flex-shrink: 0;
+  background: var(--surface);
+  user-select: none;
+}
+
+.slateWhisperRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.whisperHeader {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.btnSkipTopic {
+  background: none;
+  border: 1px solid rgba(138, 134, 127, 0.22);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 140ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btnSkipTopic:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: rgba(138, 134, 127, 0.08);
+}
+
+.slateTopicTitle {
+  font-family: var(--font-body);
+  font-size: var(--size-title);
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  margin: 0 0 10px;
+  max-width: var(--measure);
+}
+
+.slateTags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.slateTag {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* TipTap Editor Scrollable Container */
+.slateEditorContainer {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 48px 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.slateEditorContainer :global(.tiptap) {
+  outline: none;
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: var(--lh);
+  color: var(--ink);
+  min-height: 300px;
+  max-width: var(--measure);
+  width: 100%;
+}
+
+.slateEditorContainer :global(.tiptap) p {
+  margin: 0 0 1.2em;
+}
+
+.slateEditorContainer :global(.tiptap) p.is-editor-empty:first-child::before {
+  color: var(--ink-soft);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Permanently Pinned Bottom Slate Bar */
+.slateFooterBar {
+  height: 56px;
+  min-height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  border-top: 1px solid rgba(138, 134, 127, 0.12);
+  background: var(--surface);
+  z-index: 10;
+}
+
+.slateMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.wordCountLabel {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.saveStatusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a0a0a0;
+  transition: background 200ms ease;
+}
+
+.saveStatusDot[data-status="saved"] {
+  background: var(--accent);
+}
+
+.saveStatusDot[data-status="saving"] {
+  background: var(--warm);
+}
+
+.saveStatusText {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.btnDone {
+  background: var(--ink);
+  color: #ffffff;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 180ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btnDone:hover {
+  background: #111;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+

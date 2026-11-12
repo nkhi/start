@@ -133,3 +133,49 @@ export interface DbSpendingTransaction {
   budget_id: string | null;
   created_at: Date | null;
 }
+
+export interface DbJournalNode {
+  id: string;
+  kind: string;
+  title: string;
+  body: string | null;
+  priority: number;
+  intensity: number;
+  openness: number;
+  tags: string[];
+  score_history: Array<{
+    at: string;
+    priority: number;
+    intensity: number;
+    openness: number;
+    source: string;
+  }>;
+  archived: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface DbJournalEdge {
+  id: string;
+  src: string;
+  dst: string;
+  relation: string;
+  directed: boolean;
+  weight: number;
+  origin: string;
+  status: string;
+  created_at: Date;
+}
+
+export interface DbJournalEntry {
+  id: string;
+  primary_node_id: string | null;
+  mentioned_node_ids: string[];
+  doc_json: string;
+  plain_text: string;
+  word_count: number;
+  suggestion_id: string | null;
+  rev: number;
+  started_at: Date;
+  updated_at: Date;
+}

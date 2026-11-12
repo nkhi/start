@@ -1,0 +1,44 @@
+/* ScoreSlider Component */
+.scoreSlider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scoreSliderHeader {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.scoreSliderLabel {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.scoreSliderVal {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.scoreRangeInput {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.scoreSliderBounds {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+

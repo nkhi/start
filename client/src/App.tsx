@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import { HabitTracker } from './components/habits/HabitTracker';
 import { Todos } from './components/todos/Todos';
+import { Journal } from './components/journal';
 import { Next } from './components/grow/Next';
 import { Lists } from './components/lists/Lists';
 import { Landmarks } from './components/landmarks/Landmarks';
@@ -70,8 +71,7 @@ function AppContent() {
           {activeTab === 'daylight' && <Daylight workMode={WORK_MODE} />}
           {!WORK_MODE && activeTab === 'habits' && <HabitTracker />}
           {!WORK_MODE && activeTab === 'memos' && <Memos />}
-          {/* Journal tab route placeholder - ready for new React + Rust journal component */}
-          {!WORK_MODE && activeTab === 'journal' && <div></div>}
+          {!WORK_MODE && activeTab === 'journal' && <Journal />}
           {!WORK_MODE && activeTab === 'next' && <Next />}
           {!WORK_MODE && activeTab === 'lists' && <Lists />}
           {!WORK_MODE && activeTab === 'landmarks' && <Landmarks />}

@@ -1,0 +1,105 @@
+/* Compact View Switcher Button & Dropdown */
+.viewSwitcherWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.btnViewSwitcher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid rgba(138, 134, 127, 0.22);
+  border-radius: 50%;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 140ms ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.btnViewSwitcher:hover {
+  background: #faf8f5;
+  color: var(--ink);
+  border-color: rgba(124, 154, 142, 0.5);
+  transform: translateY(-1px);
+}
+
+.viewSwitcherIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewDropdownMenu {
+  position: absolute;
+  top: 38px;
+  left: 0;
+  z-index: 100;
+  background: #ffffff;
+  border: 1px solid rgba(138, 134, 127, 0.2);
+  border-radius: 12px;
+  padding: 4px;
+  min-width: 150px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  animation: dropdownFadeIn 120ms ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.viewDropdownItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  gap: 8px;
+  transition: all 120ms ease;
+}
+
+.viewDropdownItem:hover {
+  background: rgba(124, 154, 142, 0.12);
+  color: var(--sage);
+}
+
+.viewDropdownItem.activeItem {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.itemIcon {
+  display: flex;
+  align-items: center;
+}
+
+.itemTitle {
+  flex: 1;
+}
+
+.itemShortcut {
+  font-family: monospace;
+  font-size: 10px;
+  opacity: 0.6;
+}
+

@@ -1,0 +1,466 @@
+import { useEffect, useRef, useState, useCallback } from "react";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import type {
+  Breakdown,
+  Entry,
+  EntrySummary,
+  NodeWithState,
+} from "../../../types";
+import {
+  listJournalEntrySummaries,
+  saveJournalEntry,
+} from "../../../api/journal";
+import { DocumentLibrary } from "./DocumentLibrary";
+import styles from "./Slate.module.css";
+
+export interface SlateActions {
+  toggleLibrary: () => void;
+  startNewReflection: () => void;
+  backToLibrary: () => void;
+}
+
+interface SlateProps {
+  activeNode: NodeWithState | null;
+  breakdown: Breakdown | null;
+  sessionKey?: number;
+  searchQuery?: string;
+  onFinishWriting: (entry: Entry) => void;
+  actionsRef?: React.MutableRefObject<SlateActions | null>;
+  onViewModeChange?: (mode: "editor" | "library") => void;
+  onViewingArchivedChange?: (isArchived: boolean) => void;
+}
+
+// Crisp 3x3 Grid Icon
+export function Grid3x3Icon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <rect x="1" y="1" width="3.5" height="3.5" rx="0.75" />
+      <rect x="6.25" y="1" width="3.5" height="3.5" rx="0.75" />
+      <rect x="11.5" y="1" width="3.5" height="3.5" rx="0.75" />
+      <rect x="1" y="6.25" width="3.5" height="3.5" rx="0.75" />
+      <rect x="6.25" y="6.25" width="3.5" height="3.5" rx="0.75" />
+      <rect x="11.5" y="6.25" width="3.5" height="3.5" rx="0.75" />
+      <rect x="1" y="11.5" width="3.5" height="3.5" rx="0.75" />
+      <rect x="6.25" y="11.5" width="3.5" height="3.5" rx="0.75" />
+      <rect x="11.5" y="11.5" width="3.5" height="3.5" rx="0.75" />
+    </svg>
+  );
+}
+
+// Pen / Document Icon for returning to editor
+export function PenDocIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M11 2a2.121 2.121 0 0 1 3 3L5 14H2v-3L11 2z" />
+    </svg>
+  );
+}
+
+export function Slate({
+  activeNode,
+  breakdown,
+  sessionKey,
+  searchQuery = "",
+  onFinishWriting,
+  actionsRef,
+  onViewModeChange,
+  onViewingArchivedChange,
+}: SlateProps) {
+  const [viewMode, setViewMode] = useState<"editor" | "library">("editor");
+  const [summaries, setSummaries] = useState<EntrySummary[]>([]);
+  const [editingSummary, setEditingSummary] = useState<EntrySummary | null>(null);
+
+  useEffect(() => {
+    onViewModeChange?.(viewMode);
+  }, [viewMode, onViewModeChange]);
+
+  useEffect(() => {
+    onViewingArchivedChange?.(Boolean(editingSummary));
+  }, [editingSummary, onViewingArchivedChange]);
+
+  const [entryId, setEntryId] = useState<string>(() => "entry-" + crypto.randomUUID());
+  const [wordCount, setWordCount] = useState(0);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">(
+    "saved",
+  );
+
+  const entryIdRef = useRef(entryId);
+  entryIdRef.current = entryId;
+
+  const editingSummaryRef = useRef(editingSummary);
+  editingSummaryRef.current = editingSummary;
+
+  const activeNodeRef = useRef(activeNode);
+  activeNodeRef.current = activeNode;
+
+  const autosaveTimeout = useRef<number | null>(null);
+  const isProgrammaticRef = useRef(false);
+
+  // Fetch summaries from DB
+  const refreshSummaries = useCallback(async () => {
+    try {
+      const list = await listJournalEntrySummaries(100);
+      setSummaries(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.warn("Could not load entry summaries:", err);
+      setSummaries([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshSummaries();
+  }, [refreshSummaries]);
+
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: "<p></p>",
+    editorProps: {
+      attributes: {
+        class: "slate-editor-content",
+        placeholder: "Start reflecting here...",
+      },
+    },
+    onUpdate: ({ editor }) => {
+      // Programmatic clear or setContent must never trigger autosave
+      if (isProgrammaticRef.current) return;
+
+      const text = editor.getText();
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      setWordCount(words);
+
+      // Do not autosave empty draft for a new reflection session
+      if (!editingSummaryRef.current && !text.trim()) {
+        setSaveStatus("saved");
+        if (autosaveTimeout.current) {
+          window.clearTimeout(autosaveTimeout.current);
+          autosaveTimeout.current = null;
+        }
+        return;
+      }
+
+      setSaveStatus("unsaved");
+
+      if (autosaveTimeout.current) {
+        window.clearTimeout(autosaveTimeout.current);
+      }
+
+      const targetEntryId = editingSummaryRef.current
+        ? editingSummaryRef.current.entry.id
+        : entryIdRef.current;
+      const targetPrimaryId = editingSummaryRef.current
+        ? editingSummaryRef.current.primary_node?.node.id
+        : activeNodeRef.current?.node.id;
+
+      autosaveTimeout.current = window.setTimeout(async () => {
+        // Guard against race conditions if session or document changed while debouncing
+        const currentTargetId = editingSummaryRef.current
+          ? editingSummaryRef.current.entry.id
+          : entryIdRef.current;
+        if (currentTargetId !== targetEntryId) {
+          return;
+        }
+
+        setSaveStatus("saving");
+        try {
+          await saveJournalEntry({
+            id: targetEntryId,
+            doc_json: JSON.stringify(editor.getJSON()),
+            plain_text: text,
+            primary_node_id: targetPrimaryId,
+            word_count: words,
+          });
+          setSaveStatus("saved");
+          refreshSummaries();
+        } catch (e) {
+          console.error("Autosave failed:", e);
+          setSaveStatus("unsaved");
+        }
+      }, 2000);
+    },
+  });
+
+  // When active topic changes or sessionKey advances, start a fresh reflection session
+  useEffect(() => {
+    if (!editor) return;
+    // If user is currently viewing an archived entry from the library, do not interrupt unless sessionKey changed
+    if (editingSummaryRef.current && sessionKey === undefined) return;
+
+    if (autosaveTimeout.current) {
+      window.clearTimeout(autosaveTimeout.current);
+      autosaveTimeout.current = null;
+    }
+
+    setEditingSummary(null);
+    editingSummaryRef.current = null;
+
+    const newId = "entry-" + crypto.randomUUID();
+    setEntryId(newId);
+    entryIdRef.current = newId;
+
+    isProgrammaticRef.current = true;
+    editor.commands.clearContent(false);
+    isProgrammaticRef.current = false;
+
+    setWordCount(0);
+    setSaveStatus("saved");
+    refreshSummaries();
+  }, [activeNode?.node.id, sessionKey, editor, refreshSummaries]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autosaveTimeout.current) {
+        window.clearTimeout(autosaveTimeout.current);
+        autosaveTimeout.current = null;
+      }
+    };
+  }, []);
+
+  // When user clicks a sheet of paper from the library
+  const handleSelectEntry = (summary: EntrySummary) => {
+    if (autosaveTimeout.current) {
+      window.clearTimeout(autosaveTimeout.current);
+      autosaveTimeout.current = null;
+    }
+
+    setEditingSummary(summary);
+    editingSummaryRef.current = summary;
+    setViewMode("editor");
+
+    if (editor) {
+      isProgrammaticRef.current = true;
+      try {
+        const json = JSON.parse(summary.entry.doc_json);
+        editor.commands.setContent(json, { emitUpdate: false });
+      } catch {
+        editor.commands.setContent(`<p>${summary.entry.plain_text}</p>`, {
+          emitUpdate: false,
+        });
+      }
+      isProgrammaticRef.current = false;
+
+      setWordCount(summary.entry.word_count || 0);
+      setSaveStatus("saved");
+    }
+  };
+
+  // Start a fresh reflection session on current algorithmic suggestion
+  const handleStartNewReflection = () => {
+    if (autosaveTimeout.current) {
+      window.clearTimeout(autosaveTimeout.current);
+      autosaveTimeout.current = null;
+    }
+
+    setEditingSummary(null);
+    editingSummaryRef.current = null;
+    setViewMode("editor");
+
+    const newId = "entry-" + crypto.randomUUID();
+    setEntryId(newId);
+    entryIdRef.current = newId;
+
+    if (editor) {
+      isProgrammaticRef.current = true;
+      editor.commands.clearContent(false);
+      isProgrammaticRef.current = false;
+
+      setWordCount(0);
+      setSaveStatus("saved");
+    }
+  };
+
+  // Returning to library from viewing an archived document
+  const handleBackToLibrary = () => {
+    if (autosaveTimeout.current) {
+      window.clearTimeout(autosaveTimeout.current);
+      autosaveTimeout.current = null;
+    }
+    setEditingSummary(null);
+    editingSummaryRef.current = null;
+    refreshSummaries();
+    setViewMode("library");
+  };
+
+  // Toggle between Library and Editor
+  const handleToggleLibrary = () => {
+    if (viewMode === "editor") {
+      refreshSummaries();
+      setViewMode("library");
+    } else {
+      setViewMode("editor");
+    }
+  };
+
+  // Done reflecting on the active topic OR Save & Close archived document
+  const handleDone = async () => {
+    if (!editor) return;
+    const text = editor.getText();
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+
+    if (autosaveTimeout.current) {
+      window.clearTimeout(autosaveTimeout.current);
+      autosaveTimeout.current = null;
+    }
+
+    if (editingSummaryRef.current) {
+      try {
+        setSaveStatus("saving");
+        await saveJournalEntry({
+          id: editingSummaryRef.current.entry.id,
+          doc_json: JSON.stringify(editor.getJSON()),
+          plain_text: text,
+          primary_node_id: editingSummaryRef.current.primary_node?.node.id,
+          word_count: words,
+        });
+        setSaveStatus("saved");
+        await refreshSummaries();
+        setEditingSummary(null);
+        editingSummaryRef.current = null;
+        setViewMode("library");
+      } catch (e) {
+        console.error("Failed to save edited entry:", e);
+        setSaveStatus("unsaved");
+      }
+      return;
+    }
+
+    try {
+      setSaveStatus("saving");
+      const saved = await saveJournalEntry({
+        id: entryIdRef.current,
+        doc_json: JSON.stringify(editor.getJSON()),
+        plain_text: text,
+        primary_node_id: activeNodeRef.current?.node.id,
+        word_count: words,
+      });
+      setSaveStatus("saved");
+      await refreshSummaries();
+      onFinishWriting(saved);
+    } catch (e) {
+      console.error("Failed to save entry on done:", e);
+      setSaveStatus("unsaved");
+    }
+  };
+
+  const whisper = editingSummary
+    ? `ARCHIVED REFLECTION · BACKLINKED TO GARDEN`
+    : breakdown?.why_summary
+      ? `SUGGESTED TOPIC · ${breakdown.why_summary}`
+      : "TODAY'S SOUNDING BOARD";
+
+  const displayTitle = editingSummary
+    ? editingSummary.primary_node?.node.title || "Reflective Journal"
+    : activeNode
+      ? activeNode.node.title
+      : "What's still open for you?";
+
+  const displayTags = editingSummary
+    ? editingSummary.primary_node?.tags || []
+    : activeNode?.tags || [];
+
+  // Exclude the document currently open/working on in the Slate from the past documents library
+  const currentDocId = editingSummary ? editingSummary.entry.id : entryId;
+  const pastSummaries = (summaries || []).filter(
+    (item) => item?.entry?.id && item.entry.id !== currentDocId,
+  );
+
+  useEffect(() => {
+    if (actionsRef) {
+      actionsRef.current = {
+        toggleLibrary: handleToggleLibrary,
+        startNewReflection: handleStartNewReflection,
+        backToLibrary: handleBackToLibrary,
+      };
+    }
+  });
+
+  return (
+    <div className={styles.slateRoot}>
+      {/* Main View: Either Document Library or TipTap Editor */}
+      {viewMode === "library" ? (
+        <DocumentLibrary
+          summaries={pastSummaries}
+          searchQuery={searchQuery}
+          onSelectEntry={handleSelectEntry}
+          onNewReflection={handleStartNewReflection}
+        />
+      ) : (
+        <div className={styles.slateEditorView}>
+          {/* Header Section */}
+          <div className={styles.slateTopHeader}>
+            <div className={styles.slateWhisperRow}>
+              <span className={styles.whisperHeader}>{whisper}</span>
+              {editingSummary && (
+                <button
+                  className={styles.btnSkipTopic}
+                  onClick={handleBackToLibrary}
+                  title="Back to library grid"
+                >
+                  ← All Documents
+                </button>
+              )}
+            </div>
+
+            {/* Topic Title Prompt */}
+            <h1 className={styles.slateTopicTitle}>{displayTitle}</h1>
+
+            {displayTags.length > 0 && (
+              <div className={styles.slateTags}>
+                {displayTags.map((t) => (
+                  <span key={t} className={styles.slateTag}>
+                    #{t}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Scrollable TipTap Editor Area */}
+          <div className={styles.slateEditorContainer}>
+            <EditorContent editor={editor} />
+          </div>
+
+          {/* Permanently Pinned Bottom Slate Bar */}
+          <footer className={styles.slateFooterBar}>
+            <div className={styles.slateMeta}>
+              <span className={styles.wordCountLabel}>{wordCount} words</span>
+              <span className={styles.saveStatusDot} data-status={saveStatus} />
+              <span className={styles.saveStatusText}>
+                {saveStatus === "saving"
+                  ? "Saving..."
+                  : saveStatus === "saved"
+                    ? "Saved to Journal"
+                    : "Draft"}
+              </span>
+            </div>
+
+            <button
+              className={styles.btnDone}
+              onClick={handleDone}
+              title="Complete this session and reflect on your feelings"
+            >
+              {editingSummary ? "Save & Close →" : "Done Reflecting →"}
+            </button>
+          </footer>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,134 @@
+/* Custom React Flow Node Card (IdeaNodeCard) */
+.ideaNodeCard {
+  width: 250px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(138, 134, 127, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease;
+  user-select: none;
+  position: relative;
+  backdrop-filter: blur(8px);
+}
+
+.ideaNodeCard:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.09);
+  transform: translateY(-2px);
+}
+
+.selected {
+  box-shadow: 0 0 0 2px var(--accent), 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.highPriority {
+  border-left-width: 4px;
+}
+
+.dimmed {
+  opacity: 0.22 !important;
+}
+
+.cardTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-family: var(--font-ui);
+}
+
+.cardKind {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+.cardTags {
+  display: flex;
+  gap: 4px;
+}
+
+.cardTag {
+  color: var(--ink-soft);
+  font-size: 10px;
+  background: rgba(138, 134, 127, 0.12);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: var(--font-ui);
+}
+
+.cardTagMore {
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-family: var(--font-ui);
+}
+
+.cardTitle {
+  font-family: var(--font-body);
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.35;
+  word-break: break-word;
+  white-space: normal;
+  margin-bottom: 8px;
+}
+
+.cardSnippet {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+  margin-bottom: 8px;
+  max-height: 38px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(138, 134, 127, 0.12);
+}
+
+.scoreBadge {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: rgba(138, 134, 127, 0.12);
+  padding: 2px 5px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.scoreBadge strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.opennessBadge {
+  background: rgba(124, 154, 142, 0.14);
+}
+
+.cardHandle {
+  width: 8px !important;
+  height: 8px !important;
+  background: var(--ink-soft) !important;
+  border: 2px solid var(--surface) !important;
+  border-radius: 50% !important;
+  opacity: 0.3;
+  transition: opacity 150ms ease;
+}
+
+.ideaNodeCard:hover .cardHandle {
+  opacity: 0.8;
+}
+
