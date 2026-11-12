@@ -1,22 +1,22 @@
-/* Journal Root & Theme Variables */
+/* Journal Root & Dark Theme Variables */
 .journalRoot {
-  --journal-bg: #faf8f5;
-  --journal-surface: #ffffff;
-  --journal-ink: #2b2a28;
-  --journal-ink-soft: #8a867f;
+  --journal-bg: #110C09;
+  --journal-surface: #16110e;
+  --journal-ink: rgba(255, 255, 255, 0.9);
+  --journal-ink-soft: rgba(255, 255, 255, 0.5);
   --journal-accent: #7c9a8e; /* sage */
   --journal-warm: #e9c9a8;
   --journal-cool: #b9c8d6;
 
   --journal-font-body: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --journal-font-ui: -apple-system, "SF Pro Text", system-ui, sans-serif;
+  --journal-font-ui: "Geist", -apple-system, "SF Pro Text", system-ui, sans-serif;
 
   --journal-size-body: 21px;
   --journal-size-title: 40px;
   --journal-measure: 64ch;
   --journal-lh: 1.7;
 
-  --journal-radius: 14px;
+  --journal-radius: 12px;
   --journal-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --journal-dur: 400ms;
 
@@ -45,7 +45,7 @@
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  background: var(--bg);
+  background: transparent;
   color: var(--ink);
   font-family: var(--font-ui);
   box-sizing: border-box;
@@ -62,20 +62,18 @@
   display: flex;
   align-items: center;
   width: 320px;
-  height: 32px;
-  background: var(--surface);
-  border: 1px solid rgba(138, 134, 127, 0.22);
-  border-radius: 9999px;
-  padding: 0 12px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0 10px;
   box-sizing: border-box;
   transition: all 150ms ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .sharedSearchContainer:focus-within {
-  background: #ffffff;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(124, 154, 142, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .sharedSearchIcon {
@@ -97,7 +95,7 @@
 
 .sharedSearchInput::placeholder {
   color: var(--ink-soft);
-  opacity: 0.75;
+  opacity: 0.7;
 }
 
 .btnClearSearch {
@@ -107,7 +105,7 @@
   cursor: pointer;
   font-size: 11px;
   padding: 2px 4px;
-  border-radius: 50%;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -120,25 +118,25 @@
 /* View Mode Toggle (Map / List) */
 .viewModeToggle {
   display: flex;
-  background: rgba(138, 134, 127, 0.08);
-  border: 1px solid rgba(138, 134, 127, 0.16);
-  border-radius: 9999px;
-  padding: 2px;
-  height: 32px;
+  background: transparent;
+  border: none;
+  gap: 2px;
+  height: 30px;
   box-sizing: border-box;
+  align-items: center;
 }
 
 .viewModeToggle button {
   background: transparent;
-  border: none;
-  padding: 0 12px;
+  border: 1px solid transparent;
+  padding: 0 10px;
   height: 26px;
-  font-size: 11px;
+  font-size: 12px;
   font-family: var(--font-ui);
   font-weight: 500;
   color: var(--ink-soft);
   cursor: pointer;
-  border-radius: 9999px;
+  border-radius: 8px;
   transition: all 140ms ease;
   display: flex;
   align-items: center;
@@ -147,76 +145,70 @@
 
 .viewModeToggle button:hover {
   color: var(--ink);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .viewModeToggle button.active,
 .viewModeToggle button.activeMode {
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-weight: 550;
 }
 
-/* Header Action Buttons */
+/* Header Action Buttons (Minimalist, borderless by default) */
 .btnToolbarAction {
-  background: var(--surface);
-  border: 1px solid rgba(138, 134, 127, 0.22);
-  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-soft);
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 500;
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 9999px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 150ms ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   white-space: nowrap;
 }
 
 .btnToolbarAction:hover {
-  border-color: rgba(124, 154, 142, 0.5);
-  background: #faf8f5;
-  color: var(--ink);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .btnAddThought {
-  background: #ffffff;
-  border-color: rgba(124, 154, 142, 0.4);
+  color: var(--ink);
 }
 
 /* 3x3 Grid Toggle Icon Button */
 .btnGridToggle {
-  background: var(--surface);
-  border: 1px solid rgba(138, 134, 127, 0.22);
+  background: transparent;
+  border: 1px solid transparent;
   color: var(--ink-soft);
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 140ms ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .btnGridToggle:hover {
-  color: var(--ink);
-  border-color: rgba(124, 154, 142, 0.5);
-  background: #faf8f5;
-  transform: translateY(-1px);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .btnGridToggle.activeGrid {
-  background: rgba(124, 154, 142, 0.15);
-  color: var(--accent);
-  border-color: var(--accent);
-  box-shadow: 0 1px 2px rgba(124, 154, 142, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.12);
 }
-

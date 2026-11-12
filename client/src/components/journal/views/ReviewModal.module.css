@@ -2,9 +2,9 @@
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  background: rgba(43, 42, 40, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,7 +13,8 @@
 }
 
 .modalCard {
-  background: var(--surface);
+  background: #16110e;
+  border: 1px solid #363029;
   border-radius: var(--radius);
   width: 90%;
   max-width: 640px;
@@ -21,7 +22,7 @@
   display: flex;
   flex-direction: column;
   padding: 28px 32px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
   animation: popIn 220ms var(--ease);
 }
 
@@ -49,6 +50,10 @@
   padding: 4px;
 }
 
+.closeBtn:hover {
+  color: #ffffff;
+}
+
 .modalSubtitle {
   font-family: var(--font-ui);
   font-size: 13px;
@@ -67,10 +72,10 @@
 }
 
 .reviewNodeCard {
-  background: var(--bg);
+  background: rgba(255, 255, 255, 0.02);
   border-radius: 10px;
   padding: 16px;
-  border: 1px solid rgba(138, 134, 127, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .reviewNodeHeader {
@@ -88,7 +93,7 @@
   letter-spacing: 0.04em;
   padding: 2px 6px;
   border-radius: 4px;
-  background: rgba(138, 134, 127, 0.12);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--ink-soft);
   flex-shrink: 0;
 }
@@ -98,8 +103,8 @@
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  background: var(--warm);
-  color: #5c3b1e;
+  background: rgba(233, 201, 168, 0.15);
+  color: var(--warm);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -124,45 +129,43 @@
   gap: 12px;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid rgba(138, 134, 127, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btnPrimary {
-  background: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
-  border: none;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 20px;
-  border-radius: 9999px;
-  cursor: pointer;
-  transition: all 180ms ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.btnPrimary:hover:not(:disabled) {
-  opacity: 0.92;
-  transform: translateY(-1px);
-}
-
-.btnSecondary {
-  background: var(--surface);
-  border: 1px solid rgba(138, 134, 127, 0.25);
-  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 500;
   padding: 8px 18px;
-  border-radius: 9999px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.btnSecondary {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 140ms ease;
 }
 
 .btnSecondary:hover:not(:disabled) {
-  border-color: rgba(124, 154, 142, 0.5);
-  background: #faf8f5;
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
 }
 
 @keyframes fadeIn {
@@ -184,4 +187,3 @@
     transform: none;
   }
 }
-

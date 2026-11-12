@@ -9,24 +9,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
   padding: 0;
-  background: var(--surface);
-  border: 1px solid rgba(138, 134, 127, 0.22);
-  border-radius: 50%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
   color: var(--ink-soft);
   cursor: pointer;
   transition: all 140ms ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .btnViewSwitcher:hover {
-  background: #faf8f5;
-  color: var(--ink);
-  border-color: rgba(124, 154, 142, 0.5);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .viewSwitcherIcon {
@@ -37,15 +35,15 @@
 
 .viewDropdownMenu {
   position: absolute;
-  top: 38px;
+  top: 36px;
   left: 0;
   z-index: 100;
-  background: #ffffff;
-  border: 1px solid rgba(138, 134, 127, 0.2);
-  border-radius: 12px;
+  background: #16110e;
+  border: 1px solid #363029;
+  border-radius: 10px;
   padding: 4px;
   min-width: 150px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
   animation: dropdownFadeIn 120ms ease;
 }
 
@@ -71,7 +69,7 @@
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 500;
-  color: var(--ink);
+  color: var(--ink-soft);
   cursor: pointer;
   text-align: left;
   gap: 8px;
@@ -79,12 +77,12 @@
 }
 
 .viewDropdownItem:hover {
-  background: rgba(124, 154, 142, 0.12);
-  color: var(--sage);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
 }
 
 .viewDropdownItem.activeItem {
-  background: var(--ink);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
 
@@ -100,6 +98,5 @@
 .itemShortcut {
   font-family: monospace;
   font-size: 10px;
-  opacity: 0.6;
+  opacity: 0.5;
 }
-

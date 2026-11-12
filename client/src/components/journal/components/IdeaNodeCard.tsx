@@ -19,8 +19,8 @@ function getOpennessColors(openness: number) {
   const b = Math.round(142 - norm * (142 - 87));
 
   return {
-    bg: `rgba(${r}, ${g}, ${b}, ${0.08 + norm * 0.08})`,
-    border: `rgba(${r}, ${g}, ${b}, ${0.35 + norm * 0.25})`,
+    bg: `rgba(${r}, ${g}, ${b}, ${0.04 + norm * 0.06})`,
+    border: `rgba(${r}, ${g}, ${b}, ${0.22 + norm * 0.22})`,
     accent: `rgb(${r}, ${g}, ${b})`,
   };
 }

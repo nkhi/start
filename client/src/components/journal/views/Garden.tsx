@@ -172,6 +172,7 @@ export function Garden({
                 onConnect={onConnect}
                 onNodeClick={onNodeClick}
                 nodeTypes={nodeTypes}
+                proOptions={{ hideAttribution: true }}
                 fitView
                 fitViewOptions={{ padding: 0.3 }}
                 minZoom={0.2}
@@ -180,8 +181,8 @@ export function Garden({
                 <Background
                   variant={BackgroundVariant.Dots}
                   gap={24}
-                  size={1.5}
-                  color="rgba(138, 134, 127, 0.18)"
+                  size={1.2}
+                  color="rgba(255, 255, 255, 0.08)"
                 />
                 <Controls showInteractive={false} />
               </ReactFlow>

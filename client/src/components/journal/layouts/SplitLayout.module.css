@@ -6,7 +6,7 @@
   width: 100%;
   overflow: hidden;
   position: relative;
-  background: var(--bg);
+  background: transparent;
 }
 
 /* 48px Unified Shared Header above both panes */
@@ -14,8 +14,8 @@
   height: 48px;
   min-height: 48px;
   width: 100%;
-  background: var(--bg);
-  border-bottom: 1px solid rgba(138, 134, 127, 0.15);
+  background: transparent;
+  border-bottom: 1px solid #363029;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -67,12 +67,12 @@
 }
 
 .paneLeft {
-  background: var(--bg);
-  border-right: 1px solid rgba(138, 134, 127, 0.12);
+  background: transparent;
+  border-right: 1px solid #363029;
 }
 
 .paneRight {
-  background: var(--surface);
+  background: transparent;
 }
 
 /* Vertical Resize Handle */
@@ -93,13 +93,12 @@
 
 .resizeHandle:hover,
 .resizeHandle.dragging {
-  background: rgba(124, 154, 142, 0.2);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .resizeHandleBar {
   width: 2px;
   height: 48px;
-  background: rgba(138, 134, 127, 0.3);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 1px;
 }
-

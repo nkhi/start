@@ -1,10 +1,10 @@
-/* 2-Stage Add Thought Modal */
+/* 2-Stage Add Thought Modal (Dark Theme) */
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  background: rgba(43, 42, 40, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,7 +13,8 @@
 }
 
 .modalCard {
-  background: var(--surface);
+  background: #16110e;
+  border: 1px solid #363029;
   border-radius: var(--radius);
   width: 90%;
   max-width: 560px;
@@ -21,7 +22,7 @@
   display: flex;
   flex-direction: column;
   padding: 28px 32px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
   animation: popIn 220ms var(--ease);
 }
 
@@ -55,6 +56,10 @@
   padding: 4px;
 }
 
+.closeBtn:hover {
+  color: #ffffff;
+}
+
 .modalSubtitle {
   font-family: var(--font-ui);
   font-size: 13px;
@@ -64,10 +69,11 @@
 }
 
 .modalSubtitle code {
-  background: rgba(138, 134, 127, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   padding: 2px 4px;
   border-radius: 4px;
   font-size: 12px;
+  color: var(--ink);
 }
 
 .modalStepper {
@@ -87,8 +93,8 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 4px 12px;
-  border-radius: 9999px;
-  background: rgba(138, 134, 127, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
   color: var(--ink-soft);
   transition: all 140ms ease;
 }
@@ -97,7 +103,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: rgba(138, 134, 127, 0.2);
+  background: rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,7 +112,7 @@
 }
 
 .modalStepBadge.activeStep {
-  background: var(--ink);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
 
@@ -123,22 +129,22 @@
 .modalStepArrow {
   color: var(--ink-soft);
   font-size: 12px;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .modalTabBar {
   display: inline-flex;
   gap: 4px;
   margin-bottom: 14px;
-  background: rgba(138, 134, 127, 0.08);
+  background: rgba(255, 255, 255, 0.04);
   padding: 3px;
-  border-radius: 9999px;
+  border-radius: 8px;
 }
 
 .modalTabBtn {
   border: none;
   background: transparent;
-  border-radius: 9999px;
+  border-radius: 6px;
   padding: 5px 14px;
   font-family: var(--font-ui);
   font-size: 12px;
@@ -149,10 +155,9 @@
 }
 
 .modalTabBtn.activeTab {
-  background: #ffffff;
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .stage1ListContainer {
@@ -168,26 +173,25 @@
 
 .stage1Input {
   flex: 1;
-  border: 1px solid rgba(138, 134, 127, 0.25);
-  border-radius: 9999px;
-  padding: 9px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 9px 14px;
   font-family: var(--font-body);
   font-size: 15px;
   color: var(--ink);
-  background: var(--bg);
+  background: #0d0907;
   outline: none;
-  transition: border-color 150ms ease, background 150ms ease;
+  transition: border-color 150ms ease;
 }
 
 .stage1Input:focus {
   border-color: var(--accent);
-  background: #ffffff;
 }
 
 .btnAddItem {
-  background: var(--surface);
-  border: 1px solid rgba(138, 134, 127, 0.25);
-  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
   padding: 0 16px;
   font-family: var(--font-ui);
   font-size: 12px;
@@ -198,13 +202,13 @@
 }
 
 .btnAddItem:hover:not(:disabled) {
-  background: rgba(124, 154, 142, 0.1);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 .btnAddItem:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -216,10 +220,11 @@
 }
 
 .stage1Hint code {
-  background: rgba(138, 134, 127, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   padding: 1px 4px;
   border-radius: 3px;
   font-size: 11px;
+  color: var(--ink);
 }
 
 .draftThoughtsList {
@@ -235,9 +240,9 @@
 .draftThoughtItem {
   display: flex;
   align-items: center;
-  background: var(--bg);
-  border: 1px solid rgba(138, 134, 127, 0.16);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
   padding: 8px 12px;
   font-size: 13px;
   color: var(--ink);
@@ -272,7 +277,7 @@
 .draftTagChip {
   font-family: var(--font-ui);
   font-size: 10px;
-  background: rgba(138, 134, 127, 0.12);
+  background: rgba(255, 255, 255, 0.06);
   padding: 2px 6px;
   border-radius: 4px;
   color: var(--ink-soft);
@@ -293,7 +298,7 @@
   background: transparent;
   color: var(--ink-soft);
   cursor: pointer;
-  border-radius: 50%;
+  border-radius: 6px;
   width: 22px;
   height: 22px;
   display: flex;
@@ -303,8 +308,8 @@
 }
 
 .btnRemoveThought:hover {
-  color: #c94a4a;
-  background: rgba(201, 74, 74, 0.1);
+  color: #e06c6c;
+  background: rgba(224, 108, 108, 0.12);
 }
 
 .btnQuickPlant {
@@ -317,7 +322,7 @@
   justify-content: space-between;
   margin-bottom: 14px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(138, 134, 127, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   gap: 12px;
 }
 
@@ -331,9 +336,9 @@
 
 .stage2Pill {
   padding: 4px 12px;
-  border-radius: 9999px;
-  border: 1px solid rgba(138, 134, 127, 0.2);
-  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 500;
@@ -347,14 +352,14 @@
 }
 
 .stage2Pill:hover {
-  border-color: rgba(124, 154, 142, 0.4);
-  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 .stage2Pill.activePill {
-  background: var(--ink);
+  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
-  border-color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.22);
   font-weight: 600;
 }
 
@@ -372,9 +377,9 @@
 .stage2ArrowBtn {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
-  border: 1px solid rgba(138, 134, 127, 0.22);
-  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -386,9 +391,9 @@
 }
 
 .stage2ArrowBtn:hover:not(:disabled) {
-  background: #faf8f5;
-  border-color: var(--accent);
-  color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 .stage2ArrowBtn:disabled {
@@ -404,14 +409,14 @@
 
 .modalTitleInput {
   width: 100%;
-  border: 1px solid rgba(138, 134, 127, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   padding: 10px 12px;
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.4;
   color: var(--ink);
-  background: var(--bg);
+  background: #0d0907;
   outline: none;
   resize: vertical;
   transition: border-color 150ms ease;
@@ -453,13 +458,13 @@
 .modalSelect,
 .modalInput,
 .modalTextarea {
-  border: 1px solid rgba(138, 134, 127, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
   padding: 8px 10px;
   font-family: var(--font-ui);
   font-size: 13px;
   color: var(--ink);
-  background: var(--bg);
+  background: #0d0907;
   outline: none;
   transition: border-color 150ms ease;
 }
@@ -478,8 +483,8 @@
 }
 
 .modalSlidersBox {
-  background: var(--bg);
-  border: 1px solid rgba(138, 134, 127, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 8px;
   padding: 14px 16px;
   display: flex;
@@ -494,62 +499,60 @@
   gap: 12px;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid rgba(138, 134, 127, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btnPrimary {
-  background: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
-  border: none;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 20px;
-  border-radius: 9999px;
-  cursor: pointer;
-  transition: all 180ms ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.btnPrimary:hover:not(:disabled) {
-  opacity: 0.92;
-  transform: translateY(-1px);
-}
-
-.btnPrimary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btnSecondary {
-  background: var(--surface);
-  border: 1px solid rgba(138, 134, 127, 0.25);
-  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 500;
   padding: 8px 18px;
-  border-radius: 9999px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 140ms ease;
 }
 
 .btnSecondary:hover:not(:disabled) {
-  border-color: rgba(124, 154, 142, 0.5);
-  background: #faf8f5;
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
 }
 
 .modalError {
   margin-top: 12px;
   font-family: var(--font-ui);
   font-size: 13px;
-  color: #c94a4a;
+  color: #e06c6c;
 }
 
 .seedTextarea {
   width: 100%;
-  border: 1px solid rgba(138, 134, 127, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   padding: 14px;
   font-family: "SF Mono", Menlo, monospace;
@@ -557,7 +560,7 @@
   line-height: 1.6;
   resize: vertical;
   outline: none;
-  background: var(--bg);
+  background: #0d0907;
   color: var(--ink);
 }
 

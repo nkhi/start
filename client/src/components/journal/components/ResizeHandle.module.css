@@ -15,13 +15,12 @@
 
 .resizeHandle:hover,
 .resizeHandle.dragging {
-  background: rgba(124, 154, 142, 0.2);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .resizeHandleBar {
   width: 2px;
   height: 48px;
-  background: rgba(138, 134, 127, 0.3);
+  background: rgba(255, 255, 255, 0.14);
   border-radius: 1px;
 }
-

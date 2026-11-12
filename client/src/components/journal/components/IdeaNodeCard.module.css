@@ -1,10 +1,10 @@
 /* Custom React Flow Node Card (IdeaNodeCard) */
 .ideaNodeCard {
   width: 250px;
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 12px 14px;
-  border: 1px solid rgba(138, 134, 127, 0.3);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #16110e;
   cursor: pointer;
   transition: box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease;
   user-select: none;
@@ -13,16 +13,16 @@
 }
 
 .ideaNodeCard:hover {
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.09);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   transform: translateY(-2px);
 }
 
 .selected {
-  box-shadow: 0 0 0 2px var(--accent), 0 8px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(0, 0, 0, 0.6);
 }
 
 .highPriority {
-  border-left-width: 4px;
+  border-left-width: 3px;
 }
 
 .dimmed {
@@ -52,7 +52,7 @@
 .cardTag {
   color: var(--ink-soft);
   font-size: 10px;
-  background: rgba(138, 134, 127, 0.12);
+  background: rgba(255, 255, 255, 0.06);
   padding: 1px 5px;
   border-radius: 3px;
   font-family: var(--font-ui);
@@ -93,7 +93,7 @@
   align-items: center;
   gap: 6px;
   padding-top: 8px;
-  border-top: 1px solid rgba(138, 134, 127, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .scoreBadge {
@@ -101,7 +101,7 @@
   font-size: 10px;
   font-weight: 500;
   color: var(--ink-soft);
-  background: rgba(138, 134, 127, 0.12);
+  background: rgba(255, 255, 255, 0.05);
   padding: 2px 5px;
   border-radius: 4px;
   display: inline-flex;
@@ -110,7 +110,7 @@
 }
 
 .scoreBadge strong {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
 }
 
@@ -121,14 +121,13 @@
 .cardHandle {
   width: 8px !important;
   height: 8px !important;
-  background: var(--ink-soft) !important;
-  border: 2px solid var(--surface) !important;
+  background: rgba(255, 255, 255, 0.4) !important;
+  border: 2px solid #16110e !important;
   border-radius: 50% !important;
   opacity: 0.3;
   transition: opacity 150ms ease;
 }
 
 .ideaNodeCard:hover .cardHandle {
-  opacity: 0.8;
+  opacity: 0.85;
 }
-
