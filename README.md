@@ -1,16 +1,17 @@
 # ▶️ Start
 
-Start Menu, aka Start, is my personal dashboard for tracking: 
+Start Menu, aka Start, is my personal self-hosted super app. It has functionality for tracking:
 - Habits 
 - Todos
-- Notes ([Memos](https://github.com/usememos/memos))
-- Journals
+- Notes ([using Memos](https://github.com/usememos/memos))
+- Journals 
 - Lists
-- Goals
-- Vlogs ([Cap](https://cap.so/docs/self-hosting))
-- Photos ([Immich](https://github.com/immich-app/immich))
+- Stickies
+- Good Moments
+- Vlogs ([using Cap](https://cap.so/docs/self-hosting))
+- Photos ([using Immich](https://github.com/immich-app/immich))
 
-I serve this on my local network and access it from multiple devices via a Tailscale VPN for private tunnelling. I remixed [Daylight](https://github.com/bakkenbaeck/daylight-web) as a screensaver. I resurrected [Nook](https://github.com/micaiah-buttars/nook) to play Animal Crossing background music every hour. I also integrated [Cap](https://github.com/CapSoftware/Cap) to record weekly vlogs. _There's also a work mode with restricted data fetching to keep my personal data off the corporate VPN._
+I serve this on my local network and access it from multiple devices via a Tailscale VPN for private tunnelling. I remixed [Daylight](https://github.com/bakkenbaeck/daylight-web) as a screensaver. I resurrected [Nook](https://github.com/micaiah-buttars/nook) (before he brought it back, nice!) to play Animal Crossing background music every hour. I also integrated [Cap](https://github.com/CapSoftware/Cap) to record weekly vlogs. _There's also a work mode with restricted data fetching to keep my personal data off the corporate VPN._
 
 This app exists to make it easy to iterate on *how* I organize myself. Ideally, building a bespoke UX and feature set will encourage consistency in reflection and growth. 
 
@@ -42,7 +43,7 @@ This app exists to make it easy to iterate on *how* I organize myself. Ideally, 
 
 ### ✅ **Todos**
 <details>
-  <summary>Daily task management separated by Life and Work. Inspired by https://tweek.so/ </summary>
+  <summary>Daily task management with calendar integration. Separated by Life and Work. Inspired by https://tweek.so/ </summary>
    
 - **Drag and drop** - easily move tasks between status accordions, or to the graveyard
 - **Easy task punting** - move incomplete tasks to the next day
@@ -56,24 +57,41 @@ This app exists to make it easy to iterate on *how* I organize myself. Ideally, 
 
 </details>
 
-### 💭 **Memos**
+### 💭 **Notes**
 <details>
   <summary>Integrated Memos as an iFrame for quick thoughts and notes.</summary>
 
-Better than a notes app where everything gets lost. Memos has search, hashtags, date-filters, and more.
+Better than a notes app where everything gets lost. Memos has search, hashtags, date-filters, and more. Find Memos here: https://github.com/usememos/memos
 
 <img src="assets/memos.png" width="600" alt="memos">
 
 </details>
 
 ### 📔 **Journal**
-Daily check-ins with thoughtful prompts worth asking every day.
+<details>
+  <summary>A mind map + daily journal prompting algorithm powered by light text classification to suggest daily topics.</summary>
+
+ Seed the mind map with open questions/problems/observations/themes, rank open questions on a 1-10 scale for priority, intensity, and openness, and then link them to other ideas. Then with some light text classification on-device powered by Ollama, you get a relevant topic for daily journalling, so you can keep circling back to the hard questions.
+
+<!-- <img src="assets/memos.png" width="600" alt="memos"> -->
+
+</details>
+
 
 ### 📝 **Lists**
-Organize ideas and groups of thoughts that belong together. Looks like Todoist Kanban view. **Perfect for**: Groceries, Furniture ideas, Movie watchlists.
+a la Todoist. Organize ideas and groups of thoughts that belong together. **Perfect for**: Groceries, Furniture, Watchlists, Bucket lists, etc.
 
-### 🌱 **Grow**
-Google Keep-style cards for ideas on what to do next. Mosaic tile layout with variable colors and tile sizes. 
+### 🌱 **Stickies**
+a la Google Keep. Sticky notes in a mosaic layout with variable colours and sizes. 
+
+### 🗳 **Moments**
+Write-only submission box for remembering good times. At the end of the year, it turns into a Spotify-Wrapped style timeline of all the nice things that happened throughout the year.
+
+### 🎥 **Vlogs**
+Integrated [Cap](https://github.com/CapSoftware/Cap) as an iFrame. Cap is an open-source clone of Loom.
+
+### 🖼️ **Photos**
+Integrated [Immich](https://github.com/immich-app/immich) as an iFrame. 
 
 ### ☀️ **Daylight** (Bonus/Screensaver)
 <details>
@@ -85,6 +103,9 @@ Google Keep-style cards for ideas on what to do next. Mosaic tile layout with va
 
 </details>
 
+### 🎵 **Nook (Bonus/Music)**
+Plays music on the hour, every hour.
+Inspired by [Nook](https://github.com/micaiah-buttars/nook) by mn6. 
 
 ## Getting Started
 
@@ -237,7 +258,7 @@ All services on the home server are accessible via the VPN. Headscale handles au
 | **Frontend** | React, TypeScript, Vite, CSS Modules, [Phosphor Icons](https://phosphoricons.com/) |
 | **Backend** | Express, TypeScript, [Bun](https://bun.sh/) |
 | **Database** | PostgreSQL (Docker) |
-| **Integrations** | Google Calendar API, [Cap](https://cap.so/) + [MinIO](https://min.io/) |
+| **Integrations** | Google Calendar API, Immich, Memos, [Cap](https://cap.so/) + [MinIO](https://min.io/) |
 
 ## Private Data
 

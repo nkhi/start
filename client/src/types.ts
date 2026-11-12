@@ -4,8 +4,6 @@ export type {
   HabitEntry,
   Vlog,
   Task,
-  Question,
-  DiaryEntry,
   Note,
   ListItem,
   List,
@@ -17,7 +15,6 @@ export type {
   TasksByDate,
   GroupedTasks,
   TaskCounts,
-  DiaryByDate,
   VlogsByWeek,
   HabitInsightStateCounts,
   HabitInsightDowEntry,
@@ -36,11 +33,3 @@ export interface WeeklyStats {
     class: string;
   };
 }
-
-export interface DiaryByQuestion {
-  question: Question;
-  entries: DiaryEntry[];
-}
-
-// Re-import Question and DiaryEntry for the interface above
-import type { Question, DiaryEntry } from '../../shared/types';

@@ -25,12 +25,6 @@ export const queryKeys = {
         insights: (days: number) => [...queryKeys.habits.all, 'insights', days] as const,
         trend: (days: number) => [...queryKeys.habits.all, 'trend', days] as const,
     },
-    diary: {
-        all: ['diary'] as const,
-        questions: () => [...queryKeys.diary.all, 'questions'] as const,
-        entries: () => [...queryKeys.diary.all, 'entries'] as const,
-        byQuestion: () => [...queryKeys.diary.all, 'byQuestion'] as const,
-    },
     lists: {
         all: ['lists'] as const,
     },

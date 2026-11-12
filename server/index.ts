@@ -6,7 +6,7 @@ import { logToFile } from './logger.ts';
 import habitsRoutes from './routes/habits.ts';
 import vlogsRoutes from './routes/vlogs.ts';
 import tasksRoutes from './routes/tasks.ts';
-import diaryRoutes from './routes/diary.ts';
+// STALE CODE: diaryRoutes removed in favor of upcoming React/Rust journal
 import nextRoutes from './routes/next.ts';
 import listsRoutes from './routes/lists.ts';
 import landmarksRoutes from './routes/landmarks.ts';
@@ -85,7 +85,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/', habitsRoutes);
 app.use('/', vlogsRoutes);
 app.use('/', tasksRoutes);
-app.use('/', diaryRoutes);
+// app.use('/', diaryRoutes); // STALE CODE: diary endpoints removed
 app.use('/', nextRoutes);
 app.use('/', listsRoutes);
 app.use('/', landmarksRoutes);

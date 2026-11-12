@@ -58,22 +58,6 @@ export interface Task {
   puntDays?: number; // Days between activeDate and createdAt (calculated server-side)
 }
 
-export interface Question {
-  id: string;
-  text: string;
-  order: number;
-  active: boolean;
-  date?: string;
-}
-
-export interface DiaryEntry {
-  id: string;
-  date: string;
-  questionId: string;
-  answer: string | null;
-  createdAt: string | null;
-}
-
 // Note = NextItem in the server
 export interface Note {
   id: string;
@@ -161,10 +145,6 @@ export interface TaskCounts {
   };
 }
 
-export interface DiaryByDate {
-  [date: string]: DiaryEntry[];
-}
-
 export interface VlogsByWeek {
   [weekStartDate: string]: Vlog;
 }
@@ -236,28 +216,6 @@ export interface CreateVlogRequest {
   weekStartDate: string;
   videoUrl: string;
   embedHtml: string;
-}
-
-export interface CreateQuestionRequest {
-  id: string;
-  text: string;
-  order?: number;
-  active?: boolean;
-  date?: string;
-}
-
-export interface CreateDiaryEntryRequest {
-  id: string;
-  date: string;
-  questionId: string;
-  answer?: string;
-  createdAt?: string;
-}
-
-export interface UpdateDiaryEntryRequest {
-  answer?: string;
-  date?: string;
-  questionId?: string;
 }
 
 export interface CreateNoteRequest {

@@ -85,7 +85,6 @@ server/
 ├── routes/
 │   ├── habits.ts       # Habit definitions and entries
 │   ├── tasks.ts        # Todo tasks with batch operations
-│   ├── diary.ts        # Journal entries and questions
 │   ├── lists.ts        # Lists with items
 │   ├── next.ts         # Ideas/notes cards
 │   ├── vlogs.ts        # Weekly video reflections
@@ -150,16 +149,8 @@ To initialize the database tables, run the SQL in [`db_utils/table_setup.sql`](d
 | `POST` | `/tasks/batch/fail` | Batch fail multiple tasks |
 | `PATCH` | `/tasks/:id/reorder` | Update task order |
 
-### Journal (Diary)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/questions` | Get all active questions |
-| `POST` | `/questions` | Create a question |
-| `GET` | `/diary` | Get all diary entries (grouped by date) |
-| `POST` | `/diary-entries` | Create/upsert diary entry |
-| `PATCH` | `/diary-entries/:id` | Update diary entry |
-| `DELETE` | `/diary-entries/:id` | Delete diary entry |
+### Journal (Diary) [DEPRECATED / REMOVED]
+*Endpoints removed in preparation for new React + Rust journaling solution.*
 
 ### Lists
 
