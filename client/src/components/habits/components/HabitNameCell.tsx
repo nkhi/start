@@ -3,6 +3,7 @@ import { HeartIcon, Warning, Clock } from '@phosphor-icons/react';
 import type { Habit } from '../../../types';
 import { HabitTimeIcon } from './habitTimeConfig';
 import { HABIT_TIME_CONFIG } from './constants';
+import { useIsMobile } from '../../../hooks/useLayout';
 import styles from './HabitNameCell.module.css';
 
 export interface ReorderPosition {
@@ -24,6 +25,7 @@ interface HabitNameCellProps {
 const LONG_PRESS_DURATION = 500; // ms
 
 export function HabitNameCell({ habit, streak, failedStreak, onMouseEnter, onMouseLeave, onReorderStart, onDeadlineMouseEnter, onDeadlineMouseLeave }: HabitNameCellProps) {
+    const isMobile = useIsMobile();
     const longPressTimerRef = useRef<number | null>(null);
     const isLongPressRef = useRef(false);
     const elementRef = useRef<HTMLDivElement>(null);
@@ -105,7 +107,7 @@ export function HabitNameCell({ habit, streak, failedStreak, onMouseEnter, onMou
             );
         }
 
-        return <HabitTimeIcon defaultTime={habit.defaultTime} size={22} />;
+        return <HabitTimeIcon defaultTime={habit.defaultTime} size={isMobile ? 16 : 22} />;
     };
 
     return (
@@ -144,14 +146,14 @@ export function HabitNameCell({ habit, streak, failedStreak, onMouseEnter, onMou
                             onMouseEnter={(e) => onDeadlineMouseEnter?.(e, habit.deadlineTime!)}
                             onMouseLeave={onDeadlineMouseLeave}
                         >
-                            <Clock size={14} weight="regular" />
+                            <Clock size={isMobile ? 12 : 14} weight="regular" />
                         </span>
                     )}
 
                     {streak > 0 && (
                         <span className={styles.streakBadge}>
                             <span className={styles.streakIcon}>
-                                <HeartIcon size={12} weight="fill" />
+                                <HeartIcon size={isMobile ? 10 : 12} weight="fill" />
                             </span>
                             <span>{streak}</span>
                         </span>
@@ -160,7 +162,7 @@ export function HabitNameCell({ habit, streak, failedStreak, onMouseEnter, onMou
                     {failedStreak > 0 && (
                         <span className={styles.failedStreakBadge}>
                             <span className={styles.failedStreakIcon}>
-                                <Warning size={12} weight="fill" />
+                                <Warning size={isMobile ? 10 : 12} weight="fill" />
                             </span>
                             <span>{failedStreak}</span>
                         </span>

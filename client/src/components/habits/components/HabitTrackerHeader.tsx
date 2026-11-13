@@ -4,6 +4,7 @@ import { DateUtility } from '../../../utils';
 import { TimeFilterButtons } from './TimeFilterButtons';
 import { HabitTimeIcon } from './habitTimeConfig';
 import type { Habit, Vlog } from '../../../types';
+import { useIsMobile } from '../../../hooks/useLayout';
 import styles from '../HabitTracker.module.css';
 
 interface HabitTrackerHeaderProps {
@@ -42,20 +43,24 @@ export const HabitTrackerHeader = forwardRef<HTMLTableSectionElement, HabitTrack
     showSections,
     onToggleSections,
 }, ref) => {
+    const isMobile = useIsMobile();
+
     return (
         <thead id="table-head" ref={ref}>
             <tr>
-                <th className={styles.trendsHeader}>
-                    <TimeFilterButtons
-                        selectedTimeFilter={selectedTimeFilter}
-                        onFilterChange={onFilterChange}
-                        chartData={chartData}
-                        habits={habits}
-                        showInsights={showInsights}
-                        onToggleInsights={onToggleInsights}
-                        showSections={showSections}
-                        onToggleSections={onToggleSections}
-                    />
+                <th className={styles.trendsHeader} aria-label="Habits">
+                    {!isMobile && (
+                        <TimeFilterButtons
+                            selectedTimeFilter={selectedTimeFilter}
+                            onFilterChange={onFilterChange}
+                            chartData={chartData}
+                            habits={habits}
+                            showInsights={showInsights}
+                            onToggleInsights={onToggleInsights}
+                            showSections={showSections}
+                            onToggleSections={onToggleSections}
+                        />
+                    )}
                 </th>
                 {!showInsights && weeks.map((week) => {
                     const isExpanded = expandedWeeks.has(week.key);
@@ -68,7 +73,7 @@ export const HabitTrackerHeader = forwardRef<HTMLTableSectionElement, HabitTrack
                                 key={week.key}
                                 className={styles.weekSummaryHeader}
                                 onClick={() => onToggleWeek(week.key)}
-                                style={{ cursor: 'pointer', minWidth: '120px' }}
+                                style={isMobile ? { cursor: 'pointer' } : { cursor: 'pointer', minWidth: '120px' }}
                             >
                                 <div className={styles.dayHeader} style={{ flexDirection: 'column', gap: '3px', alignItems: 'center', justifyContent: 'center' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -90,7 +95,7 @@ export const HabitTrackerHeader = forwardRef<HTMLTableSectionElement, HabitTrack
                                 <th
                                     colSpan={1}
                                     className={DateUtility.isToday(date) ? styles.todayColumn : ''}
-                                    style={DateUtility.isToday(date) ? { minWidth: '120px' } : undefined}
+                                    style={DateUtility.isToday(date) && !isMobile ? { minWidth: '120px' } : undefined}
                                 >
                                     <div className={styles.dayHeader} style={{ position: 'relative' }}>
                                         <span className={`${styles.dayName} ${DateUtility.isToday(date) ? styles.today : ''}`}>

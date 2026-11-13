@@ -14,6 +14,8 @@ import { HabitTrackerHeader } from './components/HabitTrackerHeader';
 import { HabitRow } from './components/HabitRow';
 import { HabitTooltips } from './components/HabitTooltips';
 import { InsightsDashboard } from './components/insights/InsightsDashboard';
+import { TimeFilterButtons } from './components/TimeFilterButtons';
+import { useIsMobile } from '../../hooks/useLayout';
 import styles from './HabitTracker.module.css';
 
 import { HABIT_TRACKER_CONFIG, HABIT_SECTIONS } from './components/constants';
@@ -21,6 +23,7 @@ import { CRITICAL_FILTER, UNFINISHED_FILTER } from './components/TimeFilterButto
 
 
 export function HabitTracker() {
+  const isMobile = useIsMobile();
   const tableWrapperRef = useRef<HTMLDivElement>(null);
   const theadRef = useRef<HTMLTableSectionElement>(null);
   const { toasts: deadlineToasts, showDeadlineToast, dismissToast: dismissDeadlineToast } = useHabitDeadlineToast();
@@ -241,6 +244,20 @@ export function HabitTracker() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+      {isMobile && (
+        <div className={styles.mobileFilterBar}>
+          <TimeFilterButtons
+            selectedTimeFilter={selectedTimeFilter}
+            onFilterChange={handleFilterChange}
+            chartData={chartData}
+            habits={habits}
+            showInsights={showInsights}
+            onToggleInsights={handleToggleInsights}
+            showSections={showSections}
+            onToggleSections={() => setShowSections(prev => !prev)}
+          />
+        </div>
+      )}
 
       {/* Layout container: thead (always) + either tbody or InsightsDashboard */}
       <div

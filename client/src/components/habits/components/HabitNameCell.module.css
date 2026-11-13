@@ -156,3 +156,45 @@
 .deadlineBadge:hover {
   color: rgba(255, 255, 255, 0.6);
 }
+
+/* Mobile layout (driven by LayoutProvider data-layout="mobile") */
+:global([data-layout="mobile"]) .habitName {
+  gap: 6px;
+  padding: 6px 0;
+  width: max-content;
+}
+
+:global([data-layout="mobile"]) .habitNameText {
+  font-size: 13px;
+  line-height: 1.25;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+:global([data-layout="mobile"]) .timeBadge {
+  font-size: 10px;
+  padding: 1px 4px;
+  margin-left: 4px;
+}
+
+:global([data-layout="mobile"]) .routineBadge {
+  font-size: 11px;
+  padding: 2px 5px;
+}
+
+:global([data-layout="mobile"]) .badgesContainer {
+  gap: 3px;
+}
+
+:global([data-layout="mobile"]) .streakBadge,
+:global([data-layout="mobile"]) .failedStreakBadge {
+  padding: 2px 4px;
+  font-size: 10px;
+  gap: 2px;
+}
+
+:global([data-layout="mobile"]) .streakIcon,
+:global([data-layout="mobile"]) .failedStreakIcon {
+  width: 10px;
+  height: 10px;
+}

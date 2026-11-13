@@ -11,6 +11,8 @@ import { Navigation, type TabType } from './components/shared/Navigation';
 import { Daylight } from './components/daylight/Daylight';
 import { DaylightProvider } from './components/daylight/DaylightContext';
 import { CalendarEventsProvider } from './contexts/CalendarEventsContext';
+import { LayoutProvider } from './contexts/LayoutContext';
+import { useLayout } from './hooks/useLayout';
 import { ApiErrorProvider, useApiError } from './components/shared/ApiErrorContext';
 import { ApiErrorToast } from './components/shared/ApiErrorToast';
 import { setGlobalErrorReporter, clearGlobalErrorReporter } from './api/errorReporter';
@@ -35,6 +37,7 @@ function ErrorReporterSetup() {
 }
 
 function AppContent() {
+  const { layout } = useLayout();
   const [activeTab, setActiveTab] = useState<TabType>(WORK_MODE ? 'todos' : 'habits');
   const [lastTab, setLastTab] = useState<TabType>(WORK_MODE ? 'todos' : 'habits');
 
@@ -57,7 +60,7 @@ function AppContent() {
   return (
     <>
       <ErrorReporterSetup />
-      <div id="app">
+      <div id="app" data-layout={layout}>
         {showNavigation && (
           <Navigation
             activeTab={activeTab}
@@ -87,13 +90,15 @@ function AppContent() {
 
 function App() {
   return (
-    <DaylightProvider>
-      <CalendarEventsProvider>
-        <ApiErrorProvider>
-          <AppContent />
-        </ApiErrorProvider>
-      </CalendarEventsProvider>
-    </DaylightProvider>
+    <LayoutProvider>
+      <DaylightProvider>
+        <CalendarEventsProvider>
+          <ApiErrorProvider>
+            <AppContent />
+          </ApiErrorProvider>
+        </CalendarEventsProvider>
+      </DaylightProvider>
+    </LayoutProvider>
   );
 }
 

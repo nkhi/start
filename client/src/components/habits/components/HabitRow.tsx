@@ -4,6 +4,7 @@ import { DateUtility } from '../../../utils';
 import { HabitNameCell, type ReorderPosition } from './HabitNameCell';
 import { WeekSparkline } from './WeekSparkline';
 import { HabitCell } from './HabitCell';
+import { useIsMobile } from '../../../hooks/useLayout';
 import styles from '../HabitTracker.module.css';
 
 interface HabitRowProps {
@@ -48,7 +49,7 @@ export function HabitRow({
     onDeadlineMouseLeave,
     dynamicRowHeight
 }: HabitRowProps) {
-
+    const isMobile = useIsMobile();
     const currentFailedStreak = getFailedStreak(habit.id);
 
     return (
@@ -95,7 +96,7 @@ export function HabitRow({
 
                     return (
                         <React.Fragment key={`${week.key}-${idx}`}>
-                            <td style={DateUtility.isToday(date) ? { minWidth: '120px' } : undefined}>
+                            <td style={DateUtility.isToday(date) && !isMobile ? { minWidth: '120px' } : undefined}>
                                 {(() => {
                                     const handlers = getCellHandlers(date, habit, entry);
                                     return (

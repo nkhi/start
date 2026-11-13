@@ -78,20 +78,12 @@ textarea {
   background: transparent;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  #app {
-    height: calc(100vh - 1rem);
-  }
+/* Responsive (driven by LayoutProvider data-layout attribute) */
+:root[data-layout="mobile"] body {
+  min-width: 0;
+}
 
-  header {
-    padding: 16px 20px;
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
-  header h1 {
-    font-size: 18px;
-  }
+:root[data-layout="mobile"] #app {
+  height: 100vh;
+  height: 100dvh;
 }
