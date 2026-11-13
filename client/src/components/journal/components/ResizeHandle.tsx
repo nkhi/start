@@ -1,20 +1,29 @@
-import { useCallback, useEffect, useState, type MouseEvent as ReactMouseEvent, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type RefObject,
+} from "react";
 import styles from "./ResizeHandle.module.css";
 
 interface ResizeHandleProps {
+  axis?: "x" | "y";
   onResize: (ratio: number) => void;
   onReset: () => void;
   containerRef: RefObject<HTMLDivElement | null>;
 }
 
 export function ResizeHandle({
+  axis = "x",
   onResize,
   onReset,
   containerRef,
 }: ResizeHandleProps) {
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleMouseDown = useCallback((e: ReactMouseEvent) => {
+  const handlePointerDown = useCallback((e: ReactPointerEvent) => {
     e.preventDefault();
     setIsDragging(true);
   }, []);
@@ -30,31 +39,36 @@ export function ResizeHandle({
   useEffect(() => {
     if (!isDragging) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const rawRatio = (e.clientX - rect.left) / rect.width;
+      const rawRatio =
+        axis === "y"
+          ? (e.clientY - rect.top) / rect.height
+          : (e.clientX - rect.left) / rect.width;
       const clamped = Math.max(0.25, Math.min(0.75, rawRatio));
       onResize(clamped);
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setIsDragging(false);
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
     };
-  }, [isDragging, onResize, containerRef]);
+  }, [isDragging, axis, onResize, containerRef]);
 
   return (
     <div
-      className={`${styles.resizeHandle} ${isDragging ? styles.dragging : ""}`}
-      onMouseDown={handleMouseDown}
+      className={`${styles.resizeHandle} ${axis === "y" ? styles.vertical : ""} ${isDragging ? styles.dragging : ""}`}
+      onPointerDown={handlePointerDown}
       onDoubleClick={handleDoubleClick}
       title="Drag to resize, double-click to center (50/50)"
     >

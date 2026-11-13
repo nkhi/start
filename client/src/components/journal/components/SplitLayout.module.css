@@ -65,3 +65,28 @@
   background: rgba(255, 255, 255, 0.12);
   border-radius: 1px;
 }
+
+/* Mobile layout: Slate on top half, Garden on bottom half */
+:global([data-layout="mobile"]) .splitContainer {
+  flex-direction: column;
+}
+
+:global([data-layout="mobile"]) .pane {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+}
+
+:global([data-layout="mobile"]) .paneRight {
+  order: 1;
+  border-bottom: 1px solid #363029;
+}
+
+:global([data-layout="mobile"]) .modeSlate .paneRight {
+  border-bottom: none;
+}
+
+:global([data-layout="mobile"]) .paneLeft {
+  order: 3;
+  border-right: none;
+}
