@@ -1,0 +1,34 @@
+{
+  auto_https off
+}
+
+# Frontend (Vite dev server)
+:8443 {
+  tls /certs/cert.pem /certs/key.pem
+  reverse_proxy host.docker.internal:5173
+}
+
+# Backend API (Bun + Express)
+:4443 {
+  tls /certs/cert.pem /certs/key.pem
+  reverse_proxy host.docker.internal:4000
+}
+
+# Memos
+:5231 {
+  tls /certs/cert.pem /certs/key.pem
+  reverse_proxy memos:5230
+}
+
+# Immich
+:2284 {
+  tls /certs/cert.pem /certs/key.pem
+  reverse_proxy host.docker.internal:2283
+}
+
+# Cap
+:3001 {
+  tls /certs/cert.pem /certs/key.pem
+  reverse_proxy host.docker.internal:3000
+}
+

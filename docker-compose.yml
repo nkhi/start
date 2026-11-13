@@ -34,6 +34,25 @@ services:
       postgres:
         condition: service_healthy
 
+  # Caddy HTTPS Reverse Proxy (Tailscale / PWA access)
+  caddy:
+    image: caddy:2-alpine
+    container_name: start-caddy
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:8443:8443" # Vite frontend HTTPS
+      - "0.0.0.0:4443:4443" # Backend API HTTPS
+      - "0.0.0.0:5231:5231" # Memos HTTPS
+      - "0.0.0.0:2284:2284" # Immich HTTPS
+      - "0.0.0.0:3001:3001" # Cap HTTPS
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - memos
+
   # =========================================================================
   # Cap Services (Video Recording Platform)
   # Based on official Cap docker-compose template

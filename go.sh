@@ -171,13 +171,13 @@ start_immich() {
 }
 
 start_containers() {
-  echo -e "${GREEN}[DOCKER]${NC} Starting Postgres and Memos..."
+  echo -e "${GREEN}[DOCKER]${NC} Starting Postgres, Memos, and Caddy..."
 
   if [ "$WITH_CAP" = true ]; then
     echo -e "${GREEN}[DOCKER]${NC} Also starting Cap services (MySQL, MinIO, Media Server, Web)..."
     docker compose --profile cap up -d
   else
-    docker compose up -d postgres memos
+    docker compose up -d postgres memos caddy
   fi
 
   # Wait for Postgres to be healthy
@@ -196,6 +196,7 @@ start_containers() {
 
   echo -e "${GREEN}[DOCKER]${NC} Postgres is ready!"
   echo -e "${GREEN}[DOCKER]${NC} Memos running on port 5230"
+  echo -e "${GREEN}[DOCKER]${NC} Caddy HTTPS proxy running on port 8443"
 
   if [ "$WITH_CAP" = true ]; then
     echo -e "${GREEN}[DOCKER]${NC} Cap running on port 3000"
