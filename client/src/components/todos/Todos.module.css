@@ -801,24 +801,79 @@
   min-height: 0;
 }
 
-@media (max-width: 768px) {
-  .todoColumn {
-    min-width: 90vw;
-    width: 90vw;
-  }
+/* Mobile layout (driven by LayoutProvider data-layout="mobile") */
+:global([data-layout="mobile"]) .todosScrollContainer {
+  padding: 0 0.5rem;
+}
 
-  .todoContentRow {
-    flex-direction: column;
-    gap: 1.5rem;
-  }
+:global([data-layout="mobile"]) .todoColumn {
+  min-width: 92vw;
+  width: 92vw;
+  padding: 0.75rem;
+  padding-bottom: 76px;
+}
 
-  .todoCategorySection {
-    flex: 1;
-    /* On mobile, let them split height or stack? */
-    /* If we want to avoid the 'gap' on mobile, we might want flex: auto? 
-       But then we lose scrolling within the section if it overflows. 
-       Let's stick to flex: 1 for now, as the user primarily wanted side-by-side on desktop. */
-  }
+:global([data-layout="mobile"]) .todoContentRow {
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+:global([data-layout="mobile"]) .todoCategorySection {
+  flex: 1 1 0;
+}
+
+:global([data-layout="mobile"]) .todoCategorySection.collapsedCategorySection {
+  flex: 0 0 auto;
+}
+
+:global([data-layout="mobile"]) .todoCategorySection.collapsedCategorySection .todoCategoryHeader {
+  margin-bottom: 0.4rem;
+}
+
+:global([data-layout="mobile"]) .todoCategorySection.collapsedCategorySection .todoInputFormSmall {
+  margin-bottom: 0;
+}
+
+:global([data-layout="mobile"]) .todoCategorySection.collapsedCategorySection .accordionsContainer {
+  display: none;
+}
+
+:global([data-layout="mobile"]) .todoItem {
+  padding: 0.6rem 0.25rem 0.6rem 0.4rem;
+  margin: 0;
+}
+
+:global([data-layout="mobile"]) .todoItemContent {
+  gap: 0.5rem;
+}
+
+:global([data-layout="mobile"]) .taskActionsBtn {
+  padding: 2px;
+}
+
+.mobileDragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 28px;
+  margin-left: 2px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.28);
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mobileDragHandle:active {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: grabbing;
 }
 
 /* Drag and Drop Styles */

@@ -88,3 +88,10 @@
 .weekViewContainer :global(.todoActions) {
   transform: scale(0.9);
 }
+
+/* Mobile layout (driven by LayoutProvider data-layout="mobile") */
+:global([data-layout="mobile"]) .weekColumn {
+  padding: 0.5rem;
+  padding-bottom: 76px;
+  overflow-y: hidden;
+}

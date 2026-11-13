@@ -21,7 +21,9 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { DotsSixVertical } from '@phosphor-icons/react';
 import type { Task } from '../../types';
+import { useIsMobile } from '../../hooks/useLayout';
 import styles from './Todos.module.css';
 
 // ============================================
@@ -32,8 +34,8 @@ export interface DraggableTaskProps {
     /** The task data */
     task: Task;
 
-    /** Content to render inside the draggable wrapper */
-    children: React.ReactNode;
+    /** Content (or render prop receiving a mobile drag handle) inside the draggable wrapper */
+    children: React.ReactNode | ((dragHandle: React.ReactNode) => React.ReactNode);
 
     /** Whether dragging is disabled for this task */
     disabled?: boolean;
@@ -44,6 +46,7 @@ export interface DraggableTaskProps {
 // ============================================
 
 export function DraggableTask({ task, children, disabled = false }: DraggableTaskProps) {
+    const isMobile = useIsMobile();
     const {
         attributes,
         listeners,
@@ -61,14 +64,28 @@ export function DraggableTask({ task, children, disabled = false }: DraggableTas
         disabled,
     });
 
+    const useHandleOnly = isMobile && typeof children === 'function';
+
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        cursor: disabled ? 'default' : isDragging ? 'grabbing' : 'grab',
-        touchAction: 'none',
+        cursor: disabled || useHandleOnly ? 'default' : isDragging ? 'grabbing' : 'grab',
+        touchAction: isMobile ? 'auto' : 'none',
         zIndex: isDragging ? 1000 : undefined,
     };
+
+    const dragHandle = useHandleOnly && !disabled ? (
+        <button
+            type="button"
+            className={styles.mobileDragHandle}
+            aria-label="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
+            {...listeners}
+        >
+            <DotsSixVertical size={16} weight="bold" />
+        </button>
+    ) : null;
 
     return (
         <div
@@ -80,9 +97,9 @@ export function DraggableTask({ task, children, disabled = false }: DraggableTas
         ${isSorting ? styles.sorting : ''}
       `.trim()}
             {...attributes}
-            {...listeners}
+            {...(!useHandleOnly ? listeners : {})}
         >
-            {children}
+            {typeof children === 'function' ? children(dragHandle) : children}
         </div>
     );
 }

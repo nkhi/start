@@ -37,6 +37,7 @@ import { useTaskOperations } from '../../hooks/useTaskOperations';
 import { useGraveyard } from '../../hooks/useGraveyard';
 import { useViewNavigation } from '../../hooks/useViewNavigation';
 import { useCalendarEventsContext } from '../../contexts/CalendarEventsContext';
+import { useIsMobile } from '../../hooks/useLayout';
 
 
 // components
@@ -44,6 +45,7 @@ import { StateOverlayWrapper } from './StateOverlayWrapper';
 import { TaskActionsOverlay } from './TaskActionsOverlay';
 import { StatusBar } from './StatusBar';
 import { CalendarPopover } from './calendar';
+import { TodoColumnSplit } from './TodoColumnSplit';
 
 // utilities
 import {
@@ -64,14 +66,23 @@ interface TodosProps {
 }
 
 export function Todos({ workMode = false }: TodosProps) {
+  const isMobile = useIsMobile();
+
   // ----------------------------------------
   // View Mode State
   // ----------------------------------------
-  const [viewMode, setViewMode] = useState<'day' | 'two-day' | 'week'>(() => {
+  const [desktopViewMode, setDesktopViewMode] = useState<'day' | 'two-day' | 'week'>(() => {
     const saved = localStorage.getItem('todosViewMode');
     if (saved === 'three-day') return 'two-day';
     return (saved === 'day' || saved === 'two-day' || saved === 'week') ? saved : 'two-day';
   });
+
+  const [mobileViewMode, setMobileViewMode] = useState<'day' | 'two-day'>(() => {
+    const saved = localStorage.getItem('todosMobileViewMode');
+    return (saved === 'day' || saved === 'two-day') ? saved : 'day';
+  });
+
+  const viewMode: 'day' | 'two-day' | 'week' = isMobile ? mobileViewMode : desktopViewMode;
 
   const [focusedDateStr, setFocusedDateStr] = useState<string>('');
   const dayWeekRef = useRef<DayWeekHandle>(null);
@@ -86,10 +97,26 @@ export function Todos({ workMode = false }: TodosProps) {
   const [weekCategory, setWeekCategory] = useState<TaskCategory>(workMode ? 'work' : 'life');
   const [expandedAccordions, setExpandedAccordions] = useState<Record<string, boolean>>({});
 
-  // Save view mode preference
+  // Save view mode preferences
   useEffect(() => {
-    localStorage.setItem('todosViewMode', viewMode);
-  }, [viewMode]);
+    localStorage.setItem('todosViewMode', desktopViewMode);
+  }, [desktopViewMode]);
+
+  useEffect(() => {
+    localStorage.setItem('todosMobileViewMode', mobileViewMode);
+  }, [mobileViewMode]);
+
+  const handleCycleViewMode = useCallback(() => {
+    if (isMobile) {
+      setMobileViewMode(prev => (prev === 'day' ? 'two-day' : 'day'));
+    } else {
+      setDesktopViewMode(prev => {
+        if (prev === 'day') return 'two-day';
+        if (prev === 'two-day') return 'week';
+        return 'day';
+      });
+    }
+  }, [isMobile]);
 
   // Keyboard Navigation
   useEffect(() => {
@@ -99,7 +126,7 @@ export function Todos({ workMode = false }: TodosProps) {
 
       const key = e.key.toLowerCase();
       if (key === 'w' && !e.repeat) {
-        setViewMode(prev => prev === 'day' ? 'two-day' : prev === 'two-day' ? 'week' : 'day');
+        handleCycleViewMode();
       } else if (key === 'q' && !e.repeat && !workMode) {
         setWeekCategory(prev => prev === 'life' ? 'work' : 'life');
       }
@@ -110,7 +137,7 @@ export function Todos({ workMode = false }: TodosProps) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [handleCycleViewMode, workMode]);
 
   // Sync category with work mode
   useEffect(() => {
@@ -120,14 +147,6 @@ export function Todos({ workMode = false }: TodosProps) {
   // ----------------------------------------
   // Hooks
   // ----------------------------------------
-
-  const handleCycleViewMode = useCallback(() => {
-    setViewMode(prev => {
-      if (prev === 'day') return 'two-day';
-      if (prev === 'two-day') return 'week';
-      return 'day';
-    });
-  }, []);
 
   const taskOps = useTaskOperations({ workMode });
   const viewNav = useViewNavigation({
@@ -253,72 +272,75 @@ export function Todos({ workMode = false }: TodosProps) {
 
     return (
       <DraggableTask key={task.id} task={task}>
-        <div className={`${styles.todoItem} ${styles[taskState] || ''}`}>
-          <div className={styles.todoItemContent}>
-            <StateOverlayWrapper
-              taskId={task.id}
-              dateStr={dateStr}
-              currentState={taskState}
-              onSetState={taskOps.setTaskState}
-              onToggle={() => taskOps.toggleTask(dateStr, task.id)}
-            >
-              <button
-                type="button"
-                className={`${styles.todoCheckBtn} ${styles[taskState] || ''}`}
+        {(dragHandle) => (
+          <div className={`${styles.todoItem} ${styles[taskState] || ''}`}>
+            <div className={styles.todoItemContent}>
+              <StateOverlayWrapper
+                taskId={task.id}
+                dateStr={dateStr}
+                currentState={taskState}
+                onSetState={taskOps.setTaskState}
+                onToggle={() => taskOps.toggleTask(dateStr, task.id)}
               >
-                {taskState === 'completed' && <Check size={12} weight="bold" />}
-                {taskState === 'failed' && <X size={12} weight="bold" />}
-              </button>
-            </StateOverlayWrapper>
-            {editingTaskId === task.id ? (
-              <input
-                ref={editInputRef}
-                type="text"
-                className={styles.todoInputSmall}
-                style={{ flex: 1, margin: 0, height: 'auto', padding: '2px 4px' }}
-                value={editTaskText}
-                onChange={(e) => setEditTaskText(e.target.value)}
-                onBlur={() => handleEditTaskSubmit(dateStr, task.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleEditTaskSubmit(dateStr, task.id);
-                  } else if (e.key === 'Escape') {
-                    setEditingTaskId(null);
-                  }
+                <button
+                  type="button"
+                  className={`${styles.todoCheckBtn} ${styles[taskState] || ''}`}
+                >
+                  {taskState === 'completed' && <Check size={12} weight="bold" />}
+                  {taskState === 'failed' && <X size={12} weight="bold" />}
+                </button>
+              </StateOverlayWrapper>
+              {editingTaskId === task.id ? (
+                <input
+                  ref={editInputRef}
+                  type="text"
+                  className={styles.todoInputSmall}
+                  style={{ flex: 1, margin: 0, height: 'auto', padding: '2px 4px' }}
+                  value={editTaskText}
+                  onChange={(e) => setEditTaskText(e.target.value)}
+                  onBlur={() => handleEditTaskSubmit(dateStr, task.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleEditTaskSubmit(dateStr, task.id);
+                    } else if (e.key === 'Escape') {
+                      setEditingTaskId(null);
+                    }
+                  }}
+                />
+              ) : (
+                <span className={styles.todoText}>{task.text}</span>
+              )}
+            </div>
+            {editingTaskId !== task.id && (
+              <TaskActionsOverlay
+                onMoveToTop={() => taskOps.moveTaskToTop(dateStr, task.id)}
+                onPunt={() => taskOps.puntTask(dateStr, task.id)}
+                onDelete={() => taskOps.deleteTask(dateStr, task.id)}
+                onGraveyard={() => graveyard.sendToGraveyard(dateStr, task.id)}
+                onCopy={() => navigator.clipboard.writeText(task.text)}
+                onEdit={() => {
+                  setEditTaskText(task.text);
+                  setEditingTaskId(task.id);
+                }}
+                onChangeDate={(newDateStr) => {
+                  taskOps.updateTaskDate(dateStr, task.id, newDateStr);
                 }}
               />
-            ) : (
-              <span className={styles.todoText}>{task.text}</span>
             )}
+            {taskState === 'active' && puntDays > 0 && (
+              <span
+                className={styles.puntDaysBadge}
+                title={`Punted ${puntDays} day${puntDays > 1 ? 's' : ''}`}
+                style={{
+                  color: puntDays >= 3 ? '#FF3B30' : puntDays === 2 ? '#FF9500' : '#FBBF24'
+                }}
+              >
+                {puntDays}
+              </span>
+            )}
+            {dragHandle}
           </div>
-          {editingTaskId !== task.id && (
-            <TaskActionsOverlay
-              onMoveToTop={() => taskOps.moveTaskToTop(dateStr, task.id)}
-              onPunt={() => taskOps.puntTask(dateStr, task.id)}
-              onDelete={() => taskOps.deleteTask(dateStr, task.id)}
-              onGraveyard={() => graveyard.sendToGraveyard(dateStr, task.id)}
-              onCopy={() => navigator.clipboard.writeText(task.text)}
-              onEdit={() => {
-                setEditTaskText(task.text);
-                setEditingTaskId(task.id);
-              }}
-              onChangeDate={(newDateStr) => {
-                taskOps.updateTaskDate(dateStr, task.id, newDateStr);
-              }}
-            />
-          )}
-          {taskState === 'active' && puntDays > 0 && (
-            <span
-              className={styles.puntDaysBadge}
-              title={`Punted ${puntDays} day${puntDays > 1 ? 's' : ''}`}
-              style={{
-                color: puntDays >= 3 ? '#FF3B30' : puntDays === 2 ? '#FF9500' : '#FBBF24'
-              }}
-            >
-              {puntDays}
-            </span>
-          )}
-        </div>
+        )}
       </DraggableTask>
     );
   };
@@ -476,79 +498,103 @@ export function Todos({ workMode = false }: TodosProps) {
     const showLife = !workMode && (viewMode === 'day' || viewMode === 'two-day' || weekCategory === 'life');
     const showWork = viewMode === 'day' || viewMode === 'two-day' || weekCategory === 'work';
 
+    const isLifeCollapsed = isMobile && (viewMode === 'day' || viewMode === 'two-day') && lifeTasks.length === 0;
+    const isWorkCollapsed = isMobile && (viewMode === 'day' || viewMode === 'two-day') && workTasks.length === 0;
+    const layoutSignature = [
+      viewMode,
+      editingTaskId || '',
+      lifeTasks.map(t => `${t.id}:${getTaskState(t)}:${t.text.length}`).join(','),
+      workTasks.map(t => `${t.id}:${getTaskState(t)}:${t.text.length}`).join(','),
+      Object.entries(expandedAccordions)
+        .filter(([k]) => k.startsWith(dateStr))
+        .map(([k, v]) => `${k}=${v}`)
+        .join(','),
+    ].join('|');
+
+    const lifeContent = (
+      <>
+        {(viewMode === 'day' || viewMode === 'two-day') && (
+          <div className={styles.todoCategoryHeader}>
+            <span>Life</span>
+            <StatusBar {...getCountsForCategory(lifeTasks)} />
+          </div>
+        )}
+        <form onSubmit={(e) => taskOps.addTask(e, dateStr, 'life')} className={styles.todoInputFormSmall}>
+          <div className={styles.todoInputWrapper}>
+            <input
+              type="text"
+              value={taskOps.newTaskTexts[`${dateStr}_life`] || ''}
+              onChange={(e) => taskOps.setNewTaskTexts(prev => ({ ...prev, [`${dateStr}_life`]: e.target.value }))}
+              placeholder="Add task"
+              className={styles.todoInputSmall}
+            />
+            <button
+              type="submit"
+              className={styles.todoInputSubmitBtn}
+              disabled={!taskOps.newTaskTexts[`${dateStr}_life`]?.trim()}
+            >
+              <ArrowRight size={14} weight="bold" />
+            </button>
+          </div>
+        </form>
+        {renderTasksWithAccordions(lifeTasks, dateStr, 'life')}
+      </>
+    );
+
+    const workContent = (
+      <>
+        {(viewMode === 'day' || viewMode === 'two-day') && (
+          <div className={styles.todoCategoryHeader}>
+            <span>Work</span>
+            <StatusBar {...getCountsForCategory(workTasks)} />
+          </div>
+        )}
+        <form onSubmit={(e) => taskOps.addTask(e, dateStr, 'work')} className={styles.todoInputFormSmall}>
+          <div className={styles.todoInputWrapper}>
+            <input
+              type="text"
+              value={taskOps.newTaskTexts[`${dateStr}_work`] || ''}
+              onChange={(e) => taskOps.setNewTaskTexts(prev => ({ ...prev, [`${dateStr}_work`]: e.target.value }))}
+              placeholder="Add task"
+              className={styles.todoInputSmall}
+            />
+            <button
+              type="submit"
+              className={styles.todoInputSubmitBtn}
+              disabled={!taskOps.newTaskTexts[`${dateStr}_work`]?.trim()}
+            >
+              <ArrowRight size={14} weight="bold" />
+            </button>
+          </div>
+        </form>
+        {renderTasksWithAccordions(workTasks, dateStr, 'work')}
+      </>
+    );
+
     return (
       <>
         <div className={styles.todoColumnHeader}>
           <span className={`${styles.todoDate} ${isToday ? 'today' : ''} ${isShrunk ? styles.shrunkDate : ''}`}>
             {isShrunk
               ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-              : <>{date.toLocaleDateString('en-US', { weekday: viewMode === 'week' ? 'short' : 'long' })}, {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</>
+              : <>{date.toLocaleDateString('en-US', { weekday: (viewMode === 'week' || (isMobile && viewMode === 'two-day')) ? 'short' : 'long' })}, {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</>
             }
           </span>
           <CalendarPopover date={date} />
         </div>
 
-        <div className={styles.todoContentRow}>
-          {showLife && (
-            <div className={styles.todoCategorySection}>
-              {(viewMode === 'day' || viewMode === 'two-day') && (
-                <div className={styles.todoCategoryHeader}>
-                  <span>Life</span>
-                  <StatusBar {...getCountsForCategory(lifeTasks)} />
-                </div>
-              )}
-              <form onSubmit={(e) => taskOps.addTask(e, dateStr, 'life')} className={styles.todoInputFormSmall}>
-                <div className={styles.todoInputWrapper}>
-                  <input
-                    type="text"
-                    value={taskOps.newTaskTexts[`${dateStr}_life`] || ''}
-                    onChange={(e) => taskOps.setNewTaskTexts(prev => ({ ...prev, [`${dateStr}_life`]: e.target.value }))}
-                    placeholder="Add task"
-                    className={styles.todoInputSmall}
-                  />
-                  <button
-                    type="submit"
-                    className={styles.todoInputSubmitBtn}
-                    disabled={!taskOps.newTaskTexts[`${dateStr}_life`]?.trim()}
-                  >
-                    <ArrowRight size={14} weight="bold" />
-                  </button>
-                </div>
-              </form>
-              {renderTasksWithAccordions(lifeTasks, dateStr, 'life')}
-            </div>
-          )}
-
-          {showWork && (
-            <div className={styles.todoCategorySection}>
-              {(viewMode === 'day' || viewMode === 'two-day') && (
-                <div className={styles.todoCategoryHeader}>
-                  <span>Work</span>
-                  <StatusBar {...getCountsForCategory(workTasks)} />
-                </div>
-              )}
-              <form onSubmit={(e) => taskOps.addTask(e, dateStr, 'work')} className={styles.todoInputFormSmall}>
-                <div className={styles.todoInputWrapper}>
-                  <input
-                    type="text"
-                    value={taskOps.newTaskTexts[`${dateStr}_work`] || ''}
-                    onChange={(e) => taskOps.setNewTaskTexts(prev => ({ ...prev, [`${dateStr}_work`]: e.target.value }))}
-                    placeholder="Add task"
-                    className={styles.todoInputSmall}
-                  />
-                  <button
-                    type="submit"
-                    className={styles.todoInputSubmitBtn}
-                    disabled={!taskOps.newTaskTexts[`${dateStr}_work`]?.trim()}
-                  >
-                    <ArrowRight size={14} weight="bold" />
-                  </button>
-                </div>
-              </form>
-              {renderTasksWithAccordions(workTasks, dateStr, 'work')}
-            </div>
-          )}
-        </div>
+        <TodoColumnSplit
+          isMobile={isMobile}
+          showLife={showLife}
+          showWork={showWork}
+          isLifeCollapsed={isLifeCollapsed}
+          isWorkCollapsed={isWorkCollapsed}
+          lifeCount={lifeTasks.length}
+          workCount={workTasks.length}
+          layoutSignature={layoutSignature}
+          lifeContent={lifeContent}
+          workContent={workContent}
+        />
       </>
     );
   };
@@ -595,7 +641,7 @@ export function Todos({ workMode = false }: TodosProps) {
         <MultiWeekView
           renderColumn={renderTodoColumn}
           dates={viewNav.dates}
-          customGridTemplate={getGridTemplate()}
+          customGridTemplate={isMobile ? undefined : getGridTemplate()}
         />
       ) : (
         <DayWeek

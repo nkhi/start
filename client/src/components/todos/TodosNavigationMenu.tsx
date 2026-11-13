@@ -14,7 +14,7 @@
  *   a smooth scroll jump to the current date inside the underlying `DayWeek` component.
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     List,
     StrategyIcon,
@@ -26,6 +26,7 @@ import {
     Circle,
     ArrowCircleLeft
 } from '@phosphor-icons/react';
+import { useIsMobile } from '../../hooks/useLayout';
 import styles from './TodosNavigationMenu.module.css';
 
 interface TodosNavigationMenuProps {
@@ -64,14 +65,36 @@ export function TodosNavigationMenu({
     isFocusedToday,
     isFutureDate
 }: TodosNavigationMenuProps) {
+    const isMobile = useIsMobile();
     const [isHovered, setIsHovered] = useState(false);
-    const isExpanded = isHovered || isGraveyardOpen;
+    const [isTouchOpen, setIsTouchOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isMobile || !isTouchOpen) return;
+
+        const handleOutsidePointerDown = (e: PointerEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setIsTouchOpen(false);
+            }
+        };
+
+        document.addEventListener('pointerdown', handleOutsidePointerDown);
+        return () => document.removeEventListener('pointerdown', handleOutsidePointerDown);
+    }, [isMobile, isTouchOpen]);
+
+    const isExpanded = (isMobile ? isTouchOpen : isHovered) || isGraveyardOpen;
+    const nextViewModeLabel = isMobile
+        ? (viewMode === 'day' ? '2-Day' : 'Day')
+        : (viewMode === 'day' ? '2-Day' : viewMode === 'two-day' ? 'Week' : 'Day');
 
     return (
         <div
+            ref={containerRef}
             className={`${styles.navMenuContainer} ${isExpanded ? styles.expanded : ''}`}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseEnter={isMobile ? undefined : () => setIsHovered(true)}
+            onMouseLeave={isMobile ? undefined : () => setIsHovered(false)}
+            onClick={isMobile && !isExpanded ? () => setIsTouchOpen(true) : undefined}
         >
             {/* Trigger Icon - Visible only when collapsed */}
             <div className={styles.triggerWrapper}>
@@ -119,7 +142,7 @@ export function TodosNavigationMenu({
                         title="Cycle View Mode"
                     >
                         <StrategyIcon weight="fill" size={18} />
-                        <span>{viewMode === 'day' ? '2-Day' : viewMode === 'two-day' ? 'Week' : 'Day'}</span>
+                        <span>{nextViewModeLabel}</span>
                     </button>
 
                     <button
