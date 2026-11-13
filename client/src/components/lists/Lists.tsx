@@ -6,6 +6,7 @@ import type { List, ListItem } from '../../types';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, useDroppable, pointerWithin, type DragStartEvent, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { generateUUID } from '../../utils/uuid';
 import styles from './Lists.module.css';
 
 
@@ -304,7 +305,7 @@ export const Lists: React.FC = () => {
         const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
 
         const newList: Partial<List> = {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             title: 'New List',
             color: randomColor,
             order: newOrder,
@@ -378,7 +379,7 @@ export const Lists: React.FC = () => {
         if (!list) return;
 
         const newItem: ListItem = {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             text,
             completed: false,
             createdAt: new Date().toISOString(),

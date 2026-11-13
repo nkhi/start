@@ -34,7 +34,8 @@
     "react-dom": "^18.3.1",
     "react-force-graph-2d": "^1.29.2",
     "recharts": "^3.5.1",
-    "suncalc": "^1.9.0"
+    "suncalc": "^1.9.0",
+    "uuid": "^14.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

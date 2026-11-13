@@ -8,6 +8,7 @@ import {
   saveJournalEntry,
 } from "../../../api/journal";
 import { useJournal } from "../JournalContext";
+import { generateUUID } from "../../../utils/uuid";
 import { DocumentLibrary } from "./DocumentLibrary";
 import styles from "./Slate.module.css";
 
@@ -26,7 +27,7 @@ export function Slate() {
   } = useJournal();
 
   const [summaries, setSummaries] = useState<EntrySummary[]>([]);
-  const [entryId, setEntryId] = useState<string>(() => "entry-" + crypto.randomUUID());
+  const [entryId, setEntryId] = useState<string>(() => "entry-" + generateUUID());
   const [wordCount, setWordCount] = useState(0);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">(
     "saved",
@@ -178,7 +179,7 @@ export function Slate() {
       return;
     }
 
-    const newId = "entry-" + crypto.randomUUID();
+    const newId = "entry-" + generateUUID();
     setEntryId(newId);
     entryIdRef.current = newId;
 

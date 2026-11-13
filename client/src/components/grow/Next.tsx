@@ -3,6 +3,7 @@ import { Trash, RocketLaunch } from '@phosphor-icons/react';
 import { CARD_COLORS } from '../../constants/colors';
 import { getNotes, createNote, updateNote as apiUpdateNote } from '../../api/next';
 import type { Note } from '../../types';
+import { generateUUID } from '../../utils/uuid';
 import styles from './Next.module.css';
 
 export const Next: React.FC = () => {
@@ -54,7 +55,7 @@ export const Next: React.FC = () => {
         const randomColor = CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)];
 
         const newNote: Partial<Note> = {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             title: 'New Idea',
             content: 'Click to edit...',
             color: randomColor,
